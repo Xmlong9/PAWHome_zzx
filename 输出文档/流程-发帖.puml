@@ -1,0 +1,12 @@
+@startuml
+start
+:用户选择媒体并填写内容;
+if (登录?) then (是)
+  :调用上传接口获取URL;
+  :提交发布帖子接口;
+  :返回成功并刷新列表;
+else (否)
+  :跳转登录;
+endif
+stop
+@enduml

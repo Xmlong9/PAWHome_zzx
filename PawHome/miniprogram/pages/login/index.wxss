@@ -1,0 +1,11 @@
+.wrap{padding:48rpx}
+.logo{font-size:40rpx;text-align:center;margin-bottom:48rpx}
+.form{display:flex;flex-direction:column;gap:24rpx}
+.row{display:flex;gap:16rpx}
+.input{border:1px solid #e5e5e5;border-radius:8rpx;padding:20rpx}
+.code{flex:1}
+.btn{border-radius:8rpx;padding:20rpx;text-align:center}
+.primary{background:#07c160;color:#fff}
+.shade{background:#f2f3f5}
+.wechat{background:#09bb07;color:#fff;margin-top:24rpx}
+.or{text-align:center;color:#999;margin-top:24rpx}

@@ -1,0 +1,72 @@
+<view class="home">
+  <view class="header" style="margin-top: {{safeTop}}px;">
+    <view class="header-blob"></view>
+    <view class="brand-row">
+      <view class="brand">爱宠家</view>
+    </view>
+    <view class="search">
+      <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
+      <input class="search-field" type="text" placeholder="喵呜~今天要翻些什么家具呢" placeholder-style="color:#666;font-size:28rpx;text-align:center;" confirm-type="search" />
+    </view>
+  </view>
+
+  <view class="carousel-row">
+    <view class="carousel">
+      <view class="card-shadow"></view>
+      <swiper class="swiper" vertical="true" circular autoplay interval="4000" bindchange="onSwiperChange">
+        <block wx:for="{{swiperList}}" wx:key="src">
+          <swiper-item>
+            <view class="carousel-card">
+              <view class="indicator">
+                <block wx:for="{{indicatorBars}}" wx:key="*this">
+                  <view class="bar {{current==index?'active':''}}"></view>
+                </block>
+              </view>
+              <image class="carousel-img-fit" src="{{item.src}}" mode="aspectFit"></image>
+            </view>
+          </swiper-item>
+        </block>
+      </swiper>
+      <image class="carousel-sticker" src="/assets/images/home/littleface@1x.png" mode="aspectFill"></image>
+    </view>
+    <view class="ad-wrap">
+      <view class="ad-shadow"></view>
+      <view class="ad-card" bindtap="goShop">
+        <image class="ad-img" src="/assets/images/home/advertise@1x.png" mode="aspectFill"></image>
+      </view>
+    </view>
+  </view>
+
+  <view class="services">
+    <view class="service-item" bindtap="goServiceVaccine">
+      <image class="service-icon-img" src="/assets/images/home/immune@1x.png" mode="aspectFill"></image>
+      <text class="service-text">疫苗</text>
+    </view>
+    <view class="service-item" bindtap="goServiceBeauty">
+      <image class="service-icon-img" src="/assets/images/home/beautify@1x.png" mode="aspectFill"></image>
+      <text class="service-text">美容</text>
+    </view>
+    <view class="service-item" bindtap="goServiceMedical">
+      <image class="service-icon-img" src="/assets/images/home/medic@1x.png" mode="aspectFill"></image>
+      <text class="service-text">医疗</text>
+    </view>
+    <view class="service-item" bindtap="goServiceFoster">
+      <image class="service-icon-img" src="/assets/images/home/foster@1x.png" mode="aspectFill"></image>
+      <text class="service-text">寄养</text>
+    </view>
+  </view>
+
+  <view class="promo" bindtap="goShop">
+    <view class="promo-tag">促</view>
+    <image class="promo-img" src="/assets/images/home/promo.png" mode="aspectFill"></image>
+    <view class="promo-text">星星猫粮全场7折优惠  点击迅速抢购 →</view>
+  </view>
+
+  <view class="community-card" bindtap="goCommunity">
+    <view class="community-tag">热帖</view>
+    <view class="community-title">那些火遍全网的猫meme</view>
+    <image class="community-img" src="/assets/images/home/community.png" mode="aspectFill"></image>
+  </view>
+
+  
+</view>

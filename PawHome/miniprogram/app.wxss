@@ -1,0 +1,19 @@
+/**app.wxss**/
+.font-paw {
+  font-family: 'PawZKKL', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+@font-face {
+  font-family: 'PawZKKL';
+  src: url('/assets/fonts/ZhanKuKuaiLeTi2016XiuDingBan-1.ttf') format('truetype');
+  font-display: swap;
+}
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 200rpx 0;
+  box-sizing: border-box;
+}

@@ -1,0 +1,92 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class User {
+  +id: long
+  +openid: string
+  +nickname: string
+  +avatarUrl: string
+}
+
+class Pet {
+  +id: long
+  +userId: long
+  +name: string
+  +breed: string
+}
+
+class Post {
+  +id: long
+  +userId: long
+  +title: string
+  +content: string
+}
+
+class Media {
+  +id: long
+  +postId: long
+  +type: string
+  +url: string
+}
+
+class Comment {
+  +id: long
+  +postId: long
+  +userId: long
+  +content: string
+}
+
+class Product {
+  +id: long
+  +name: string
+}
+
+class Sku {
+  +id: long
+  +productId: long
+  +spec: string
+  +price: number
+}
+
+class Order {
+  +id: long
+  +userId: long
+  +status: string
+}
+
+class OrderItem {
+  +id: long
+  +orderId: long
+  +skuId: long
+  +quantity: int
+}
+
+class ServiceOrg {
+  +id: long
+  +name: string
+}
+
+class ServiceItem {
+  +id: long
+  +orgId: long
+  +typeCode: string
+}
+
+class Appointment {
+  +id: long
+  +userId: long
+  +serviceItemId: long
+  +scheduleId: long
+}
+
+User "1" -- "*" Pet
+User "1" -- "*" Post
+Post "1" -- "*" Media
+Post "1" -- "*" Comment
+Product "1" -- "*" Sku
+User "1" -- "*" Order
+Order "1" -- "*" OrderItem
+ServiceOrg "1" -- "*" ServiceItem
+User "1" -- "*" Appointment
+ServiceItem "1" -- "*" Appointment
+@enduml

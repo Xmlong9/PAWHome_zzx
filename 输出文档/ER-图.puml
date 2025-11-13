@@ -1,0 +1,78 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+class user
+class pet
+class follow
+class post
+class post_media
+class tag
+class post_tag
+class topic
+class post_topic
+class comment
+class like
+class favorite
+class dm_conversation
+class dm_message
+class notification
+
+class category
+class brand
+class product
+class sku
+class cart
+class cart_item
+class address
+class order
+class order_item
+class payment
+class refund
+class review
+class coupon
+class coupon_claim
+
+class service_org
+class service_type
+class service_item
+class schedule
+class appointment
+class service_order
+class service_record
+class rating
+
+user "1" -- "*" pet
+user "1" -- "*" post
+user "1" -- "*" comment
+user "1" -- "*" like
+user "1" -- "*" favorite
+user "1" -- "*" dm_conversation
+user "1" -- "*" notification
+post "1" -- "*" post_media
+post "*" -- "*" tag : post_tag
+post "*" -- "*" topic : post_topic
+dm_conversation "1" -- "*" dm_message
+
+category "1" -- "*" product
+brand "1" -- "*" product
+product "1" -- "*" sku
+user "1" -- "1" cart
+cart "1" -- "*" cart_item
+user "1" -- "*" address
+user "1" -- "*" order
+order "1" -- "*" order_item
+order "1" -- "1" payment
+order "1" -- "*" refund
+user "1" -- "*" review
+coupon "1" -- "*" coupon_claim
+
+service_org "1" -- "*" service_item
+service_type "1" -- "*" service_item
+service_item "1" -- "*" schedule
+user "1" -- "*" appointment
+appointment "1" -- "1" service_order
+appointment "1" -- "1" service_record
+user "1" -- "*" rating
+
+@enduml

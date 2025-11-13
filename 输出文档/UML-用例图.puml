@@ -1,0 +1,70 @@
+@startuml
+left to right direction
+actor 用户
+actor 管理员
+
+package 社区交流 {
+  usecase UC1 as "浏览帖子"
+  usecase UC2 as "发布帖子"
+  usecase UC3 as "点赞评论收藏"
+  usecase UC4 as "搜索筛选话题"
+  usecase UC5 as "私信交流"
+}
+
+package 商城购买 {
+  usecase UC6 as "浏览商品"
+  usecase UC7 as "购物车管理"
+  usecase UC8 as "下单支付退款"
+  usecase UC9 as "商品收藏与评价"
+}
+
+package 宠物服务 {
+  usecase UC10 as "疫苗预约与提醒"
+  usecase UC11 as "美容预约与记录"
+  usecase UC12 as "医疗预约与记录"
+  usecase UC13 as "寄养预约与状态"
+  usecase UC14 as "服务评价"
+}
+
+package 个人中心 {
+  usecase UC15 as "资料与账号安全"
+  usecase UC16 as "宠物信息卡管理"
+  usecase UC17 as "关注/粉丝/获赞"
+  usecase UC18 as "发布/收藏/浏览历史"
+  usecase UC19 as "订单与预约管理"
+  usecase UC20 as "设置中心"
+}
+
+package 管理与审核 {
+  usecase UC21 as "内容审核管理"
+  usecase UC22 as "商品管理"
+  usecase UC23 as "用户管理"
+  usecase UC24 as "服务预约管理"
+}
+
+用户 --> UC1
+用户 --> UC2
+用户 --> UC3
+用户 --> UC4
+用户 --> UC5
+用户 --> UC6
+用户 --> UC7
+用户 --> UC8
+用户 --> UC9
+用户 --> UC10
+用户 --> UC11
+用户 --> UC12
+用户 --> UC13
+用户 --> UC14
+用户 --> UC15
+用户 --> UC16
+用户 --> UC17
+用户 --> UC18
+用户 --> UC19
+用户 --> UC20
+
+管理员 --> UC21
+管理员 --> UC22
+管理员 --> UC23
+管理员 --> UC24
+@enduml

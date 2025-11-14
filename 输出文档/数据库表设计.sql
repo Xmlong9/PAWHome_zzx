@@ -419,3 +419,50 @@ CREATE TABLE config_kv (
   v VARCHAR(512) NOT NULL,
   updated_at DATETIME NOT NULL
 );
+
+-- 首页投放位与素材
+CREATE TABLE banner_slot (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  code VARCHAR(64) UNIQUE NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  desc VARCHAR(256)
+);
+
+CREATE TABLE banner_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  slot_code VARCHAR(64) NOT NULL,
+  image_url VARCHAR(255) NOT NULL,
+  title VARCHAR(128),
+  sub_title VARCHAR(128),
+  cta_text VARCHAR(64),
+  link_url VARCHAR(255),
+  badge VARCHAR(32),
+  bg_color VARCHAR(16),
+  border_radius INT DEFAULT 40,
+  shadow_offset_x INT DEFAULT 12,
+  shadow_offset_y INT DEFAULT 12,
+  weight INT DEFAULT 1,
+  status TINYINT DEFAULT 1,
+  start_at DATETIME,
+  end_at DATETIME,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  INDEX idx_banner_slot (slot_code),
+  INDEX idx_banner_time (start_at, end_at)
+);
+
+-- 社区推荐卡片素材（横幅）
+CREATE TABLE community_card (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  image_url VARCHAR(255) NOT NULL,
+  title VARCHAR(128) NOT NULL,
+  link_url VARCHAR(255),
+  badge VARCHAR(32),
+  weight INT DEFAULT 1,
+  status TINYINT DEFAULT 1,
+  start_at DATETIME,
+  end_at DATETIME,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  INDEX idx_card_time (start_at, end_at)
+);

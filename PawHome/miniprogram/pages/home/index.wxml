@@ -56,16 +56,52 @@
     </view>
   </view>
 
-  <view class="promo" bindtap="goShop">
-    <view class="promo-tag">促</view>
-    <image class="promo-img" src="/assets/images/home/promo.png" mode="aspectFill"></image>
-    <view class="promo-text">星星猫粮全场7折优惠  点击迅速抢购 →</view>
+  <view class="group1" bindtap="goShop">
+    <view class="group1-shadow"></view>
+    <view class="group1-card">
+      <block wx:if="{{promo}}">
+        <image class="group1-left" src="{{promo.imageUrl}}" mode="aspectFit"></image>
+      </block>
+      <block wx:else>
+        <image class="group1-left" src="/assets/images/home/advertise@1x.png" mode="aspectFit"></image>
+      </block>
+      <view class="group1-desc">
+        <block wx:if="{{promo}}">
+          <view class="group1-line1">{{promo.title}}<text wx:if="{{promo.ctaText}}" class="accent"></text></view>
+          <view class="group1-btn">{{promo.ctaText}}</view>
+        </block>
+        <block wx:else>
+          <view class="group1-line1">星星猫粮全场7折优惠</view>
+          <view class="group1-btn">点击迅速抢购 →</view>
+        </block>
+      </view>
+      <block wx:if="{{promo}}">
+        <view class="group1-badge">{{promo.badge}}</view>
+      </block>
+      <block wx:else>
+        <view class="group1-badge">广告</view>
+      </block>
+    </view>
   </view>
 
-  <view class="community-card" bindtap="goCommunity">
-    <view class="community-tag">热帖</view>
-    <view class="community-title">那些火遍全网的猫meme</view>
-    <image class="community-img" src="/assets/images/home/community.png" mode="aspectFill"></image>
+  <view class="group" bindtap="goCommunity">
+    <view class="group-shadow"></view>
+    <view class="group-card">
+      <block wx:if="{{communityCard}}">
+        <image class="group-left" src="{{communityCard.imageUrl}}" mode="aspectFit"></image>
+      </block>
+      <block wx:else>
+        <image class="group-left" src="/assets/images/home/slideshow1@1x.png" mode="aspectFit"></image>
+      </block>
+      <block wx:if="{{communityCard}}">
+        <view class="group-title">{{communityCard.title}}</view>
+        <view class="group-badge">{{communityCard.badge}}</view>
+      </block>
+      <block wx:else>
+        <view class="group-title">那些火遍全网的猫meme</view>
+        <view class="group-badge">社区</view>
+      </block>
+    </view>
   </view>
 
   

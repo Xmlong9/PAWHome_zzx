@@ -384,6 +384,208 @@ paths:
         '200':
           description: 成功
 
+  /banners:
+    get:
+      summary: 获取投放素材列表
+      parameters:
+        - in: query
+          name: slot
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BannerItem'
+                  total: { type: integer }
+
+  /feeds/community:
+    get:
+      summary: 社区推荐卡片
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommunityCard'
+                  total: { type: integer }
+    post:
+      summary: 创建预约
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreate'
+      responses:
+        '200':
+          description: 成功
+
+  /users/me/posts:
+    get:
+      summary: 我的帖子列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected, hidden, deleted] }
+        - in: query
+          name: visibility
+          schema: { type: string, enum: [public, friends, private] }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResp'
+
+  /users/{id}/posts:
+    get:
+      summary: 某用户公开帖子列表
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResp'
+
+  /admin/posts:
+    get:
+      summary: 管理员帖子检索
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected, hidden, deleted] }
+        - in: query
+          name: keyword
+          schema: { type: string }
+        - in: query
+          name: userId
+          schema: { type: integer }
+        - in: query
+          name: topicId
+          schema: { type: integer }
+        - in: query
+          name: startAt
+          schema: { type: string, format: date-time }
+        - in: query
+          name: endAt
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResp'
+
+  /admin/posts/{id}/moderate:
+    put:
+      summary: 管理员审核与处置帖子
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject, hide, restore]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  /admin/posts/{id}/pin:
+    patch:
+      summary: 管理员置顶或取消置顶
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pinned:
+                  type: boolean
+                expireAt:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: 成功
 components:
   securitySchemes:
     bearerAuth:
@@ -442,13 +644,17 @@ components:
       properties:
         id: { type: integer }
         userId: { type: integer }
+        user: { $ref: '#/components/schemas/UserSummary' }
         title: { type: string }
         content: { type: string }
         petType: { type: string }
+        visibility: { type: string, enum: [public, friends, private] }
+        status: { type: string, enum: [pending, approved, rejected, hidden, deleted] }
         likeCount: { type: integer }
         commentCount: { type: integer }
         favoriteCount: { type: integer }
         createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     PostCreate:
       type: object
       properties:
@@ -457,6 +663,12 @@ components:
         petType: { type: string }
         media: { type: array, items: { $ref: '#/components/schemas/MediaItem' } }
       required: [content]
+    UserSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        nickname: { type: string }
+        avatarUrl: { type: string }
     MediaItem:
       type: object
       properties:
@@ -563,3 +775,31 @@ components:
         serviceItemId: { type: integer }
         scheduleId: { type: integer }
       required: [orgId, serviceItemId, scheduleId]
+
+    BannerItem:
+      type: object
+      properties:
+        id: { type: integer }
+        slot: { type: string, description: '投放位编码，如 home_promo / home_community' }
+        imageUrl: { type: string }
+        title: { type: string }
+        subTitle: { type: string }
+        ctaText: { type: string }
+        linkUrl: { type: string }
+        badge: { type: string }
+        bgColor: { type: string }
+        borderRadius: { type: integer }
+        shadowOffsetX: { type: integer }
+        shadowOffsetY: { type: integer }
+        weight: { type: integer }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+
+    CommunityCard:
+      type: object
+      properties:
+        id: { type: integer }
+        imageUrl: { type: string }
+        title: { type: string }
+        linkUrl: { type: string }
+        badge: { type: string }

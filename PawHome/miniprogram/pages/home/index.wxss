@@ -14,6 +14,7 @@
 .carousel{position:relative}
 .swiper{width:460rpx;height:360rpx}
 .carousel-card{background:#fff;border-radius:64rpx;width:460rpx;height:360rpx;border:6rpx solid #000;overflow:hidden;padding:0;box-sizing:border-box;position:relative}
+.carousel-card{clip-path: inset(0 round 64rpx)}
 .carousel-card{box-shadow:12rpx 12rpx 0 #849C4E}
 .carousel-img{width:100%;height:100%}
 .carousel-img-fill{width:100%;height:100%}
@@ -49,14 +50,21 @@
 .service-icon.medical{background:linear-gradient(180deg,#cfe9ff,#6ab0ff)}
 .service-icon.foster{background:linear-gradient(180deg,#dff5ff,#6bd3ff)}
 
-.promo{margin:24rpx;background:#fff;border-radius:40rpx;padding:24rpx;display:flex;align-items:center;gap:16rpx;border:8rpx solid #000;box-shadow:0 8rpx 20rpx rgba(0,0,0,0.06)}
-.promo-img{width:160rpx;height:160rpx;border-radius:24rpx}
-.promo-tag{background:#ff7ab6;color:#fff;border-radius:999rpx;padding:8rpx 16rpx;font-size:24rpx}
-.promo-text{color:#333;font-size:28rpx}
+.group1{margin:40rpx 32rpx;position:relative;height:180rpx}
+.group1-shadow{position:absolute;inset:0;border-radius:40rpx;background:#849C4E;transform:translate(12rpx,12rpx);z-index:0}
+.group1-card{position:relative;background:#ff9ecf;border-radius:40rpx;height:180rpx;display:flex;align-items:center;padding:24rpx 28rpx;gap:24rpx;z-index:1;border:6rpx solid #000}
+.group1-left{width:160rpx;height:135rpx}
+.group1-desc{flex:1;color:#fff}
+.group1-line1{font-size:30rpx;line-height:40rpx}
+.group1-line1 .accent{font-weight:700}
+.group1-btn{margin-top:12rpx;font-size:28rpx}
+.group1-badge{position:absolute;right:16rpx;top:10rpx;background:#fff;color:#666;border-radius:999rpx;padding:4rpx 12rpx;font-size:20rpx}
 
-.community-card{margin:24rpx;background:#fff;border-radius:40rpx;padding:24rpx;border:8rpx solid #000;box-shadow:0 8rpx 20rpx rgba(0,0,0,0.06)}
-.community-img{width:100%;height:200rpx;border-radius:24rpx;margin-top:12rpx}
-.community-tag{background:#333;color:#fff;border-radius:999rpx;padding:8rpx 16rpx;display:inline-block}
-.community-title{margin-top:12rpx;font-size:32rpx;color:#333}
+.group{margin:80rpx 32rpx;position:relative;height:180rpx}
+.group-shadow{position:absolute;inset:0;border-radius:32rpx;background:#849C4E;transform:translate(10rpx,10rpx);z-index:0}
+.group-card{position:relative;background:#fff;border-radius:32rpx;border:6rpx solid #000;height:180rpx;display:flex;align-items:center;gap:24rpx;padding:24rpx 28rpx;z-index:1}
+.group-left{width:160rpx;height:120rpx}
+.group-title{flex:1;font-size:30rpx;color:#333}
+.group-badge{position:absolute;right:16rpx;top:10rpx;background:#fff;color:#666;border-radius:999rpx;padding:4rpx 12rpx;font-size:20rpx}
 
 .nav-icon-img{width:48rpx;height:48rpx}

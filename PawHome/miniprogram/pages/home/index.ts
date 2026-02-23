@@ -1,3 +1,5 @@
+import { getBanners, getCommunityCards } from "../../services/banners";
+
 Page({
   data: {
     swiperList: [
@@ -7,7 +9,9 @@ Page({
     ],
     current: 0,
     indicatorBars: [],
-    safeTop: 0
+    safeTop: 0,
+    promo: null as any,
+    communityCard: null as any
   },
   goSearch(){ wx.switchTab({ url: '/pages/community/index' }); },
   goCommunity(){ wx.switchTab({ url: '/pages/community/index' }); },
@@ -34,5 +38,15 @@ Page({
       success: () => {},
       fail: () => {}
     })
+    // 首页投放与卡片
+    getBanners("home_promo").then(list => {
+      if (list && list.length) this.setData({ promo: list[0] })
+    }).catch(() => {})
+    getBanners("home_community").then(list => {
+      if (list && list.length) this.setData({ communityCard: list[0] })
+    }).catch(() => {})
+    getCommunityCards(1,1).then(list => {
+      if (list && list.length && !this.data.communityCard) this.setData({ communityCard: { imageUrl: list[0].imageUrl, title: list[0].title, badge: list[0].badge } })
+    }).catch(() => {})
   }
 });

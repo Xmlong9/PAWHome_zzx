@@ -1,13 +1,23 @@
 /**app.wxss**/
 .font-paw {
-  font-family: 'PawZKKL', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  /* 临时使用系统字体，因为微信小程序不支持本地字体文件路径 */
+  /* font-family: 'PawZKKL', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
 
+/* 
+注意：微信小程序 @font-face 的 src 必须是 https 网络链接，不能是本地路径。
+在开发阶段，我们暂时注释掉它以避免报错。
+正式上线时，请将字体文件上传到服务器或CDN，并将下方的 url 替换为网络地址。
+*/
+/* 
 @font-face {
   font-family: 'PawZKKL';
   src: url('/assets/fonts/ZhanKuKuaiLeTi2016XiuDingBan-1.ttf') format('truetype');
   font-display: swap;
-}
+} 
+*/
+
 .container {
   height: 100%;
   display: flex;

@@ -1,6 +1,14 @@
 import { request } from "./request";
 
+const MOCK = true;
+
 export function code2Session(code: string) {
+  if (MOCK) {
+    return Promise.resolve({
+      token: "mock-token-123456",
+      openid: "mock-openid-123456"
+    });
+  }
   return request<{ token: string; openid: string }>({
     url: "/auth/code2session",
     method: "POST",
@@ -9,6 +17,9 @@ export function code2Session(code: string) {
 }
 
 export function sendSms(phone: string) {
+  if (MOCK) {
+    return Promise.resolve({ ok: true });
+  }
   return request<{ ok: boolean }>({
     url: "/auth/sms/send",
     method: "POST",
@@ -17,6 +28,9 @@ export function sendSms(phone: string) {
 }
 
 export function loginSms(phone: string, code: string) {
+  if (MOCK) {
+    return Promise.resolve({ token: "mock-token-123456" });
+  }
   return request<{ token: string }>({
     url: "/auth/login/sms",
     method: "POST",

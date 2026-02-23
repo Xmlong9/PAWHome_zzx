@@ -1,1 +1,82 @@
-<view class="container"><text>社区</text></view>
+<view class="community">
+  <!-- Header -->
+  <view class="header" style="padding-top: {{safeTop}}px;">
+    <view class="header-blob"></view>
+    <view class="header-content">
+      <view class="mail-icon" bindtap="onMailTap">
+        <view class="mail-box">
+          <view class="mail-flap"></view>
+        </view>
+      </view>
+      <view class="search">
+        <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
+        <input class="search-field" type="text" placeholder="喵呜~今天要翻些什么家具呢" placeholder-style="color:#666;font-size:28rpx;text-align:center;" confirm-type="search" />
+      </view>
+    </view>
+  </view>
+
+  <!-- Tags Filter -->
+  <scroll-view class="tags-scroll" scroll-x enable-flex>
+    <view class="tags-container">
+      <block wx:for="{{tags}}" wx:key="*this">
+        <view class="tag {{currentTag === item ? 'active' : ''}}" bindtap="onTagTap" data-tag="{{item}}">
+          {{item}}
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <!-- Post List -->
+  <view class="post-list">
+    <block wx:for="{{posts}}" wx:key="id">
+      <view class="post-card" bindtap="goPostDetail" data-id="{{item.id}}">
+        <!-- User Info -->
+        <view class="post-header">
+          <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-info">
+            <view class="nickname">{{item.user.nickname}}</view>
+            <view class="time">{{item.timeAgo}}</view>
+          </view>
+        </view>
+
+        <!-- Content -->
+        <view class="post-content">
+          <!-- Logic: If no text, show image. If no image, show text (3 lines). If both, show text (1 line) + image. -->
+          <view class="text-content {{item.images.length > 0 ? 'single-line' : 'multi-line'}}" wx:if="{{item.content}}">
+            {{item.content}}
+          </view>
+          
+          <view class="media-content" wx:if="{{item.images.length > 0}}">
+            <image class="post-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+          </view>
+        </view>
+
+        <!-- Status Bar -->
+        <view class="post-footer">
+          <view class="stats">
+            <view class="stat-item">
+              <view class="icon-heart {{item.isLiked ? 'liked' : ''}}"></view>
+              <text>{{item.likeCount}}</text>
+            </view>
+            <view class="stat-item">
+              <view class="icon-comment"></view>
+              <text>{{item.commentCount}}</text>
+            </view>
+          </view>
+          <view class="action">
+            <view class="icon-bookmark {{item.isFavorited ? 'favorited' : ''}}" catchtap="onFavoriteTap" data-id="{{item.id}}" data-index="{{index}}"></view>
+          </view>
+        </view>
+      </view>
+    </block>
+    
+    <!-- Loading/Empty State -->
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
+    <view class="no-more" wx:if="{{!loading && posts.length > 0}}">没有更多了</view>
+  </view>
+
+  <!-- Floating Action Button -->
+  <view class="fab" bindtap="goCreatePost">
+    <view class="fab-icon">+</view>
+  </view>
+</view>

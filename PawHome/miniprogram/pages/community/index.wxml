@@ -4,9 +4,7 @@
     <view class="header-blob"></view>
     <view class="header-content">
       <view class="mail-icon" bindtap="onMailTap">
-        <view class="mail-box">
-          <view class="mail-flap"></view>
-        </view>
+        <image class="mail-svg" src="/assets/icons/community/mail.svg" mode="aspectFit"></image>
       </view>
       <view class="search">
         <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>

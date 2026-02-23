@@ -126,9 +126,8 @@ Page({
   },
 
   onMailTap() {
-    wx.showToast({
-      title: '私信功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/messages/index'
     });
   }
 });

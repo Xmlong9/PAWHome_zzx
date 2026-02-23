@@ -1,62 +1,84 @@
 import { request } from "./request"
 
-type Post = {
+export type Post = {
   id: number
   userId: number
   user?: { id: number; nickname: string; avatarUrl: string }
   title?: string
   content: string
+  images: string[]
   petType?: string
   visibility?: string
   status?: string
-  likeCount?: number
-  commentCount?: number
-  favoriteCount?: number
-  createdAt?: string
+  likeCount: number
+  commentCount: number
+  favoriteCount: number
+  isFavorited?: boolean // Current user has favorited
+  isLiked?: boolean // Current user has liked
+  createdAt: string
   updatedAt?: string
 }
 
 const MOCK = true
 
-export async function getPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
-  if (MOCK) {
-    const list: Post[] = Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => ({
-      id: i + 1 + (page - 1) * pageSize,
-      userId: 100,
-      user: { id: 100, nickname: "小爪", avatarUrl: "https://example.com/avt.png" },
-      title: "今天的猫又翻箱倒柜了",
-      content: "晒晒我家主子的日常，顺带问问大家猫砂推荐",
-      petType: "cat",
+// Mock data generator
+const generateMockPosts = (page: number, pageSize: number, type?: string): Post[] => {
+  const baseId = (page - 1) * pageSize;
+  const now = new Date();
+  
+  return Array.from({ length: Math.min(pageSize, 10) }).map((_, i) => {
+    const id = baseId + i + 1;
+    // Varying time for testing time formats
+    const timeOffset = i * 1000 * 60 * 60 * 5; // 5 hours steps
+    const createdAt = new Date(now.getTime() - timeOffset).toISOString();
+    
+    // Varying content structure
+    const hasImage = i % 3 !== 0; // Some don't have images
+    const images = hasImage ? [`https://picsum.photos/seed/${id}/400/300`] : [];
+    
+    return {
+      id,
+      userId: 100 + i,
+      user: { 
+        id: 100 + i, 
+        nickname: i % 2 === 0 ? "淡水鱼鱼鱼鱼鱼鱼鱼" : "赵嘉航", 
+        avatarUrl: i % 2 === 0 ? "https://picsum.photos/seed/user1/100" : "https://picsum.photos/seed/user2/100" 
+      },
+      title: i % 2 === 0 ? "哈哈哈哈好可爱的猫猫 #猫猫探头" : undefined,
+      content: i % 2 === 0 
+        ? "哈哈哈哈好可爱的猫猫 #猫猫探头" 
+        : "家里养的涛涛又不听话了 :( 真的不知道该怎么办才好，大家有什么好办法吗？在线等挺急的。",
+      images,
+      petType: i % 2 === 0 ? "cat" : "dog",
       visibility: "public",
       status: "approved",
-      likeCount: 12,
-      commentCount: 3,
-      favoriteCount: 1,
-      createdAt: new Date().toISOString()
-    }))
-    return { list, page, pageSize, total: 20 }
+      likeCount: 200 + i * 10,
+      commentCount: 40 + i,
+      favoriteCount: i,
+      isFavorited: i % 4 === 0,
+      isLiked: i % 3 === 0,
+      createdAt
+    };
+  });
+};
+
+export async function getPosts(page = 1, pageSize = 10, type = 'recommend'): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
+  if (MOCK) {
+    const list = generateMockPosts(page, pageSize, type);
+    return { list, page, pageSize, total: 100 }
   }
-  const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ url: "/posts", method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ 
+    url: "/posts", 
+    method: "GET", 
+    data: { page, pageSize, type } 
+  })
   return res
 }
 
 export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
   if (MOCK) {
-    const list: Post[] = Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => ({
-      id: i + 1 + (page - 1) * pageSize,
-      userId: 200,
-      user: { id: 200, nickname: "我", avatarUrl: "https://example.com/me.png" },
-      title: "我的主子也来报到",
-      content: "记录一次打疫苗的经历",
-      petType: "dog",
-      visibility: "public",
-      status: "approved",
-      likeCount: 5,
-      commentCount: 2,
-      favoriteCount: 0,
-      createdAt: new Date().toISOString()
-    }))
-    return { list, page, pageSize, total: 8 }
+    const list = generateMockPosts(page, pageSize);
+    return { list, page, pageSize, total: 20 }
   }
   const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ url: "/users/me/posts", method: "GET", data: { page, pageSize } })
   return res
@@ -64,20 +86,7 @@ export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[
 
 export async function getPost(id: number): Promise<Post>{
   if (MOCK) {
-    return {
-      id,
-      userId: 100,
-      user: { id: 100, nickname: "小爪", avatarUrl: "https://example.com/avt.png" },
-      title: "帖子详情",
-      content: "这是一个详细的帖子内容，包含多张图片与视频",
-      petType: "cat",
-      visibility: "public",
-      status: "approved",
-      likeCount: 23,
-      commentCount: 7,
-      favoriteCount: 2,
-      createdAt: new Date().toISOString()
-    }
+    return generateMockPosts(1, 1)[0];
   }
   const res = await request<Post>({ url: `/posts/${id}`, method: "GET" })
   return res
@@ -92,5 +101,17 @@ export async function likePost(id: number): Promise<{ ok: boolean }>{
 export async function unlikePost(id: number): Promise<{ ok: boolean }>{
   if (MOCK) return { ok: true }
   const res = await request<{ ok: boolean }>({ url: `/posts/${id}/like`, method: "DELETE" })
+  return res
+}
+
+export async function favoritePost(id: number): Promise<{ ok: boolean }>{
+  if (MOCK) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/favorite`, method: "POST" })
+  return res
+}
+
+export async function unfavoritePost(id: number): Promise<{ ok: boolean }>{
+  if (MOCK) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/favorite`, method: "DELETE" })
   return res
 }

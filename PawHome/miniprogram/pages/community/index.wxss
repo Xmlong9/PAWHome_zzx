@@ -84,23 +84,24 @@
   flex: 1;
   position: relative;
   height: 100rpx;
+  overflow: visible;
 }
 
 .search-bg {
   position: absolute;
   left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  width: 85%; /* 缩小宽度以避免图片过大 */
+  transform: translateY(-52%) scale(1.1);
   display: block;
 }
 
 .search-field {
   position: absolute;
-  left: 80rpx;
-  right: 40rpx;
-  top: 45%; /* Adjusted to align with background image */
-  transform: translateY(-50%);
+  left: 60rpx; /* 微调文字起始位置 */
+  right: 15%; /* 对应背景图的宽度缩减 */
+  top: 50%;
+  transform: translateY(-40%);
   height: 44rpx;
   line-height: 44rpx;
   border: 0;

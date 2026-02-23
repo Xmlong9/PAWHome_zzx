@@ -63,7 +63,7 @@ const generateMockPosts = (page: number, pageSize: number, type?: string): Post[
       status: "approved",
       likeCount: 200 + i * 10,
       commentCount: 40 + i,
-      favoriteCount: i,
+      favoriteCount: i % 4 === 0 ? Math.max(1, i) : i, // If favorited (i % 4 === 0), ensure at least 1
       isFavorited: i % 4 === 0,
       isLiked: i % 3 === 0,
       isFollowed: i % 5 === 0,

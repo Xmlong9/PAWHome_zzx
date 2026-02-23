@@ -55,16 +55,16 @@
         <view class="post-footer">
           <view class="stats">
             <view class="stat-item">
-              <view class="icon-heart {{item.isLiked ? 'liked' : ''}}"></view>
+              <image class="icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text>{{item.likeCount}}</text>
             </view>
             <view class="stat-item">
-              <view class="icon-comment"></view>
+              <image class="icon-img" src="/assets/icons/community/comment.svg" mode="aspectFit"></image>
               <text>{{item.commentCount}}</text>
             </view>
           </view>
           <view class="action">
-            <view class="icon-bookmark {{item.isFavorited ? 'favorited' : ''}}" catchtap="onFavoriteTap" data-id="{{item.id}}" data-index="{{index}}"></view>
+            <image class="icon-img" src="/assets/icons/community/{{item.isFavorited ? 'bookmark-filled' : 'bookmark'}}.svg" mode="aspectFit" catchtap="onFavoriteTap" data-id="{{item.id}}" data-index="{{index}}"></image>
           </view>
         </view>
       </view>

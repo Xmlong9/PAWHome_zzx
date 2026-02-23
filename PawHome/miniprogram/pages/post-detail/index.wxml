@@ -85,15 +85,15 @@
     </view>
     <view class="action-icons">
       <view class="icon-btn" bindtap="onLikePostTap">
-        <view class="icon-heart {{post.isLiked ? 'liked' : ''}}"></view>
+        <image class="icon-img" src="/assets/icons/community/{{post.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
         <text class="icon-text">{{post.likeCount || 0}}</text>
       </view>
       <view class="icon-btn" bindtap="onFavoriteTap">
-        <view class="icon-bookmark {{post.isFavorited ? 'favorited' : ''}}"></view>
+        <image class="icon-img" src="/assets/icons/community/{{post.isFavorited ? 'bookmark-filled' : 'bookmark'}}.svg" mode="aspectFit"></image>
         <text class="icon-text">{{post.favoriteCount || 0}}</text>
       </view>
       <view class="icon-btn">
-        <view class="icon-comment"></view>
+        <image class="icon-img" src="/assets/icons/community/comment.svg" mode="aspectFit"></image>
         <text class="icon-text">{{post.commentCount || 0}}</text>
       </view>
     </view>
@@ -116,7 +116,7 @@
             <text class="c-time">{{item.timeAgo}}</text>
             <view class="c-actions">
               <view class="c-like" bindtap="onLikeCommentTap" data-index="{{index}}" data-id="{{item.id}}">
-                <view class="icon-heart-sm {{item.isLiked ? 'liked' : ''}}"></view>
+                <image class="icon-img-sm" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
                 <text wx:if="{{item.likeCount > 0}}">{{item.likeCount}}</text>
               </view>
             </view>

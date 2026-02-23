@@ -140,9 +140,15 @@ Page({
 
   async onFavoriteTap() {
     if (!this.data.post) return;
-    const { id, isFavorited } = this.data.post;
+    const { id, isFavorited, favoriteCount } = this.data.post;
     
-    this.setData({ 'post.isFavorited': !isFavorited });
+    // Ensure count doesn't go below 0
+    const newCount = isFavorited ? Math.max(0, favoriteCount - 1) : favoriteCount + 1;
+
+    this.setData({ 
+      'post.isFavorited': !isFavorited,
+      'post.favoriteCount': newCount
+    });
 
     try {
       if (isFavorited) {
@@ -151,7 +157,10 @@ Page({
         await favoritePost(id);
       }
     } catch (err) {
-      this.setData({ 'post.isFavorited': isFavorited });
+      this.setData({ 
+        'post.isFavorited': isFavorited,
+        'post.favoriteCount': favoriteCount
+      });
     }
   },
 

@@ -4,6 +4,7 @@
     "pages/index/index",
     "pages/home/index",
     "pages/community/index",
+    "pages/post-detail/index",
     "pages/shop/index",
     "pages/service/index",
     "pages/my/index",

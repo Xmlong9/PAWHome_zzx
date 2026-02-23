@@ -1,0 +1,130 @@
+<view class="container">
+  <view class="nav-bar" style="padding-top: {{safeAreaTop}}px">
+    <view class="nav-inner">
+      <view class="nav-left" catchtap="goBack">
+        <view class="back-icon"></view>
+      </view>
+      <view class="nav-tabs">
+        <view class="tab-item {{currentTab === 'content' ? 'active' : ''}}" bindtap="onTabChange" data-tab="content">
+          正文
+          <view class="tab-line" wx:if="{{currentTab === 'content'}}"></view>
+        </view>
+        <view class="tab-item {{currentTab === 'comments' ? 'active' : ''}}" bindtap="onTabChange" data-tab="comments">
+          评论
+          <view class="tab-line" wx:if="{{currentTab === 'comments'}}"></view>
+        </view>
+      </view>
+      <view class="nav-right"></view>
+    </view>
+  </view>
+
+  <!-- Scroll Area -->
+  <!-- 使用绝对定位和 padding-top 来避免 margin 塌陷或计算误差 -->
+  <scroll-view scroll-y class="scroll-area" enable-flex style="padding-top: {{safeAreaTop + 44}}px;">
+    
+    <view class="tab-content" hidden="{{currentTab !== 'content'}}">
+      <view class="post-detail" wx:if="{{post}}">
+        <view class="media-carousel" wx:if="{{post.images && post.images.length > 0}}" style="margin-top: 0;">
+          <swiper class="swiper" bindchange="onSwiperChange">
+            <block wx:for="{{post.images}}" wx:key="*this">
+              <swiper-item>
+                <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-current="{{item}}"></image>
+              </swiper-item>
+            </block>
+          </swiper>
+          <view class="image-indicator">{{swiperCurrent + 1}}/{{post.images.length}}</view>
+        </view>
+
+        <view class="post-body">
+          <view class="author-header">
+            <image class="avatar" src="{{post.user.avatarUrl}}" mode="aspectFill"></image>
+            <view class="author-info">
+              <view class="nickname">{{post.user.nickname}}</view>
+            </view>
+            <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap">
+              {{post.isFollowed ? '已关注' : '+ 关注'}}
+            </view>
+          </view>
+
+          <view class="content-text">
+            <view class="post-title" wx:if="{{post.title}}">{{post.title}}</view>
+            <text class="text" user-select>{{post.content}}</text>
+            <view class="post-time">{{post.timeAgo}}</view>
+          </view>
+        </view>
+        
+        <view class="divider"></view>
+
+        <view class="comments-section">
+          <view class="section-title">全部评论 ({{totalComments}})</view>
+          <template is="commentList" data="{{comments, loadingComments}}"/>
+        </view>
+      </view>
+    </view>
+
+    <view class="tab-content" hidden="{{currentTab !== 'comments'}}">
+      <view class="comments-section" style="padding-top: 20rpx;">
+        <template is="commentList" data="{{comments, loadingComments}}"/>
+      </view>
+    </view>
+
+  </scroll-view>
+
+  <view class="footer-bar" style="padding-bottom: {{safeAreaBottom}}px">
+    <view class="input-wrapper">
+      <input class="input-field" 
+             placeholder="{{replyTo ? '回复 ' + replyTo.user.nickname + '：' : '说点什么...'}}" 
+             placeholder-style="color:#999" 
+             confirm-type="send"
+             value="{{inputValue}}"
+             focus="{{inputFocus}}"
+             bindinput="onInput"
+             bindconfirm="onSend"
+             bindblur="onInputBlur"
+      />
+    </view>
+    <view class="action-icons">
+      <view class="icon-btn" bindtap="onLikePostTap">
+        <view class="icon-heart {{post.isLiked ? 'liked' : ''}}"></view>
+        <text class="icon-text">{{post.likeCount || 0}}</text>
+      </view>
+      <view class="icon-btn" bindtap="onFavoriteTap">
+        <view class="icon-bookmark {{post.isFavorited ? 'favorited' : ''}}"></view>
+        <text class="icon-text">{{post.favoriteCount || 0}}</text>
+      </view>
+      <view class="icon-btn">
+        <view class="icon-comment"></view>
+        <text class="icon-text">{{post.commentCount || 0}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<template name="commentList">
+  <view class="comment-list">
+    <block wx:for="{{comments}}" wx:key="id">
+      <view class="comment-item">
+        <image class="c-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+        <view class="c-right">
+          <view class="c-header">
+            <text class="c-nickname">{{item.user.nickname}}</text>
+          </view>
+          <view class="c-content" bindtap="onReplyTap" data-item="{{item}}">
+            <text wx:if="{{item.replyTo}}">回复 <text class="reply-target">@{{item.replyTo.nickname}}</text>：</text>{{item.content}}
+          </view>
+          <view class="c-footer">
+            <text class="c-time">{{item.timeAgo}}</text>
+            <view class="c-actions">
+              <view class="c-like" bindtap="onLikeCommentTap" data-index="{{index}}" data-id="{{item.id}}">
+                <view class="icon-heart-sm {{item.isLiked ? 'liked' : ''}}"></view>
+                <text wx:if="{{item.likeCount > 0}}">{{item.likeCount}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view class="no-comments" wx:if="{{comments.length === 0}}">暂无评论，快来抢沙发吧~</view>
+    <view class="loading-more" wx:if="{{loadingComments}}">加载中...</view>
+  </view>
+</template>

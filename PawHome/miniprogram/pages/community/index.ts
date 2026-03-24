@@ -1,3 +1,4 @@
+// community page
 import { getPosts, favoritePost, unfavoritePost, Post } from "../../services/posts";
 import { formatTimeAgo } from "../../utils/date";
 

@@ -1,0 +1,70 @@
+<view class="container">
+  <view class="custom-nav" style="padding-top: {{statusBarHeight}}px">
+    <view class="nav-content">
+      <view class="back-btn" bindtap="goBack">
+        <view class="back-arrow">←</view>
+      </view>
+      <view class="nav-title">消息</view>
+      <view class="nav-right"></view>
+    </view>
+    <view class="tabs">
+      <view class="tab {{currentTab === 'like' ? 'active' : ''}}" bindtap="switchTab" data-tab="like">点赞</view>
+      <view class="tab {{currentTab === 'comment' ? 'active' : ''}}" bindtap="switchTab" data-tab="comment">评论</view>
+      <view class="tab {{currentTab === 'dm' ? 'active' : ''}}" bindtap="switchTab" data-tab="dm">私信</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="scroll" style="padding-top: {{navHeight}}px;">
+    <view class="list" wx:if="{{currentTab === 'like'}}">
+      <block wx:for="{{likeList}}" wx:key="id">
+        <view class="item" bindtap="openItem" data-type="like" data-item="{{item}}">
+          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="mid">
+            <view class="row1">
+              <text class="name">{{item.nickname}}</text>
+              <text class="time">{{item.time}}</text>
+            </view>
+            <view class="row2">{{item.text}}</view>
+          </view>
+          <image class="thumb" src="{{item.thumbUrl}}" mode="aspectFill" wx:if="{{item.thumbUrl}}"></image>
+        </view>
+      </block>
+      <view class="empty" wx:if="{{likeList.length === 0}}">暂无点赞消息</view>
+    </view>
+
+    <view class="list" wx:elif="{{currentTab === 'comment'}}">
+      <block wx:for="{{commentList}}" wx:key="id">
+        <view class="item" bindtap="openItem" data-type="comment" data-item="{{item}}">
+          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="mid">
+            <view class="row1">
+              <text class="name">{{item.nickname}}</text>
+              <text class="time">{{item.time}}</text>
+            </view>
+            <view class="row2">{{item.text}}</view>
+            <view class="row3" wx:if="{{item.content}}">“{{item.content}}”</view>
+          </view>
+          <image class="thumb" src="{{item.thumbUrl}}" mode="aspectFill" wx:if="{{item.thumbUrl}}"></image>
+        </view>
+      </block>
+      <view class="empty" wx:if="{{commentList.length === 0}}">暂无评论消息</view>
+    </view>
+
+    <view class="list" wx:else>
+      <block wx:for="{{dmList}}" wx:key="id">
+        <view class="item" bindtap="openItem" data-type="dm" data-item="{{item}}">
+          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="mid">
+            <view class="row1">
+              <text class="name">{{item.nickname}}</text>
+              <text class="time">{{item.time}}</text>
+            </view>
+            <view class="row2">{{item.lastMessage}}</view>
+          </view>
+          <view class="badge" wx:if="{{item.unreadCount > 0}}">{{item.unreadCount}}</view>
+        </view>
+      </block>
+      <view class="empty" wx:if="{{dmList.length === 0}}">暂无私信</view>
+    </view>
+  </scroll-view>
+</view>

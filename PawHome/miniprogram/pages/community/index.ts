@@ -1,3 +1,4 @@
+// community page
 import { getPosts, favoritePost, unfavoritePost, Post } from "../../services/posts";
 import { formatTimeAgo } from "../../utils/date";
 
@@ -84,11 +85,16 @@ Page({
     const { id, index } = e.currentTarget.dataset;
     const post = this.data.posts[index];
     const isFavorited = !post.isFavorited;
+    const favoriteCount = post.favoriteCount || 0;
 
-    // Optimistic update
-    const up = `posts[${index}].isFavorited`;
+    // Optimistic update, prevent negative
+    const newCount = isFavorited ? Math.max(0, favoriteCount - 1) : favoriteCount + 1;
+    
+    const upFavorited = `posts[${index}].isFavorited`;
+    const upCount = `posts[${index}].favoriteCount`;
     this.setData({
-      [up]: isFavorited
+      [upFavorited]: isFavorited,
+      [upCount]: newCount
     });
 
     try {
@@ -100,7 +106,8 @@ Page({
     } catch (err) {
       // Revert on failure
       this.setData({
-        [up]: !isFavorited
+        [upFavorited]: !isFavorited,
+        [upCount]: favoriteCount
       });
       wx.showToast({ title: '操作失败', icon: 'none' });
     }
@@ -120,9 +127,8 @@ Page({
   },
 
   onMailTap() {
-    wx.showToast({
-      title: '私信功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/messages/index'
     });
   }
 });

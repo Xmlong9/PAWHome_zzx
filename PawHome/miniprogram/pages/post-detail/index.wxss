@@ -1,0 +1,312 @@
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* Navigation Bar */
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  z-index: 100;
+  border-bottom: 1rpx solid #f5f5f5;
+  /* Ensure padding-top is set via inline style in JS, but define height here */
+}
+
+.nav-inner {
+  height: 44px; /* Fixed height for content area */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10rpx;
+  box-sizing: border-box; /* Include padding in height if needed, but 44px is standard */
+}
+
+.nav-left, .nav-right {
+  width: 88rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 101; 
+}
+
+.back-icon {
+  width: 24rpx;
+  height: 24rpx;
+  border-left: 4rpx solid #333;
+  border-bottom: 4rpx solid #333;
+  transform: rotate(45deg);
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 40rpx;
+  height: 100%;
+  align-items: center;
+}
+
+.tab-item {
+  font-size: 32rpx;
+  color: #666;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.tab-item.active {
+  color: #333;
+  font-weight: 600;
+  font-size: 34rpx;
+}
+
+.tab-line {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 6rpx;
+  background: #333;
+  border-radius: 4rpx;
+}
+
+.scroll-area {
+  position: absolute; /* 让它覆盖整个屏幕 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0; /* 放在导航栏下面 */
+  /* padding-top 已经在 WXML 的 style 里设了，这里不需要再设 */
+}
+
+/* Post Detail Container - Remove padding that might cause gaps */
+.post-detail {
+  width: 100%;
+}
+
+/* Media Carousel */
+.media-carousel {
+  position: relative;
+  width: 100%;
+  height: 750rpx; /* Square or 4:3 aspect ratio */
+}
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-img {
+  width: 100%;
+  height: 100%;
+}
+
+.image-indicator {
+  position: absolute;
+  right: 32rpx;
+  top: 32rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+}
+
+/* Post Body */
+.post-body {
+  padding: 32rpx;
+}
+
+/* Author Header */
+.author-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  border: 1rpx solid #f0f0f0;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.nickname {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.follow-btn {
+  padding: 10rpx 32rpx;
+  background: #333;
+  color: #fff;
+  font-size: 26rpx;
+  border-radius: 999rpx;
+  font-weight: 500;
+}
+
+.follow-btn.followed {
+  background: #f0f0f0;
+  color: #999;
+  border: 1rpx solid #ddd;
+}
+
+/* Content Text */
+.post-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.text {
+  font-size: 32rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+  display: block;
+}
+
+.post-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.divider {
+  height: 2rpx;
+  background: #f5f5f5;
+  margin: 0 32rpx;
+}
+
+/* Comments Section */
+.comments-section {
+  padding: 32rpx;
+  padding-bottom: 120rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 32rpx;
+  color: #333;
+}
+
+.comment-item {
+  display: flex;
+  margin-bottom: 40rpx;
+}
+
+.c-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.c-right {
+  flex: 1;
+  border-bottom: 1rpx solid #f9f9f9;
+  padding-bottom: 24rpx;
+}
+
+.c-header {
+  margin-bottom: 8rpx;
+}
+
+.c-nickname {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.c-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 16rpx;
+}
+
+.reply-target {
+  color: #576b95;
+}
+
+.c-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.c-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.c-actions {
+  display: flex;
+  gap: 32rpx;
+}
+
+.c-like {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* Icons */
+.icon-img {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.icon-img-sm {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.no-comments, .loading-more {
+  text-align: center; color: #999; font-size: 26rpx; padding: 40rpx 0;
+}
+
+/* Footer Bar */
+.footer-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; padding: 16rpx 24rpx; display: flex; align-items: center;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05); z-index: 100;
+}
+
+.input-wrapper {
+  flex: 1; background: #f5f5f5; border-radius: 40rpx; height: 72rpx;
+  display: flex; align-items: center; padding: 0 24rpx; margin-right: 24rpx;
+}
+
+.input-field {
+  flex: 1; font-size: 28rpx; height: 72rpx; line-height: 72rpx;
+}
+
+.action-icons {
+  display: flex; gap: 40rpx; align-items: center;
+}
+
+.icon-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4rpx; position: relative;
+}
+
+.icon-text {
+  font-size: 20rpx; color: #333;
+}

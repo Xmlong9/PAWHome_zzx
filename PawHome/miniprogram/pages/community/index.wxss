@@ -48,35 +48,9 @@
   justify-content: center;
 }
 
-.mail-box {
+.mail-svg {
   width: 56rpx;
-  height: 40rpx;
-  border: 4rpx solid #333;
-  border-radius: 8rpx;
-  position: relative;
-  background: transparent;
-}
-
-.mail-flap {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-bottom: 4rpx solid transparent;
-}
-
-.mail-flap::before {
-  content: '';
-  position: absolute;
-  top: -4rpx;
-  left: -4rpx;
-  width: 0; 
-  height: 0; 
-  border-left: 30rpx solid transparent;
-  border-right: 30rpx solid transparent;
-  border-top: 24rpx solid #333;
-  z-index: 1;
+  height: 56rpx;
 }
 
 /* Search Bar */
@@ -84,23 +58,24 @@
   flex: 1;
   position: relative;
   height: 100rpx;
+  overflow: visible;
 }
 
 .search-bg {
   position: absolute;
   left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  width: 85%; /* 缩小宽度以避免图片过大 */
+  transform: translateY(-52%) scale(1.1);
   display: block;
 }
 
 .search-field {
   position: absolute;
-  left: 80rpx;
-  right: 40rpx;
-  top: 45%; /* Adjusted to align with background image */
-  transform: translateY(-50%);
+  left: 60rpx; /* 微调文字起始位置 */
+  right: 15%; /* 对应背景图的宽度缩减 */
+  top: 50%;
+  transform: translateY(-40%);
   height: 44rpx;
   line-height: 44rpx;
   border: 0;
@@ -249,83 +224,9 @@
 }
 
 /* CSS Icons for stats */
-.icon-heart {
+.icon-img {
   width: 36rpx;
   height: 36rpx;
-  position: relative;
-}
-
-.icon-heart::before,
-.icon-heart::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 18rpx;
-  height: 28rpx;
-  border-radius: 18rpx 18rpx 0 0;
-  background: #999;
-  transform: rotate(-45deg);
-  transform-origin: 0 100%;
-}
-
-.icon-heart::after {
-  left: 0;
-  transform: rotate(45deg);
-  transform-origin: 100% 100%;
-}
-
-.icon-heart.liked::before,
-.icon-heart.liked::after {
-  background: #ff4d4f;
-}
-
-.icon-comment {
-  width: 32rpx;
-  height: 28rpx;
-  background: #999;
-  border-radius: 6rpx;
-  position: relative;
-}
-
-.icon-comment::after {
-  content: "";
-  position: absolute;
-  bottom: -6rpx;
-  left: 8rpx;
-  border-width: 8rpx 8rpx 0;
-  border-style: solid;
-  border-color: #999 transparent;
-}
-
-.icon-bookmark {
-  width: 24rpx;
-  height: 32rpx;
-  border: 4rpx solid #999;
-  border-bottom: none;
-  position: relative;
-}
-
-.icon-bookmark::after {
-  content: "";
-  position: absolute;
-  bottom: -8rpx;
-  left: -4rpx;
-  width: 0;
-  height: 0;
-  border-left: 16rpx solid #999;
-  border-right: 16rpx solid #999;
-  border-bottom: 10rpx solid transparent;
-  border-top: 10rpx solid #999;
-}
-
-.icon-bookmark.favorited {
-  border-color: #FF9E59;
-}
-
-.icon-bookmark.favorited::after {
-  border-left-color: #FF9E59;
-  border-right-color: #FF9E59;
-  border-top-color: #FF9E59;
 }
 
 /* FAB */

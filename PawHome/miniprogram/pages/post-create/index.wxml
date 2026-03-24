@@ -1,0 +1,95 @@
+<view class="container" style="padding-top: {{navBarHeight}}px">
+  <scroll-view scroll-y class="scroll-content" enable-flex>
+    <view class="content-wrap">
+      <view class="type-tabs">
+        <view class="tab-item {{postType === 'image' ? 'active' : ''}}" bindtap="switchType" data-type="image">图文</view>
+        <view class="tab-item {{postType === 'video' ? 'active' : ''}}" bindtap="switchType" data-type="video">视频</view>
+        <view class="tab-item {{postType === 'qa' ? 'active' : ''}}" bindtap="switchType" data-type="qa">问答</view>
+      </view>
+
+      <view class="input-section">
+        <textarea class="content-input" 
+                  placeholder="说说此刻的想法..." 
+                  placeholder-style="color:#999;font-size:30rpx;" 
+                  maxlength="1000"
+                  cursor-spacing="80"
+                  adjust-position="true"
+                  bindinput="onContentInput"
+                  value="{{content}}"
+        ></textarea>
+      </view>
+
+      <view class="media-section">
+        <block wx:for="{{mediaList}}" wx:key="tempFilePath">
+          <view class="media-item">
+            <image class="media-preview" src="{{item.tempFilePath}}" mode="aspectFill" bindtap="previewMedia" data-index="{{index}}"></image>
+            <view class="delete-btn" catchtap="deleteMedia" data-index="{{index}}">×</view>
+            <view class="video-badge" wx:if="{{item.fileType === 'video'}}">▶</view>
+          </view>
+        </block>
+        
+        <view class="upload-btn" bindtap="chooseMedia" wx:if="{{mediaList.length < 9}}">
+          <view class="plus-icon">+</view>
+        </view>
+      </view>
+
+      <view class="options-list">
+        <view class="option-item" bindtap="chooseTopic">
+          <view class="option-left">
+            <view class="option-icon">#</view>
+            <text>添加话题</text>
+          </view>
+          <view class="option-right">
+            <text class="option-value" wx:if="{{topic}}">{{topic}}</text>
+            <view class="arrow-icon">></view>
+          </view>
+        </view>
+
+        <view class="option-item" bindtap="chooseLocation">
+          <view class="option-left">
+            <view class="option-icon location">📍</view>
+            <text>所在位置</text>
+          </view>
+          <view class="option-right">
+            <text class="option-value" wx:if="{{location}}">{{location.name}}</text>
+            <view class="arrow-icon">></view>
+          </view>
+        </view>
+
+        <view class="option-item" bindtap="tagPet">
+          <view class="option-left">
+            <view class="option-icon pet">🐾</view>
+            <text>标记宠物</text>
+          </view>
+          <view class="option-right">
+            <text class="option-value" wx:if="{{pet}}">{{pet}}</text>
+            <view class="arrow-icon">></view>
+          </view>
+        </view>
+
+        <view class="option-item" bindtap="chooseVisibility">
+          <view class="option-left">
+            <view class="option-icon visibility">👁</view>
+            <text>谁可以看</text>
+          </view>
+          <view class="option-right">
+            <text class="option-value">{{visibilityText}}</text>
+            <view class="arrow-icon">></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>
+
+<view class="custom-nav" style="padding-top: {{statusBarHeight}}px">
+  <view class="nav-content">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow" style="font-size: 48rpx; line-height: 1;">×</view> <!-- Use X or Back Arrow -->
+    </view>
+    <view class="nav-title">发布帖子</view>
+    <view class="nav-right"></view>
+  </view>
+</view>
+
+<view class="fab-publish" bindtap="publish">发布</view>

@@ -9,13 +9,6 @@
     "pages/post-create/index",
     "pages/post-detail/index",
     "pages/shop/index",
-    "pages/cart/index",
-    "pages/shop/detail",
-    "pages/shop/order/checkout",
-    "pages/shop/order/list",
-    "pages/shop/recharge",
-    "pages/shop/customer-service",
-    "pages/shop/favorites",
     "pages/service/index",
     "pages/my/index",
     "pages/logs/logs"

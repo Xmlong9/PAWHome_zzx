@@ -1,0 +1,47 @@
+<view class="service-page">
+  <view class="top-card">
+    <image class="top-bg-image" src="/assets/images/shop/问号猫.png" mode="aspectFill"></image>
+    <view class="top-content">
+      <view class="title">喵！遇到什么问题了吗？让小宠来帮你吧！</view>
+      <view class="quick-actions">
+        <view class="quick-btn">如何查询订单状态？</view>
+        <view class="quick-btn">退货流程说明</view>
+        <view class="quick-btn">修改收货地址</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card human-card">
+    <view class="human-info">
+      <view class="human-title">人工客服</view>
+      <view class="human-sub">工作时间：09:00-21:00</view>
+      <view class="human-sub wait-count">当前等待：3 人</view>
+    </view>
+    <view class="action human-btn" bindtap="toHuman">转人工客服</view>
+  </view>
+
+  <view class="card contact-card">
+    <view class="card-title">联系方式</view>
+    <view class="contact-item" bindtap="callNow">
+      <text class="icon">📞</text>
+      <text class="text">400-888-8888</text>
+    </view>
+    <view class="contact-item">
+      <text class="icon">✉️</text>
+      <text class="text">support@petmall.com</text>
+    </view>
+  </view>
+
+  <view class="card history-card">
+    <view class="card-title">历史会话</view>
+    <block wx:for="{{history}}" wx:key="id">
+      <view class="history-item">
+        <view class="history-left">
+          <view class="history-title">{{item.title}}</view>
+          <view class="history-status">{{item.status}}</view>
+        </view>
+        <view class="history-time">{{item.time}}</view>
+      </view>
+    </block>
+  </view>
+</view>

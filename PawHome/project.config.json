@@ -44,7 +44,12 @@
   },
   "libVersion": "trial",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "file",
+        "value": "assets/fonts/ZhanKuKuaiLeTi2016XiuDingBan-1.ttf"
+      }
+    ],
     "include": []
   },
   "appid": "wx21a9c6d1cc54e9a9"

@@ -1,1 +1,46 @@
-<view class="container"><text>商城</text></view>
+<view class="shop-page" style="padding-top: {{safeTop}}px;">
+  <view class="shop-top">
+    <view class="search-row">
+      <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
+      <input
+        class="search-field"
+        type="text"
+        value="{{searchText}}"
+        bindinput="onSearchInput"
+        placeholder="喵呜~今天要翻些什么家具呢"
+        placeholder-style="color:#666;font-size:24rpx;text-align:center;"
+        confirm-type="search"
+      />
+      <image class="cart-btn" src="/assets/icons/shop/购物车.png" mode="aspectFit" bindtap="goCart"></image>
+    </view>
+
+    <view class="entry-grid">
+      <block wx:for="{{entries}}" wx:key="id">
+        <view class="entry-item" data-url="{{item.url}}" bindtap="tapEntry">
+          <image class="entry-icon" src="{{item.icon}}" mode="aspectFit"></image>
+          <text>{{item.title}}</text>
+        </view>
+      </block>
+    </view>
+
+    <image class="hero-banner" src="{{banners[0]}}" mode="widthFix" bindtap="openBannerDetail"></image>
+  </view>
+
+  <view class="section-title">推荐好物</view>
+  <view class="product-grid">
+    <block wx:for="{{products}}" wx:key="id">
+      <view class="product-card" data-id="{{item.id}}" bindtap="tapProduct">
+        <image class="product-img" src="{{item.imageUrl}}" mode="aspectFill"></image>
+        <view class="product-name">{{item.name}}</view>
+        <view class="product-desc">{{item.desc}}</view>
+        <view class="product-bottom">
+          <view class="price-wrap">
+            <text class="price">¥{{item.price}}</text>
+            <text class="market">¥{{item.marketPrice}}</text>
+          </view>
+          <view class="fav {{item.favorite ? 'active' : ''}}" data-id="{{item.id}}" catchtap="tapFavorite">收藏</view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

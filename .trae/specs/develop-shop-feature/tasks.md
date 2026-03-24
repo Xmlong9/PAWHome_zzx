@@ -1,4 +1,5 @@
 # Tasks
+
 - [ ] Task 1: 创建商店相关页面及路由配置
   - [ ] SubTask 1.1: 在 `app.json` 中配置商店主页、购物车、商品详情、下单页、查看订单页、充值页、客服页、收藏页的路由。
   - [ ] SubTask 1.2: 创建相应的页面目录和初始文件（WXML, WXSS, TS, JSON）。
@@ -36,5 +37,7 @@
   - [ ] SubTask 8.3: 为上述开发的各个页面接入服务层假接口，确保页面具有真实的交互体验，为后续对接后端做好准备。
 
 # Task Dependencies
-- [Task 2], [Task 3], [Task 4], [Task 5], [Task 6], [Task 7] depends on [Task 1]
-- [Task 8] depends on [Task 2], [Task 3], [Task 4], [Task 5], [Task 6], [Task 7]
+
+- \[Task 2], \[Task 3], \[Task 4], \[Task 5], \[Task 6], \[Task 7] depends on \[Task 1]
+- \[Task 8] depends on \[Task 2], \[Task 3], \[Task 4], \[Task 5], \[Task 6], \[Task 7]
+

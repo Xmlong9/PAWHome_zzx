@@ -1,0 +1,72 @@
+.recharge-page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.balance-card {
+  background: linear-gradient(135deg, #ffd07d, #ff9f6d);
+  border-radius: 20rpx;
+  padding: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  color: #4b2f1f;
+}
+
+.label {
+  font-size: 24rpx;
+}
+
+.balance {
+  font-size: 54rpx;
+  font-weight: 700;
+}
+
+.section-title {
+  margin: 24rpx 0 14rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.option-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  border: 2rpx solid transparent;
+}
+
+.option-item.active {
+  border-color: #ff8f8f;
+  background: #fff2f2;
+}
+
+.amount {
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.bonus {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #888;
+}
+
+.submit-btn {
+  margin-top: 40rpx;
+  height: 78rpx;
+  border-radius: 39rpx;
+  background: #ff6d6d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+}

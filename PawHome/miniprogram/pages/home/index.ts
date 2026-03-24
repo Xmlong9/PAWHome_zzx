@@ -32,13 +32,6 @@ Page({
     const info = wx.getSystemInfoSync()
     const safeTop = (info.statusBarHeight || 0) + 8
     this.setData({ indicatorBars: bars, safeTop })
-    wx.loadFontFace({
-      family: 'PawZKKL',
-      source: 'url("/assets/fonts/ZhanKuKuaiLeTi2016XiuDingBan-1.ttf")',
-      success: () => {},
-      fail: () => {}
-    })
-    // 首页投放与卡片
     getBanners("home_promo").then(list => {
       if (list && list.length) this.setData({ promo: list[0] })
     }).catch(() => {})

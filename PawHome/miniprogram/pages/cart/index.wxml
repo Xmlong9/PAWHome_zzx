@@ -1,3 +1,75 @@
-<view class="container">
-  <text>购物车页面</text>
+<view class="cart-page">
+  <view class="nav-shell" style="padding-top: {{safeTop}}px;">
+    <view class="nav-bar">
+      <view class="nav-back" bindtap="goBack">‹</view>
+      <view class="nav-title">购物车</view>
+      <view class="nav-actions">
+        <view class="nav-action">•••</view>
+        <view class="nav-action nav-action-mini">◉</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="cart-content">
+    <view class="section-title">在售商品</view>
+    <view class="sale-card" wx:if="{{cartList.length}}">
+      <block wx:for="{{cartList}}" wx:key="id">
+        <view class="goods-item" data-id="{{item.id}}" bindtap="openDetail">
+          <view class="check-dot {{item.checked ? 'active' : ''}}" data-id="{{item.id}}" data-checked="{{item.checked}}" catchtap="toggleItem"></view>
+          <image class="thumb" src="{{item.product.imageUrl}}" mode="aspectFill"></image>
+          <view class="meta">
+            <view class="name">{{item.product.name}}</view>
+            <view class="spec-text">规格：{{item.product.specs[0] || '默认'}}</view>
+            <view class="price">¥{{item.product.price}}</view>
+            <view class="count-row">
+              <view class="count-box">
+                <view class="op" data-id="{{item.id}}" data-count="{{item.count}}" catchtap="minusCount">－</view>
+                <view class="num">{{item.count}}</view>
+                <view class="op" data-id="{{item.id}}" data-count="{{item.count}}" catchtap="plusCount">＋</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="empty-card" wx:else>
+      <view class="empty-title">购物车还是空的</view>
+      <view class="empty-desc">去商城挑点主子喜欢的粮和零食吧</view>
+    </view>
+
+    <view class="invalid-section" wx:if="{{invalidList.length}}">
+      <view class="section-row">
+        <view class="section-title invalid-title">失效商品</view>
+        <view class="clear-btn" bindtap="clearInvalid">清除</view>
+      </view>
+      <view class="invalid-card">
+        <block wx:for="{{invalidList}}" wx:key="id">
+          <view class="invalid-item">
+            <view class="invalid-dot"></view>
+            <view class="invalid-text">该商品已下架或无库存</view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="section-title like-title">猜你喜欢</view>
+    <view class="recommend-grid">
+      <block wx:for="{{recommendList}}" wx:key="id">
+        <view class="recommend-item" data-id="{{item.id}}" bindtap="openDetail">
+          <image class="recommend-thumb" src="{{item.imageUrl}}" mode="aspectFill"></image>
+          <view class="recommend-name">{{item.name}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="settle-bar" style="padding-bottom: {{safeBottom}}px;">
+    <view class="settle-left" bindtap="toggleAll">
+      <view class="check-dot check-bottom {{allChecked ? 'active' : ''}}"></view>
+      <text class="settle-label">全选</text>
+    </view>
+    <view class="settle-total">合计：<text class="total-num">¥{{totalAmount}}</text></view>
+    <view class="submit" bindtap="goCheckout">去结算({{checkedCount}})</view>
+  </view>
 </view>

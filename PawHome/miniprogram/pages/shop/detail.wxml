@@ -1,0 +1,133 @@
+<view class="detail-page" wx:if="{{product}}">
+  <view class="nav-shell" style="padding-top: {{safeTop}}px;">
+    <view class="nav-bar">
+      <view class="nav-back" bindtap="goBack">‹</view>
+      <view class="nav-title">商品详情</view>
+      <view class="nav-actions">
+        <view class="nav-action">•••</view>
+        <view class="nav-action nav-action-mini">◉</view>
+      </view>
+    </view>
+  </view>
+
+  <image class="product-image" src="{{product.imageUrl}}" mode="aspectFill"></image>
+
+  <view class="content-sheet">
+    <view class="card info-card">
+      <view class="price-row">
+        <view class="price-wrap">
+          <text class="price">¥{{product.price}}</text>
+          <text class="market">¥{{product.marketPrice}}</text>
+        </view>
+        <view class="fav {{product.favorite ? 'active' : ''}}" bindtap="toggleFav">收藏</view>
+      </view>
+      <view class="name">{{product.name}}</view>
+      <view class="desc">{{product.desc}}</view>
+      <view class="meta-row">
+        <text>月销 {{soldText}}+</text>
+        <text>·</text>
+        <text>★ {{product.rating}}</text>
+      </view>
+    </view>
+
+    <view class="card compact-card">
+      <view class="row-item">
+        <view class="row-label">已选</view>
+        <view class="row-value">{{selectedSpec}}</view>
+        <view class="row-arrow">›</view>
+      </view>
+      <view class="row-item row-item-count">
+        <view class="row-label">数量</view>
+        <view class="count-box">
+          <view class="op" bindtap="minusCount">－</view>
+          <view class="num">{{quantity}}</view>
+          <view class="op" bindtap="plusCount">＋</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">规格</view>
+      <view class="spec-list">
+        <block wx:for="{{product.specs}}" wx:key="*this">
+          <view class="spec-item {{selectedSpec===item ? 'active' : ''}}" data-value="{{item}}" bindtap="chooseSpec">{{item}}</view>
+        </block>
+      </view>
+    </view>
+
+    <view class="tabs-card">
+      <view class="tabs">
+        <view class="tab-item {{currentTab==='detail' ? 'active' : ''}}" data-tab="detail" bindtap="switchTab">
+          <text>商品详情</text>
+          <view class="tab-line" wx:if="{{currentTab==='detail'}}"></view>
+        </view>
+        <view class="tab-item {{currentTab==='reviews' ? 'active' : ''}}" data-tab="reviews" bindtap="switchTab">
+          <text>评价（2.3w+）</text>
+          <view class="tab-line" wx:if="{{currentTab==='reviews'}}"></view>
+        </view>
+        <view class="tab-item {{currentTab==='qa' ? 'active' : ''}}" data-tab="qa" bindtap="switchTab">
+          <text>问答</text>
+          <view class="tab-line" wx:if="{{currentTab==='qa'}}"></view>
+        </view>
+      </view>
+
+      <view wx:if="{{currentTab==='detail'}}">
+        <view class="shipping-row">
+          <text class="shipping-icon">🚚</text>
+          <text class="shipping-text">深圳发货 | 预计2-3天送达 | 运费¥8</text>
+        </view>
+        <view class="card section-card">
+          <view class="section-title">适用信息</view>
+          <block wx:for="{{detailItems}}" wx:key="label">
+            <view class="detail-line">
+              <text class="detail-label">{{item.label}}：</text>
+              <text class="detail-value">{{item.value}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <view class="card section-card" wx:elif="{{currentTab==='reviews'}}">
+        <view class="review-score">综合评分 {{product.rating}}</view>
+        <view class="review-tags">
+          <block wx:for="{{reviewTags}}" wx:key="*this">
+            <view class="review-tag">{{item}}</view>
+          </block>
+        </view>
+        <view class="review-note">大家普遍反馈适口性不错，颗粒大小适中，近期发货速度稳定。</view>
+      </view>
+
+      <view class="card section-card" wx:else>
+        <block wx:for="{{qaList}}" wx:key="q">
+          <view class="qa-item">
+            <view class="qa-q">Q：{{item.q}}</view>
+            <view class="qa-a">A：{{item.a}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-bar" style="padding-bottom: {{safeBottom}}px;">
+    <view class="tool-group">
+      <view class="tool-item" bindtap="contactService">
+        <image class="tool-icon" src="/assets/icons/shop/customer-service-outlined.svg" mode="aspectFit"></image>
+        <text class="tool-text">客服</text>
+      </view>
+      <view class="tool-item" bindtap="toggleFav">
+        <image class="tool-icon" src="{{product.favorite ? '/assets/icons/shop/heart-outlined-active.svg' : '/assets/icons/shop/heart-outlined.svg'}}" mode="aspectFit"></image>
+        <text class="tool-text {{product.favorite ? 'active' : ''}}">收藏</text>
+      </view>
+      <view class="tool-item" bindtap="goCart">
+        <image class="tool-icon" src="/assets/icons/shop/shopping-cart-outlined.svg" mode="aspectFit"></image>
+        <text class="tool-text">购物车</text>
+      </view>
+    </view>
+    <view class="action-group">
+      <view class="add" bindtap="addCart">加入购物车</view>
+      <view class="buy" bindtap="buyNow">立即购买</view>
+    </view>
+  </view>
+</view>
+<view class="state-page" wx:elif="{{loading}}">加载中...</view>
+<view class="state-page" wx:else>商品不存在</view>

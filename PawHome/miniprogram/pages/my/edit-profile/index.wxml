@@ -1,0 +1,46 @@
+<view class="edit-page">
+  <view class="avatar-section" bindtap="changeAvatar">
+    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+    <view class="avatar-text">更换头像</view>
+  </view>
+
+  <view class="form-group">
+    <view class="form-item">
+      <view class="label">昵称</view>
+      <input class="input" value="{{nickname}}" data-field="nickname" bindinput="onInput" placeholder="请输入昵称" />
+    </view>
+
+    <view class="form-item">
+      <view class="label">性别</view>
+      <radio-group class="radio-group" bindchange="onGenderChange">
+        <label class="radio"><radio value="男" checked="{{gender === '男'}}" color="#ff9e59"/> 男</label>
+        <label class="radio"><radio value="女" checked="{{gender === '女'}}" color="#ff9e59"/> 女</label>
+      </radio-group>
+    </view>
+
+    <view class="form-item">
+      <view class="label">生日</view>
+      <picker mode="date" value="{{birthday}}" bindchange="onDateChange">
+        <view class="picker-value {{birthday ? '' : 'placeholder'}}">
+          {{birthday || '请选择生日'}}
+          <text class="calendar-icon">📅</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">所在地</view>
+      <input class="input with-arrow" value="{{location}}" data-field="location" bindinput="onInput" placeholder="请输入所在地" />
+      <text class="arrow">›</text>
+    </view>
+
+    <view class="form-item">
+      <view class="label">个性签名</view>
+      <textarea class="textarea" value="{{signature}}" data-field="signature" bindinput="onInput" placeholder="介绍一下自己吧..." maxlength="100" />
+    </view>
+  </view>
+
+  <view class="btn-wrap">
+    <button class="save-btn" bindtap="onSave">保存修改</button>
+  </view>
+</view>

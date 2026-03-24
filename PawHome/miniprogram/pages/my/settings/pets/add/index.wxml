@@ -1,0 +1,96 @@
+<view class="ui-page ui-page--with-bottom">
+  <!-- 头像上传区域 -->
+  <view class="avatar-section">
+    <view class="avatar-wrap" bindtap="onChooseAvatar">
+      <image class="avatar-img" src="{{formData.avatarUrl || '/assets/images/mine/宠物.png'}}" mode="aspectFill"></image>
+      <view class="camera-icon">
+        <text class="camera-icon-inner">📷</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-section">
+    <!-- 宠物名称 -->
+    <view class="form-item">
+      <view class="form-label">宠物名称</view>
+      <view class="form-input-wrap">
+        <input class="form-input" placeholder="请输入宠物名称" placeholder-class="form-placeholder" value="{{formData.name}}" data-field="name" bindinput="onInput" />
+      </view>
+    </view>
+
+    <!-- 宠物类型 -->
+    <view class="form-item">
+      <view class="form-label">宠物类型</view>
+      <picker bindchange="onTypeChange" value="{{typeIndex}}" range="{{types}}">
+        <view class="form-picker-wrap">
+          <view class="form-picker-text {{typeIndex === -1 ? 'form-placeholder' : ''}}">
+            {{typeIndex === -1 ? '请选择宠物类型' : types[typeIndex]}}
+          </view>
+          <view class="form-arrow">›</view>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 品种 -->
+    <view class="form-item">
+      <view class="form-label">品种</view>
+      <picker bindchange="onBreedChange" value="{{breedIndex}}" range="{{currentBreeds}}">
+        <view class="form-picker-wrap">
+          <view class="form-picker-text {{breedIndex === -1 ? 'form-placeholder' : ''}}">
+            {{breedIndex === -1 ? '请选择品种' : currentBreeds[breedIndex]}}
+          </view>
+          <view class="form-arrow">›</view>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 性别 -->
+    <view class="form-item">
+      <view class="form-label">性别</view>
+      <view class="gender-group">
+        <view class="gender-btn {{formData.gender === '帅哥' ? 'active boy' : ''}}" data-gender="帅哥" bindtap="onGenderSelect">
+          <text class="gender-icon">♂</text> 公
+        </view>
+        <view class="gender-btn {{formData.gender === '美女' ? 'active girl' : ''}}" data-gender="美女" bindtap="onGenderSelect">
+          <text class="gender-icon">♀</text> 母
+        </view>
+      </view>
+    </view>
+
+    <!-- 出生日期 -->
+    <view class="form-item">
+      <view class="form-label">出生日期</view>
+      <picker mode="date" value="{{formData.birthday}}" bindchange="onDateChange">
+        <view class="form-picker-wrap">
+          <view class="form-picker-text {{!formData.birthday ? 'form-placeholder' : ''}}">
+            {{formData.birthday || '请选择出生日期'}}
+          </view>
+          <view class="form-icon">📅</view>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 体重 -->
+    <view class="form-item">
+      <view class="form-label">体重 (kg)</view>
+      <view class="form-input-wrap">
+        <input class="form-input" type="digit" placeholder="请输入体重" placeholder-class="form-placeholder" value="{{formData.weight}}" data-field="weight" bindinput="onInput" />
+      </view>
+    </view>
+
+    <!-- 是否绝育 -->
+    <view class="form-item">
+      <view class="form-label">是否绝育</view>
+      <view class="radio-group">
+        <view class="radio-btn {{formData.isSterilized === '是' ? 'active' : ''}}" data-value="是" bindtap="onSterilizedSelect">是</view>
+        <view class="radio-btn {{formData.isSterilized === '否' ? 'active' : ''}}" data-value="否" bindtap="onSterilizedSelect">否</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="ui-bottom-bar">
+    <button class="ui-btn-primary" bindtap="onSubmit">确认添加</button>
+  </view>
+</view>

@@ -1,1 +1,87 @@
-<view class="container"><text>我的</text></view>
+<view class="my-page" style="padding-top: {{safeTop}}px;">
+  <!-- User Section -->
+  <view class="user-section" wx:if="{{userInfo}}">
+    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+    <view class="user-info">
+      <view class="nickname">{{userInfo.nickname}}</view>
+      <view class="uid">ID: {{userInfo.id}}</view>
+      <view class="location">📍 {{userInfo.location}}</view>
+    </view>
+    <view class="edit-btn" bindtap="goEditProfile">编辑资料</view>
+  </view>
+
+  <view class="divider"></view>
+
+  <!-- Pet Card Section -->
+  <view class="pet-card-wrap" wx:if="{{petInfo}}">
+    <image class="cat-head-decor" src="/assets/images/mine/猫头.png" mode="aspectFit"></image>
+    <view class="pet-card">
+      <view class="pet-card-title">宠家卡</view>
+      <view class="pet-content">
+        <view class="pet-avatar-wrap">
+          <image class="pet-avatar" src="{{petInfo.avatarUrl}}" mode="aspectFill"></image>
+        </view>
+        <view class="pet-info" bindtap="goPetDetail">
+          <view class="pet-header">
+            <text class="pet-name">{{petInfo.name}}</text>
+            <view class="pet-actions">
+              <view class="pet-action-text" bindtap="goAddPet">添加宠物 +</view>
+              <view class="pet-action-text" bindtap="onSwitchPet">切换宠物 ⇆</view>
+            </view>
+          </view>
+          <view class="pet-detail-grid">
+            <view class="detail-item"><text class="label">性别：</text><text class="value">{{petInfo.gender}}</text></view>
+            <view class="detail-item"><text class="label">体重：</text><text class="value">{{petInfo.weight}}</text></view>
+            <view class="detail-item full-width"><text class="label">是否绝育：</text><text class="value">{{petInfo.isSterilized}}</text></view>
+            <view class="detail-item full-width"><text class="label">出生年月：</text><text class="value">{{petInfo.birthday}}</text></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Stats Section -->
+  <view class="stats-section" wx:if="{{userInfo}}">
+    <view class="stat-item">
+      <view class="stat-num">{{userInfo.postCount}}</view>
+      <view class="stat-label">发帖</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num">{{userInfo.followingCount}}</view>
+      <view class="stat-label">关注</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num">{{userInfo.followerCount}}</view>
+      <view class="stat-label">粉丝</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num">{{userInfo.likeCount}}</view>
+      <view class="stat-label">获赞</view>
+    </view>
+  </view>
+
+  <!-- List Menu -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="goFavorites">
+      <view class="menu-left">
+        <text class="menu-icon fav-icon">❤️</text>
+        <text class="menu-text">我的收藏</text>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+    <view class="menu-item" bindtap="goHistory">
+      <view class="menu-left">
+        <text class="menu-icon history-icon">🕒</text>
+        <text class="menu-text">浏览历史</text>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+    <view class="menu-item" bindtap="goSettings">
+      <view class="menu-left">
+        <text class="menu-icon settings-icon">⚙️</text>
+        <text class="menu-text">设置</text>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+</view>

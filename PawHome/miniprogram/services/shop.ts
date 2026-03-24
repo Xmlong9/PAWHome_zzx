@@ -213,6 +213,35 @@ const setCartSync = (list: ShopCartItem[]) => writeJSON(STORAGE_CART, list)
 const getOrdersSync = () => readJSON<ShopOrder[]>(STORAGE_ORDERS, [])
 const setOrdersSync = (list: ShopOrder[]) => writeJSON(STORAGE_ORDERS, list)
 
+export const listAddresses = async (): Promise<UserAddress[]> => {
+  if (!MOCK) {
+    const res = await request<{ list: UserAddress[] }>({ url: "/user/addresses", method: "GET" })
+    return res.list || []
+  }
+  return [
+    {
+      id: "addr_1",
+      name: "张子轩",
+      phone: "19510370909",
+      province: "浙江省",
+      city: "杭州市",
+      district: "余杭区",
+      detail: "杭州师范大学",
+      isDefault: true
+    },
+    {
+      id: "addr_2",
+      name: "李小明",
+      phone: "13800138000",
+      province: "浙江省",
+      city: "杭州市",
+      district: "西湖区",
+      detail: "文一西路888号",
+      isDefault: false
+    }
+  ]
+}
+
 export const getDefaultAddress = async (): Promise<UserAddress | null> => {
   if (!MOCK) {
     const res = await request<{ data: UserAddress }>({ url: "/user/address/default", method: "GET" })

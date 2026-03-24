@@ -1,0 +1,33 @@
+<view class="ui-page">
+  <view class="ui-hero">
+    <text class="ui-title">修改密码</text>
+    <text class="ui-subtitle">建议使用 8 位以上、包含字母与数字的组合</text>
+  </view>
+
+  <view class="ui-card">
+    <view class="ui-field">
+      <text class="ui-label">原密码</text>
+      <view class="ui-input-wrap">
+        <input class="ui-input" type="password" placeholder="请输入原密码" placeholder-class="ui-input-placeholder" data-field="oldPassword" bindinput="onInput" confirm-type="next" />
+      </view>
+    </view>
+
+    <view class="ui-field">
+      <text class="ui-label">新密码</text>
+      <view class="ui-input-wrap">
+        <input class="ui-input" type="password" placeholder="请输入新密码" placeholder-class="ui-input-placeholder" data-field="newPassword" bindinput="onInput" confirm-type="next" />
+      </view>
+    </view>
+
+    <view class="ui-field">
+      <text class="ui-label">确认密码</text>
+      <view class="ui-input-wrap">
+        <input class="ui-input" type="password" placeholder="请再次输入新密码" placeholder-class="ui-input-placeholder" data-field="confirmPassword" bindinput="onInput" confirm-type="done" />
+      </view>
+    </view>
+  </view>
+
+  <view class="ui-footer">
+    <button class="ui-btn-primary" bindtap="submit">确认修改</button>
+  </view>
+</view>

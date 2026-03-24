@@ -1,0 +1,19 @@
+<view class="fav-page">
+  <block wx:if="{{list.length > 0}}">
+    <view class="post-list">
+      <block wx:for="{{list}}" wx:key="id">
+        <view class="post-card" bindtap="goDetail" data-id="{{item.id}}">
+          <view class="post-header">
+            <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+            <view class="nickname">{{item.user.nickname}}</view>
+          </view>
+          <view class="post-content">
+            <view class="text" wx:if="{{item.content}}">{{item.content}}</view>
+            <image wx:if="{{item.images.length > 0}}" class="post-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+  <view class="empty" wx:else>暂无收藏的帖子</view>
+</view>

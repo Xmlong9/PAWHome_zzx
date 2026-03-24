@@ -1,0 +1,39 @@
+<view class="ui-page ui-page--with-bottom">
+  <!-- 头像区 -->
+  <view class="detail-header">
+    <image class="detail-avatar" src="{{petInfo.avatarUrl}}" mode="aspectFill"></image>
+    <view class="detail-name-row">
+      <text class="detail-name">{{petInfo.name}}</text>
+      <text class="ui-chip {{petInfo.gender === '帅哥' ? 'ui-chip--boy' : 'ui-chip--girl'}}">{{petInfo.gender}}</text>
+    </view>
+  </view>
+
+  <!-- 信息卡片 -->
+  <view class="ui-card detail-card">
+    <view class="info-row">
+      <text class="info-label">宠物类型</text>
+      <text class="info-value">{{petInfo.type || '未知'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">宠物品种</text>
+      <text class="info-value">{{petInfo.breed || '未知'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">出生日期</text>
+      <text class="info-value">{{petInfo.birthday}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">体重</text>
+      <text class="info-value">{{petInfo.weight}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">是否绝育</text>
+      <text class="info-value">{{petInfo.isSterilized}}</text>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="ui-bottom-bar">
+    <button class="ui-btn-primary" bindtap="onEdit">编辑资料</button>
+  </view>
+</view>

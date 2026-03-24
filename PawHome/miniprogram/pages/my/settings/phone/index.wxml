@@ -1,0 +1,29 @@
+<view class="ui-page">
+  <view class="ui-hero">
+    <text class="ui-title">手机号验证</text>
+    <text class="ui-subtitle">用于账号安全校验与重要通知接收</text>
+  </view>
+
+  <view class="ui-card">
+    <view class="ui-field">
+      <text class="ui-label">手机号</text>
+      <view class="ui-input-wrap">
+        <input class="ui-input" type="number" maxlength="11" placeholder="请输入 11 位手机号" placeholder-class="ui-input-placeholder" data-field="phone" bindinput="onInput" confirm-type="next" />
+      </view>
+    </view>
+
+    <view class="ui-field">
+      <text class="ui-label">验证码</text>
+      <view class="ui-input-wrap">
+        <input class="ui-input" type="number" maxlength="6" placeholder="请输入验证码" placeholder-class="ui-input-placeholder" data-field="code" bindinput="onInput" confirm-type="done" />
+        <view class="ui-action {{counting ? 'disabled' : ''}}" bindtap="sendCode">
+          {{counting ? countdown + 's' : '获取验证码'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="ui-footer">
+    <button class="ui-btn-primary" bindtap="submit">验证</button>
+  </view>
+</view>

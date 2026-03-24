@@ -1,0 +1,81 @@
+<view class="order-detail-page" wx:if="{{order}}">
+  <view class="status-header {{order.status}}">
+    <view class="status-title">{{order.statusText}}</view>
+    <view class="status-desc" wx:if="{{order.status === 'pending_pay'}}">请尽快完成支付，超时订单将自动取消</view>
+    <view class="status-desc" wx:elif="{{order.status === 'shipping'}}">包裹正在飞奔向你</view>
+    <view class="status-desc" wx:elif="{{order.status === 'done'}}">感谢你的购买，欢迎再次光临</view>
+    <view class="status-desc" wx:else>订单已关闭</view>
+  </view>
+
+  <view class="address-card" wx:if="{{address}}">
+    <view class="address-icon">📍</view>
+    <view class="address-info">
+      <view class="contact">
+        <text class="name">{{address.name}}</text>
+        <text class="phone">{{address.phone}}</text>
+      </view>
+      <view class="detail">{{address.province}} {{address.city}} {{address.district}} {{address.detail}}</view>
+    </view>
+  </view>
+
+  <view class="goods-card">
+    <view class="shop-info">
+      <text class="platform-tag">自营</text>
+      <text class="shop-name">PAWHome 官方精选</text>
+    </view>
+    
+    <view class="goods-list">
+      <block wx:for="{{order.items || []}}" wx:key="id" wx:for-item="goods">
+        <view class="goods-item">
+          <image class="goods-thumb" src="{{goods.imageUrl}}" mode="aspectFill"></image>
+          <view class="goods-info">
+            <view class="goods-name">{{goods.name}}</view>
+            <view class="goods-spec">{{goods.spec}}</view>
+            <view class="goods-tags">
+              <text class="tag">支持7天无理由</text>
+            </view>
+          </view>
+          <view class="goods-price-box">
+            <view class="goods-price">¥{{goods.price}}</view>
+            <view class="goods-count">x{{goods.count}}</view>
+          </view>
+        </view>
+      </block>
+      <view class="fallback-goods" wx:if="{{!order.items}}">{{order.productNames.join('、')}}</view>
+    </view>
+    
+    <view class="fee-row">
+      <text>商品总价</text>
+      <text>¥{{order.amount}}</text>
+    </view>
+    <view class="fee-row">
+      <text>运费</text>
+      <text>免运费</text>
+    </view>
+    <view class="total-row">
+      <text>实付款</text>
+      <text class="total-price">¥{{order.amount}}</text>
+    </view>
+  </view>
+
+  <view class="info-card">
+    <view class="info-title">订单信息</view>
+    <view class="info-row">
+      <text class="label">订单编号</text>
+      <text class="value">{{order.id}}</text>
+      <view class="copy-btn" bindtap="copyId">复制</view>
+    </view>
+    <view class="info-row">
+      <text class="label">创建时间</text>
+      <text class="value">{{order.displayTime}}</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar">
+    <view class="btn outline">联系客服</view>
+    <view class="btn primary" wx:if="{{order.status === 'shipping'}}">确认收货</view>
+    <view class="btn primary" wx:elif="{{order.status === 'pending_pay'}}">去支付</view>
+    <view class="btn outline" wx:else>评价</view>
+  </view>
+</view>
+<view class="loading-page" wx:else>加载中...</view>

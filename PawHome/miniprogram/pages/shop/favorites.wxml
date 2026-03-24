@@ -1,0 +1,16 @@
+<view class="favorites-page">
+  <block wx:if="{{list.length}}">
+    <block wx:for="{{list}}" wx:key="id">
+      <view class="item">
+        <image class="thumb" src="{{item.imageUrl}}" mode="aspectFill" data-id="{{item.id}}" bindtap="openDetail"></image>
+        <view class="meta" data-id="{{item.id}}" bindtap="openDetail">
+          <view class="name">{{item.name}}</view>
+          <view class="desc">{{item.desc}}</view>
+          <view class="price">¥{{item.price}}</view>
+        </view>
+        <view class="remove" data-id="{{item.id}}" bindtap="cancelFavorite">取消</view>
+      </view>
+    </block>
+  </block>
+  <view class="empty" wx:else>还没有收藏商品</view>
+</view>

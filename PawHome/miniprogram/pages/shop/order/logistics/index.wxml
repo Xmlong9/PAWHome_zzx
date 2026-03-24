@@ -1,0 +1,121 @@
+<view class="logistics-page">
+  <!-- Map Header -->
+  <view class="map-header">
+    <map class="map" longitude="120.00" latitude="30.28" scale="12" markers="{{markers}}"></map>
+  </view>
+
+  <view class="content-wrapper">
+    <!-- Logistics Card -->
+    <view class="card logistics-card">
+      <view class="company-info">
+        <image class="company-logo" src="/assets/images/shop/物流.png" mode="aspectFill"></image>
+        <text class="company-name">申通快递</text>
+        <text class="tracking-no">773411056870401</text>
+        <text class="copy-btn">复制</text>
+        <text class="call-btn">打电话</text>
+      </view>
+      
+      <view class="status-summary">
+        <view class="status-icon done"></view>
+        <view class="status-text">已签收</view>
+        <view class="status-time">03-19 18:53</view>
+      </view>
+      
+      <view class="status-desc">
+        您已在杭师A区博文苑10号楼菜鸟驿站完成取件，感谢使用菜鸟驿站，期待再次为您服务。
+      </view>
+      
+      <view class="feedback-box">
+        <view class="feedback-title">请问本次收件是否遇到问题？</view>
+        <view class="feedback-btns">
+          <view class="feedback-btn bad">有问题，去解决</view>
+          <view class="feedback-btn good">没问题，去评价</view>
+        </view>
+      </view>
+
+      <view class="logistics-detail" wx:if="{{showMoreLogistics}}">
+        <view class="timeline">
+          <view class="timeline-item">
+            <view class="time">03-19 18:53</view>
+            <view class="desc">您已在杭师A区博文苑10号楼菜鸟驿站完成取件，感谢使用菜鸟驿站，期待再次为您服务。</view>
+          </view>
+          <view class="timeline-item">
+            <view class="time">03-19 10:20</view>
+            <view class="desc">您的快件已由菜鸟驿站代收，请及时取件。</view>
+          </view>
+          <view class="timeline-item">
+            <view class="time">03-18 20:58</view>
+            <view class="desc">商家已发货，等待快递揽收。</view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="toggle-btn" bindtap="toggleLogistics">
+        <text>{{showMoreLogistics ? '收起物流明细' : '查看更多物流明细'}}</text>
+        <text class="arrow {{showMoreLogistics ? 'up' : 'down'}}"></text>
+      </view>
+    </view>
+
+    <!-- Address Card -->
+    <view class="card address-card" wx:if="{{address}}">
+      <view class="address-icon">📍</view>
+      <view class="address-info">
+        <view class="address-detail">送至 {{address.province}}{{address.city}}{{address.district}}{{address.detail}}</view>
+        <view class="user-info">{{address.name}} {{address.phone}} <text class="tag">号码保护中</text></view>
+      </view>
+    </view>
+
+    <!-- Order Info Card -->
+    <view class="card order-card" wx:if="{{order}}">
+      <view class="shop-name">PAWHome 官方精选</view>
+      
+      <block wx:for="{{order.items}}" wx:key="id" wx:for-item="goods">
+        <view class="goods-item">
+          <image class="goods-thumb" src="{{goods.imageUrl}}" mode="aspectFill"></image>
+          <view class="goods-info">
+            <view class="goods-name">{{goods.name}} {{goods.spec}}</view>
+            <view class="goods-tags">
+              <text class="tag">支持7天无理由</text>
+            </view>
+          </view>
+          <view class="goods-price-box">
+            <view class="goods-price">¥{{goods.price}}</view>
+            <view class="goods-count">x{{goods.count}}</view>
+          </view>
+        </view>
+      </block>
+      
+      <view class="order-detail" wx:if="{{showMoreOrder}}">
+        <view class="detail-row">
+          <text class="label">商品总价</text>
+          <text class="value">¥{{order.amount}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="label">运费</text>
+          <text class="value">¥0</text>
+        </view>
+        <view class="detail-row total-row">
+          <text class="label">实付款</text>
+          <text class="value highlight">¥{{order.amount}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="label">支付方式</text>
+          <text class="value">微信支付</text>
+        </view>
+        <view class="detail-row">
+          <text class="label">订单编号</text>
+          <text class="value">{{order.id}} <text class="copy-small" bindtap="copyId">复制</text></text>
+        </view>
+        <view class="detail-row">
+          <text class="label">创建时间</text>
+          <text class="value">{{order.displayTime}}</text>
+        </view>
+      </view>
+
+      <view class="toggle-btn" bindtap="toggleOrder">
+        <text>{{showMoreOrder ? '收起全部订单信息' : '查看全部订单信息'}}</text>
+        <text class="arrow {{showMoreOrder ? 'up' : 'down'}}"></text>
+      </view>
+    </view>
+  </view>
+</view>

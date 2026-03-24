@@ -1,0 +1,290 @@
+.checkout-page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding: 24rpx;
+  box-sizing: border-box;
+  padding-bottom: 130rpx;
+}
+
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+/* Address Section */
+.address-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.address-left {
+  flex: 1;
+}
+
+.user-info {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.user-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.user-phone {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.address-detail-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+}
+
+.location-icon {
+  font-size: 28rpx;
+  margin-top: 4rpx;
+}
+
+.address-detail {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+.arrow-right {
+  font-size: 32rpx;
+  color: #ccc;
+  margin-left: 20rpx;
+}
+
+/* Goods Card */
+.item-row {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 10rpx;
+}
+
+.thumb {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  background: #f8f8f8;
+  flex-shrink: 0;
+}
+
+.meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  line-height: 1.4;
+}
+
+.spec {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: auto;
+}
+
+.price-row-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.price {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* Options Card (Coupons & Delivery) */
+.option-card {
+  padding: 0 32rpx;
+}
+
+.option-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 0;
+}
+
+.divider {
+  height: 1rpx;
+  background: #f0f0f0;
+}
+
+.option-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.option-value {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.value-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* Payment Card */
+.payment-card {
+  padding-bottom: 16rpx;
+}
+
+.pay-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.pay-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+}
+
+.pay-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.pay-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.pay-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.radio-icon {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid #ccc;
+  box-sizing: border-box;
+}
+
+.radio-icon.active {
+  border-color: #07c160;
+  background: #07c160;
+  position: relative;
+}
+
+.radio-icon.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16rpx;
+  height: 8rpx;
+  border-left: 4rpx solid #fff;
+  border-bottom: 4rpx solid #fff;
+  transform: translate(-50%, -65%) rotate(-45deg);
+}
+
+/* Price Detail Card */
+.price-detail-card {
+  padding: 24rpx 32rpx;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-value {
+  color: #333;
+}
+
+.detail-value.highlight {
+  color: #333;
+}
+
+/* Submit Bar */
+.submit-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.total-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.total-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.total-price {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #111;
+}
+
+.submit-btn {
+  width: 220rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  background: #ff9e59;
+  color: #111;
+  font-weight: 500;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

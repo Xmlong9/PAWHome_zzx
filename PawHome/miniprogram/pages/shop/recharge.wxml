@@ -1,0 +1,19 @@
+<view class="recharge-page">
+  <view class="balance-card">
+    <text class="label">当前余额</text>
+    <text class="balance">¥{{balance}}</text>
+  </view>
+
+  <view class="section-title">选择充值金额</view>
+  <view class="option-grid">
+    <block wx:for="{{options}}" wx:key="id">
+      <view class="option-item {{selectedId===item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="chooseOption">
+        <view class="amount">¥{{item.amount}}</view>
+        <view class="bonus" wx:if="{{item.bonus>0}}">送 ¥{{item.bonus}}</view>
+        <view class="bonus" wx:else>无赠送</view>
+      </view>
+    </block>
+  </view>
+
+  <view class="submit-btn" bindtap="submit">立即充值</view>
+</view>

@@ -13,6 +13,8 @@
     "pages/shop/detail",
     "pages/shop/order/checkout",
     "pages/shop/order/list",
+    "pages/shop/order/detail/index",
+    "pages/shop/order/logistics/index",
     "pages/shop/recharge",
     "pages/shop/customer-service",
     "pages/shop/favorites",

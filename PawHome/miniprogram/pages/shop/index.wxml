@@ -1,4 +1,4 @@
-<view class="shop-page" style="padding-top: {{safeTop}}px;">
+<view class="shop-page {{showBlob ? 'page-transition' : 'page-hidden'}}" style="padding-top: {{safeTop}}px;">
   <!-- 右上角灰色椭圆背景 -->
   <view class="header-blob" wx:if="{{showBlob}}"></view>
 

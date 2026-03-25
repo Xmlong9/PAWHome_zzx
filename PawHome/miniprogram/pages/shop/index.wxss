@@ -94,7 +94,8 @@
 }
 
 .hero-banner {
-  margin-top: 22rpx;
+  margin-top: -10rpx;
+  margin-bottom: -30rpx;
   width: calc(100% + 20rpx);
   margin-left: -10rpx;
   display: block;
@@ -103,7 +104,7 @@
 }
 
 .section-title {
-  margin: 28rpx 4rpx 16rpx;
+  margin: 0rpx 4rpx 10rpx;
   font-size: 38rpx;
   font-weight: 700;
   color: #111;

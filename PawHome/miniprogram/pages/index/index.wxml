@@ -16,7 +16,8 @@
     
     <view class="gooey-container">
       <view class="bg-circle-orange">
-        <text class="welcome-text" style="opacity: {{isRegister ? 1 : 0}}; transform: scale({{isRegister ? 1 : 0.5}});">欢迎来到\n爱宠家！</text>
+        <text class="welcome-text" style="opacity: {{isRegister ? 1 : 0}}; transform: scale({{isRegister ? 1 : 0.5}});">欢迎来到
+爱宠家！</text>
       </view>
       <view class="bg-circle-grey">
         <text class="hi-text" style="opacity: {{!isRegister ? 1 : 0}}; transform: scale({{!isRegister ? 1 : 0.5}}) rotate(-10deg);">Hi!</text>
@@ -76,12 +77,6 @@
       <text class="label">用户名</text>
       <view class="input-wrap">
         <input class="input" placeholder="请输入用户名" value="{{regUsername}}" bindinput="onInput" data-field="regUsername" />
-      </view>
-    </view>
-    <view class="form-item">
-      <text class="label">邮箱</text>
-      <view class="input-wrap">
-        <input class="input" placeholder="请输入邮箱" value="{{regEmail}}" bindinput="onInput" data-field="regEmail" />
       </view>
     </view>
     <view class="form-item">

@@ -15,7 +15,6 @@ Page({
     
     // Register fields
     regUsername: "",
-    regEmail: "",
     regPhone: "",
     regPassword: "",
     regPasswordConfirm: "",
@@ -123,8 +122,8 @@ Page({
   },
 
   onRegister() {
-    const { regUsername, regEmail, regPhone, regPassword, regPasswordConfirm } = this.data;
-    if (!regUsername || !regEmail || !regPhone || !regPassword || !regPasswordConfirm) {
+    const { regUsername, regPhone, regPassword, regPasswordConfirm } = this.data;
+    if (!regUsername || !regPhone || !regPassword || !regPasswordConfirm) {
       wx.showToast({ title: "请填写完整信息", icon: "none" });
       return;
     }

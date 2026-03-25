@@ -60,6 +60,15 @@ Page({
     }
   },
 
+  goUserProfile(e: WechatMiniprogram.TouchEvent) {
+    const userId = e.currentTarget.dataset.userid;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/user-profile/index?id=${userId}`
+      });
+    }
+  },
+
   async loadPost(id: number) {
     try {
       const post = await getPost(id);

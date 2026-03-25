@@ -1,13 +1,13 @@
 <view class="my-page" style="padding-top: {{safeTop}}px;">
   <!-- User Section -->
-  <view class="user-section" wx:if="{{userInfo}}">
+  <view class="user-section" wx:if="{{userInfo}}" bindtap="goMyProfile">
     <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
     <view class="user-info">
       <view class="nickname">{{userInfo.nickname}}</view>
       <view class="uid">ID: {{userInfo.id}}</view>
       <view class="location">📍 {{userInfo.location}}</view>
     </view>
-    <view class="edit-btn" bindtap="goEditProfile">编辑资料</view>
+    <view class="edit-btn" catchtap="goEditProfile">编辑资料</view>
   </view>
 
   <view class="divider"></view>
@@ -17,16 +17,18 @@
     <image class="cat-head-decor" src="/assets/images/mine/猫头.png" mode="aspectFit"></image>
     <view class="pet-card">
       <view class="pet-card-title">宠家卡</view>
-      <view class="pet-content">
+      <view class="pet-content" bindtap="goPetDetail">
         <view class="pet-avatar-wrap">
           <image class="pet-avatar" src="{{petInfo.avatarUrl}}" mode="aspectFill"></image>
         </view>
-        <view class="pet-info" bindtap="goPetDetail">
+        <view class="pet-info">
           <view class="pet-header">
-            <text class="pet-name">{{petInfo.name}}</text>
+            <view class="pet-name-wrap">
+              <text class="pet-name">{{petInfo.name}}</text>
+            </view>
             <view class="pet-actions">
-              <view class="pet-action-text" bindtap="goAddPet">添加宠物 +</view>
-              <view class="pet-action-text" bindtap="onSwitchPet">切换宠物 ⇆</view>
+              <view class="pet-action-text" catchtap="goAddPet">添加宠物 +</view>
+              <view class="pet-action-text" catchtap="onSwitchPet">切换宠物 ⇆</view>
             </view>
           </view>
           <view class="pet-detail-grid">

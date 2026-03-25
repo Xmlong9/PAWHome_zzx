@@ -91,6 +91,6 @@
 
   <!-- 底部按钮 -->
   <view class="ui-bottom-bar">
-    <button class="ui-btn-primary" bindtap="onSubmit">确认添加</button>
+    <button class="ui-btn-primary" bindtap="onSubmit">{{submitText}}</button>
   </view>
 </view>

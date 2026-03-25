@@ -30,9 +30,9 @@
       <view class="post-card" bindtap="goPostDetail" data-id="{{item.id}}">
         <!-- User Info -->
         <view class="post-header">
-          <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+          <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
           <view class="user-info">
-            <view class="nickname">{{item.user.nickname}}</view>
+            <view class="nickname" catchtap="goUserProfile" data-userid="{{item.userId}}">{{item.user.nickname}}</view>
             <view class="time">{{item.timeAgo}}</view>
           </view>
         </view>

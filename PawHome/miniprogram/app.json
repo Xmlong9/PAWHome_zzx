@@ -30,6 +30,7 @@
     "pages/my/settings/pets/detail/index",
     "pages/my/favorites/index",
     "pages/my/history/index",
+    "pages/user-profile/index",
     "pages/logs/logs"
   ],
   "window": {

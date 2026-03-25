@@ -16,6 +16,12 @@ Page({
     }
   },
 
+  onShow() {
+    if (this.data.petId && wx.getStorageSync('petListNeedRefresh')) {
+      this.fetchPetDetail(this.data.petId);
+    }
+  },
+
   async fetchPetDetail(id: string) {
     wx.showLoading({ title: '加载中...' });
     try {
@@ -34,7 +40,6 @@ Page({
   },
 
   onEdit() {
-    // 预留编辑页面入口
-    wx.showToast({ title: '编辑功能开发中', icon: 'none' });
+    wx.navigateTo({ url: `/pages/my/settings/pets/add/index?id=${this.data.petId}` });
   }
 });

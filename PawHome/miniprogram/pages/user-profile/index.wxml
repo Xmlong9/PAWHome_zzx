@@ -1,0 +1,116 @@
+<view class="user-profile-page">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar" style="padding-top: {{safeTop}}px;">
+    <view class="nav-back" bindtap="goBack">
+      <view class="back-icon"></view>
+    </view>
+    <view class="nav-title">{{isSelf ? '我的主页' : '个人主页'}}</view>
+    <view class="nav-right"></view>
+  </view>
+
+  <view class="page-content" wx:if="{{userInfo}}">
+    <!-- 第一行：头像、昵称、ID、地点、关注按钮 -->
+    <view class="header-section">
+      <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+      <view class="info-block">
+        <view class="name-row">
+          <text class="nickname">{{userInfo.nickname}}</text>
+        </view>
+        <view class="id-row">ID: {{userInfo.id || '未知'}}</view>
+        <view class="location-row">
+          <text class="location-icon">📍</text>
+          <text class="location-text">{{userInfo.location || '未知'}}</text>
+        </view>
+      </view>
+      <view class="action-block" wx:if="{{!isSelf}}">
+        <view class="follow-btn {{isFollowing ? 'following' : ''}}" bindtap="onFollow">
+          {{isFollowing ? '已关注' : '关注'}}
+        </view>
+        <view class="msg-btn" bindtap="onMessage">私信</view>
+      </view>
+    </view>
+
+    <!-- 第二行：数据统计与签名 -->
+    <view class="stats-section">
+      <view class="stat-item">
+        <text class="stat-num">{{userInfo.followingCount || 0}}</text>
+        <text class="stat-label">关注</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{userInfo.followerCount || 0}}</text>
+        <text class="stat-label">粉丝</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{userInfo.likeCount || 0}}</text>
+        <text class="stat-label">获赞</text>
+      </view>
+    </view>
+    <view class="signature-section">
+      <text class="signature-text">{{userInfo.signature || '这个人很懒，什么都没写~'}}</text>
+    </view>
+
+    <!-- 第三行：Tabs -->
+    <view class="tabs-container">
+      <view 
+        class="tab-item {{currentTab === item ? 'active' : ''}}" 
+        wx:for="{{tabs}}" 
+        wx:key="*this"
+        data-tab="{{item}}"
+        bindtap="switchTab"
+      >
+        {{item}}
+        <view class="tab-line" wx:if="{{currentTab === item}}"></view>
+      </view>
+    </view>
+
+    <!-- 列表区域 -->
+    <scroll-view class="list-container" scroll-y>
+      <!-- 帖子列表 -->
+      <view class="waterfall-grid" wx:if="{{currentTab === '帖子'}}">
+        <view class="post-card" wx:for="{{posts}}" wx:key="id" data-id="{{item.id}}" bindtap="goPostDetail">
+          <image class="post-cover" src="{{item.images[0]}}" mode="aspectFill"></image>
+          <view class="post-title">{{item.content}}</view>
+          <view class="post-footer">
+            <view class="post-like">
+              <text class="like-icon">♡</text>
+              <text class="like-count">{{item.likeCount}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 点赞列表 -->
+      <view class="waterfall-grid" wx:if="{{currentTab === '点赞'}}">
+        <view class="post-card" wx:for="{{likes}}" wx:key="id" data-id="{{item.id}}" bindtap="goPostDetail">
+          <image class="post-cover" src="{{item.images[0]}}" mode="aspectFill"></image>
+          <view class="post-title">{{item.content}}</view>
+          <view class="post-footer">
+            <view class="post-like">
+              <text class="like-icon">♡</text>
+              <text class="like-count">{{item.likeCount}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 收藏列表 -->
+      <view class="waterfall-grid" wx:if="{{currentTab === '收藏'}}">
+        <view class="post-card" wx:for="{{favorites}}" wx:key="id" data-id="{{item.id}}" bindtap="goPostDetail">
+          <image class="post-cover" src="{{item.images[0]}}" mode="aspectFill"></image>
+          <view class="post-title">{{item.content}}</view>
+          <view class="post-footer">
+            <view class="post-like">
+              <text class="like-icon">♡</text>
+              <text class="like-count">{{item.likeCount}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{(currentTab === '帖子' && posts.length === 0) || (currentTab === '点赞' && likes.length === 0) || (currentTab === '收藏' && favorites.length === 0)}}">
+        <text>暂无内容</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>

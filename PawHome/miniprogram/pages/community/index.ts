@@ -120,6 +120,15 @@ Page({
     });
   },
 
+  goUserProfile(e: WechatMiniprogram.TouchEvent) {
+    const userId = e.currentTarget.dataset.userid;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/user-profile/index?id=${userId}`
+      });
+    }
+  },
+
   goCreatePost() {
     wx.navigateTo({
       url: '/pages/post-create/index'

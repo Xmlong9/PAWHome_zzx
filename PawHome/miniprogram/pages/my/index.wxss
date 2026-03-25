@@ -78,12 +78,13 @@
 }
 
 .pet-card {
-  background: #ffcfb3;
+  background: linear-gradient(180deg, #FFAD73 0%, #FF4242 100%);
   border: 4rpx solid #111;
   border-radius: 32rpx;
-  padding: 24rpx;
+  padding: 24rpx 0 0 0; /* 左右 padding 也设为 0，让内层自然撑满 */
   position: relative;
   z-index: 1;
+  overflow: hidden; /* 防止子元素溢出圆角 */
 }
 
 .pet-card-title {
@@ -91,16 +92,18 @@
   font-weight: 600;
   color: #111;
   margin-bottom: 16rpx;
-  padding-left: 12rpx;
+  padding-left: 36rpx; /* 补偿因为去掉了外层 padding 导致的标题左移 */
 }
 
 .pet-content {
-  background: #ffe3cd;
-  border: 4rpx solid #111;
-  border-radius: 24rpx;
-  padding: 24rpx;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFCFA2 100%);
+  border-top: 4rpx solid #111;
+  border-bottom: none; /* 去掉底部边框，与外层贴合 */
+  border-radius: 24rpx 24rpx 0 0; /* 只保留上方的圆角 */
+  padding: 24rpx 36rpx; /* 增加内层的左右 padding 保持内容不贴边 */
   display: flex;
   gap: 24rpx;
+  margin: 0; /* 移除负边距 */
 }
 
 .pet-avatar-wrap {
@@ -126,9 +129,14 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 2rpx solid #111;
-  padding-bottom: 12rpx;
   margin-bottom: 12rpx;
+}
+
+.pet-name-wrap {
+  border-bottom: 2rpx solid #111;
+  padding-bottom: 8rpx;
+  flex: 1;
+  margin-right: 24rpx;
 }
 
 .pet-name {
@@ -141,12 +149,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4rpx;
+  margin-top: -10rpx;
 }
 
 .pet-action-text {
   font-size: 20rpx;
   color: #555;
+  padding: 10rpx 20rpx;
+  margin-right: -20rpx;
 }
 
 .pet-detail-grid {

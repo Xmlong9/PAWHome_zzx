@@ -37,8 +37,8 @@
 
         <view class="post-body">
           <view class="author-header">
-            <image class="avatar" src="{{post.user.avatarUrl}}" mode="aspectFill"></image>
-            <view class="author-info">
+            <image class="avatar" src="{{post.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{post.userId}}"></image>
+            <view class="author-info" catchtap="goUserProfile" data-userid="{{post.userId}}">
               <view class="nickname">{{post.user.nickname}}</view>
             </view>
             <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap">
@@ -104,9 +104,9 @@
   <view class="comment-list">
     <block wx:for="{{comments}}" wx:key="id">
       <view class="comment-item">
-        <image class="c-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+        <image class="c-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
         <view class="c-right">
-          <view class="c-header">
+          <view class="c-header" catchtap="goUserProfile" data-userid="{{item.userId}}">
             <text class="c-nickname">{{item.user.nickname}}</text>
           </view>
           <view class="c-content" bindtap="onReplyTap" data-item="{{item}}">

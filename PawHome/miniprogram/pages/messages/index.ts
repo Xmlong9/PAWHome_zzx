@@ -69,6 +69,8 @@ Page({
         lastMessage: c.lastMessage,
         unreadCount: c.unreadCount
       }))
+      
+      // 就算捕获到错误，我们也尽量合并本地真实缓存的对话列表和写死的 mock 列表
       this.setData({ dmList })
     } catch {
       this.setData({ dmList: this.getMockDMList() })
@@ -90,20 +92,21 @@ Page({
   },
 
   openItem(e: WechatMiniprogram.TouchEvent) {
-    const { type, item } = e.currentTarget.dataset as { type: 'like' | 'comment' | 'dm'; item: any }
+    const type = e.currentTarget.dataset.type
+    const item = e.currentTarget.dataset.item
     if (type === 'dm') {
-      const nickname = encodeURIComponent(item.nickname || '私信')
-      const avatarUrl = encodeURIComponent(item.avatarUrl || '')
-      const id = encodeURIComponent(item.id || '')
-      const peerId = encodeURIComponent(item.peerId || '')
-      wx.navigateTo({ url: `/pages/chat/index?id=${id}&peerId=${peerId}&nickname=${nickname}&avatarUrl=${avatarUrl}` })
-      return
+      const dm = item as DMMsg
+      // 跳转时一定要带上 id (conversationId)，peerId，nickname 和 avatarUrl，保证两边一致
+      wx.navigateTo({
+        url: `/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`
+      })
+    } else {
+      if (item.postId) {
+        wx.navigateTo({
+          url: `/pages/post-detail/index?id=${item.postId}`
+        })
+      }
     }
-    if (item && item.postId) {
-      wx.navigateTo({ url: `/pages/post-detail/index?id=${item.postId}` })
-      return
-    }
-    wx.showToast({ title: '暂时没有可跳转内容', icon: 'none' })
   },
 
   getMockLikeList(): LikeMsg[] {

@@ -33,6 +33,9 @@ Page({
   goEditProfile() {
     wx.navigateTo({ url: "/pages/my/edit-profile/index" })
   },
+  goMyProfile() {
+    wx.navigateTo({ url: "/pages/user-profile/index" })
+  },
   goFavorites() {
     wx.navigateTo({ url: "/pages/my/favorites/index" })
   },

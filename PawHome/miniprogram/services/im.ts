@@ -1,4 +1,5 @@
 import { request } from "./request"
+import { MOCK_USERS } from "./user"
 
 export type IMConversation = {
   id: string
@@ -200,11 +201,33 @@ export const sendTextMessage = async (params: {
 
   const convs = readConversations()
   const idx = convs.findIndex((c) => c.id === params.conversationId)
+  
   if (idx >= 0) {
     const c = convs[idx]
     convs[idx] = { ...c, lastMessage: params.text, lastMessageAt: createdAt }
-    writeConversations(convs)
+  } else {
+    // 如果没有找到现有会话（比如从主页第一次发起私信），就创建一个新的会话
+    // 尝试从 mock 数据中找到对方的头像和昵称，如果没有则用默认值
+    let peerNickname = "未知用户"
+    let peerAvatarUrl = "https://picsum.photos/seed/peer/100"
+    
+    if (params.peerId && MOCK_USERS[params.peerId]) {
+      peerNickname = MOCK_USERS[params.peerId].nickname
+      peerAvatarUrl = MOCK_USERS[params.peerId].avatarUrl
+    }
+    
+    convs.push({
+      id: params.conversationId,
+      peerId: params.peerId,
+      peerNickname,
+      peerAvatarUrl,
+      lastMessage: params.text,
+      lastMessageAt: createdAt,
+      unreadCount: 0
+    })
   }
+  
+  writeConversations(convs)
 
   return pending
 }

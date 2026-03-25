@@ -48,6 +48,22 @@
       {
         "type": "file",
         "value": "assets/fonts/ZhanKuKuaiLeTi2016XiuDingBan-1.ttf"
+      },
+      {
+        "type": "file",
+        "value": "assets/images/log/cat.png"
+      },
+      {
+        "type": "file",
+        "value": "assets/images/log/catlag.png"
+      },
+      {
+        "type": "file",
+        "value": "assets/images/log/启动页.png"
+      },
+      {
+        "type": "file",
+        "value": "assets/images/mine/宠家卡.png"
       }
     ],
     "include": []

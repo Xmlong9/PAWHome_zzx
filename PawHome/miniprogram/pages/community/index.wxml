@@ -1,14 +1,14 @@
 <view class="community">
   <!-- Header -->
   <view class="header" style="padding-top: {{safeTop}}px;">
-    <view class="header-blob"></view>
+    <view class="header-blob" wx:if="{{showBlob}}"></view>
     <view class="header-content">
       <view class="mail-icon" bindtap="onMailTap">
         <image class="mail-svg" src="/assets/icons/community/mail.svg" mode="aspectFit"></image>
       </view>
-      <view class="search">
+      <view class="search" bindtap="goSearch">
         <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
-        <input class="search-field" type="text" placeholder="喵呜~今天要翻些什么家具呢" placeholder-style="color:#666;font-size:28rpx;text-align:center;" confirm-type="search" />
+        <view class="search-placeholder">喵呜~今天要翻些什么家具呢</view>
       </view>
     </view>
   </view>

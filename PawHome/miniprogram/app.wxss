@@ -307,3 +307,41 @@
   color: #94a3b8;
   line-height: 1.6;
 }
+
+/* 页面顶部圆弧背景进场动画：从右边滚到左边（首页、社区） */
+@keyframes rollFromRightToLeft {
+  0% {
+    transform: translateX(100vw) rotate(180deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 快速进入 */
+  }
+  60% {
+    transform: translateX(-40rpx) rotate(-20deg); /* 冲过头一点点，模拟撞击边缘 */
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  80% {
+    transform: translateX(20rpx) rotate(10deg); /* 弹回来一点 */
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg); /* 最终静止 */
+  }
+}
+
+/* 页面顶部圆弧背景进场动画：从左边滚到右边（商店、我的） */
+@keyframes rollFromLeftToRight {
+  0% {
+    transform: translateX(-100vw) rotate(-180deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 快速进入 */
+  }
+  60% {
+    transform: translateX(40rpx) rotate(20deg); /* 冲过头一点点，模拟撞击边缘 */
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  80% {
+    transform: translateX(-20rpx) rotate(-10deg); /* 弹回来一点 */
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg); /* 最终静止 */
+  }
+}

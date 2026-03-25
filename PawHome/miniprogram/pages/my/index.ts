@@ -4,13 +4,18 @@ Page({
   data: {
     safeTop: 0,
     userInfo: null as UserProfile | null,
-    petInfo: null as PetProfile | null
+    petInfo: null as PetProfile | null,
+    showBlob: false
   },
   onShow() {
+    this.setData({ showBlob: true });
     if (wx.getStorageSync('petListNeedRefresh')) {
       this.fetchData();
       wx.removeStorageSync('petListNeedRefresh');
     }
+  },
+  onHide() {
+    this.setData({ showBlob: false });
   },
   async fetchData() {
     try {

@@ -1,12 +1,14 @@
 <view class="home">
-  <view class="header" style="margin-top: {{safeTop}}px;">
-    <view class="header-blob"></view>
-    <view class="brand-row">
-      <view class="brand">爱宠家</view>
-    </view>
-    <view class="search">
+  <!-- Header Section -->
+  <view class="header" style="padding-top: {{safeTop}}px;">
+    <!-- 恢复左上角橘猫圆弧背景 -->
+    <view class="header-blob" wx:if="{{showBlob}}"></view>
+    
+    <view class="brand-text">爱宠家</view>
+
+    <view class="search-wrap" bindtap="goSearch">
       <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
-      <input class="search-field" type="text" placeholder="喵呜~今天要翻些什么家具呢" placeholder-style="color:#666;font-size:28rpx;text-align:center;" confirm-type="search" />
+      <view class="search-placeholder">喵呜~今天要翻些什么家具呢</view>
     </view>
   </view>
 

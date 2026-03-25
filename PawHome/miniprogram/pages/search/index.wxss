@@ -1,0 +1,296 @@
+.search-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 导航栏 & 搜索框 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 32rpx;
+  background-color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back {
+  width: 60rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.back-icon {
+  width: 40rpx;
+  height: 40rpx;
+  border: solid #333;
+  border-width: 0 0 4rpx 4rpx;
+  transform: rotate(45deg);
+}
+
+.search-bar {
+  flex: 1;
+  height: 64rpx;
+  background-color: #f5f5f5;
+  border-radius: 32rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  margin-left: 10rpx;
+}
+
+.search-icon {
+  margin-right: 12rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.clear-icon {
+  font-size: 36rpx;
+  color: #999;
+  padding: 0 10rpx;
+}
+
+/* 搜索提示区 */
+.suggest-area {
+  padding: 40rpx 32rpx;
+}
+
+.section {
+  margin-bottom: 48rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.tag-item {
+  background-color: #f8f8f8;
+  padding: 12rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.tag-close {
+  margin-left: 10rpx;
+  color: #999;
+  font-size: 30rpx;
+}
+
+/* 搜索历史 */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.history-icon {
+  font-size: 32rpx;
+  color: #ccc;
+  margin-right: 16rpx;
+}
+
+.history-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.history-del {
+  font-size: 36rpx;
+  color: #999;
+  padding: 0 20rpx;
+}
+
+/* 搜索结果区 */
+.result-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20rpx;
+}
+
+/* 分类筛选 */
+.category-scroll {
+  width: 100%;
+  white-space: nowrap;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+  margin-bottom: 24rpx;
+}
+
+.category-list {
+  display: flex;
+  gap: 20rpx;
+}
+
+.cat-item {
+  display: inline-block;
+  padding: 12rpx 36rpx;
+  background-color: #f8f8f8;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.cat-item.active {
+  background-color: #111;
+  color: #fff;
+}
+
+/* 排序 Tabs */
+.sort-tabs {
+  display: flex;
+  padding: 0 32rpx;
+  border-bottom: 1rpx solid #eee;
+  margin-bottom: 20rpx;
+}
+
+.sort-item {
+  flex: 1;
+  text-align: center;
+  font-size: 28rpx;
+  color: #999;
+  padding: 20rpx 0;
+  position: relative;
+}
+
+.sort-item.active {
+  color: #333;
+  font-weight: bold;
+}
+
+/* 结果列表 */
+.result-list {
+  flex: 1;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+}
+
+.post-item {
+  display: flex;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.post-img {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 16rpx;
+  background-color: #eee;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.post-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.post-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.post-summary {
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 8rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.post-meta {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+
+.dot {
+  margin: 0 8rpx;
+}
+
+/* 商店结果 */
+.shop-item {
+  display: flex;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.shop-img {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+  background-color: #eee;
+  margin-right: 24rpx;
+}
+
+.shop-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.shop-title {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.shop-summary {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.shop-price {
+  font-size: 32rpx;
+  color: #ff4242;
+  font-weight: bold;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}

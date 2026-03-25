@@ -1,7 +1,23 @@
 .my-page {
   min-height: 100vh;
-  background: #f7f8fa;
+  background: #fff;
   box-sizing: border-box;
+  padding-bottom: 40rpx;
+  position: relative;
+  overflow: hidden; /* 防止背景溢出产生横向滚动条 */
+}
+
+/* 右上角灰色椭圆背景 */
+.header-blob {
+  position: absolute;
+  right: -100rpx;
+  top: -100rpx;
+  width: 480rpx;
+  height: 300rpx;
+  background: #B3B3B3;
+  border-radius: 9999rpx;
+  z-index: 0;
+  animation: rollFromLeftToRight 0.8s ease-out forwards;
 }
 
 /* User Section */
@@ -9,7 +25,9 @@
   display: flex;
   align-items: center;
   padding: 32rpx 40rpx;
-  background: #fff;
+  background: transparent;
+  position: relative;
+  z-index: 1; /* 保证内容在背景之上 */
 }
 
 .avatar {

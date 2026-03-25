@@ -1,4 +1,9 @@
 <view class="my-page" style="padding-top: {{safeTop}}px;">
+  <!-- 右上角灰色椭圆背景 -->
+  <view class="header-blob" wx:if="{{showBlob}}"></view>
+
+  <view class="header-bg"></view>
+
   <!-- User Section -->
   <view class="user-section" wx:if="{{userInfo}}" bindtap="goMyProfile">
     <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>

@@ -1,0 +1,116 @@
+<view class="search-page">
+  <!-- 导航栏 & 搜索框 -->
+  <view class="nav-bar" style="padding-top: {{safeTop}}px;">
+    <view class="nav-back" bindtap="goBack">
+      <view class="back-icon"></view>
+    </view>
+    <view class="search-bar">
+      <icon type="search" size="14" color="#999" class="search-icon"></icon>
+      <input 
+        class="search-input" 
+        placeholder="{{searchType === 'community' ? '搜索宠物话题、用户或内容' : '搜索商品名称或品牌'}}" 
+        value="{{keyword}}"
+        focus="{{isFocused}}"
+        bindinput="onInput"
+        bindconfirm="onSearchConfirm"
+        confirm-type="search"
+      />
+      <view class="clear-icon" wx:if="{{keyword}}" bindtap="onClear">×</view>
+    </view>
+  </view>
+
+  <!-- 搜索提示区 (未搜索时显示) -->
+  <view class="suggest-area" wx:if="{{!hasSearched}}">
+    <!-- 热门搜索 -->
+    <view class="section">
+      <view class="section-title">热门搜索</view>
+      <view class="tag-list">
+        <view class="tag-item" wx:for="{{hotKeywords}}" wx:key="*this" bindtap="onTapKeyword" data-kw="{{item}}">
+          {{item}} <text class="tag-close" wx:if="{{false}}">×</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 搜索历史 -->
+    <view class="section" wx:if="{{historyKeywords.length > 0}}">
+      <view class="section-title">搜索历史</view>
+      <view class="history-list">
+        <view class="history-item" wx:for="{{historyKeywords}}" wx:key="*this">
+          <view class="history-left" bindtap="onTapKeyword" data-kw="{{item}}">
+            <text class="history-icon">🕒</text>
+            <text class="history-text">{{item}}</text>
+          </view>
+          <view class="history-del" catchtap="onDeleteHistory" data-kw="{{item}}">×</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索结果区 (已搜索时显示) -->
+  <view class="result-area" wx:if="{{hasSearched}}">
+    
+    <!-- 结果筛选栏 (仅社区搜索展示，商店可能有自己的筛选) -->
+    <block wx:if="{{searchType === 'community'}}">
+      <!-- 宠物分类 -->
+      <scroll-view scroll-x class="category-scroll" show-scrollbar="false">
+        <view class="category-list">
+          <view 
+            class="cat-item {{currentCategory === item ? 'active' : ''}}" 
+            wx:for="{{categories}}" 
+            wx:key="*this"
+            bindtap="switchCategory"
+            data-cat="{{item}}"
+          >
+            {{item}}
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 排序 Tab -->
+      <view class="sort-tabs">
+        <view 
+          class="sort-item {{currentSort === item ? 'active' : ''}}" 
+          wx:for="{{sortTabs}}" 
+          wx:key="*this"
+          bindtap="switchSort"
+          data-sort="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+    </block>
+
+    <!-- 结果列表 -->
+    <scroll-view scroll-y class="result-list">
+      <block wx:if="{{searchType === 'community'}}">
+        <view class="post-item" wx:for="{{results}}" wx:key="id">
+          <image class="post-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="post-info">
+            <view class="post-title">{{item.title}}</view>
+            <view class="post-summary">{{item.summary}}</view>
+            <view class="post-meta">
+              <text>{{item.likes}} 点赞</text>
+              <text class="dot">·</text>
+              <text>{{item.comments}} 评论</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      
+      <block wx:if="{{searchType === 'shop'}}">
+        <!-- 简单的商店结果 mock -->
+        <view class="shop-item" wx:for="{{results}}" wx:key="id">
+          <image class="shop-img" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="shop-info">
+            <view class="shop-title">{{item.title}}</view>
+            <view class="shop-summary">{{item.summary}}</view>
+            <view class="shop-price">{{item.price}}</view>
+          </view>
+        </view>
+      </block>
+
+      <view class="empty-state" wx:if="{{results.length === 0}}">没有找到相关内容</view>
+    </scroll-view>
+  </view>
+
+</view>

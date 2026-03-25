@@ -4,7 +4,7 @@ import styles from './index.module.scss';
 
 const Component = () => {
   return (
-    <img src="../image/mn4sv54e-wkdji8d.svg" className={styles.clipPathGroup} />
+    <img src="../image/mn69p2xn-px2u5xk.svg" className={styles.clipPathGroup} />
   );
 }
 

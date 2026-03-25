@@ -3,14 +3,30 @@
   background: #fff;
   padding: 0 24rpx 160rpx;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden; /* 防止背景溢出产生横向滚动条 */
+}
+
+/* 右上角灰色椭圆背景 */
+.header-blob {
+  position: absolute;
+  right: -100rpx;
+  top: -100rpx;
+  width: 480rpx;
+  height: 300rpx;
+  background: #B3B3B3;
+  border-radius: 9999rpx;
+  z-index: 0;
+  animation: rollFromLeftToRight 0.8s ease-out forwards;
 }
 
 .shop-top {
-  background: #fff;
+  background: transparent;
   border-radius: 28rpx;
   padding: 20rpx 18rpx 26rpx;
   position: relative;
   overflow: visible;
+  z-index: 1; /* 保证内容在背景之上 */
 }
 
 .search-row {
@@ -31,18 +47,14 @@
   display: block;
 }
 
-.search-field {
+.search-placeholder {
   position: absolute;
   left: 128rpx;
   right: 128rpx;
   top: 50%;
   transform: translateY(-42%);
-  height: 38rpx;
-  line-height: 38rpx;
-  border: 0;
-  background: transparent;
-  color: #333;
   font-size: 22rpx;
+  color: #666;
 }
 
 .cart-btn {

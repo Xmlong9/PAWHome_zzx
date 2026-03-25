@@ -1,17 +1,12 @@
 <view class="shop-page" style="padding-top: {{safeTop}}px;">
+  <!-- 右上角灰色椭圆背景 -->
+  <view class="header-blob" wx:if="{{showBlob}}"></view>
+
   <view class="shop-top">
-    <view class="search-row">
+    <view class="search-row" bindtap="goSearch">
       <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
-      <input
-        class="search-field"
-        type="text"
-        value="{{searchText}}"
-        bindinput="onSearchInput"
-        placeholder="喵呜~今天要翻些什么家具呢"
-        placeholder-style="color:#666;font-size:24rpx;text-align:center;"
-        confirm-type="search"
-      />
-      <image class="cart-btn" src="/assets/icons/shop/购物车.png" mode="aspectFit" bindtap="goCart"></image>
+      <view class="search-placeholder">喵呜~今天要翻些什么家具呢</view>
+      <image class="cart-btn" src="/assets/icons/shop/购物车.png" mode="aspectFit" catchtap="goCart"></image>
     </view>
 
     <view class="entry-grid">

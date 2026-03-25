@@ -28,79 +28,83 @@
 
   <!-- Login Form -->
   <view class="form-card" wx:if="{{!isRegister}}">
-    <view class="form-item">
-      <text class="label">账号</text>
-      <view class="input-wrap">
-        <input class="input" placeholder="请输入账号 / 手机号" value="{{account}}" bindinput="onInput" data-field="account" />
-      </view>
-    </view>
-    
-    <view class="form-item" wx:if="{{loginType === 'password'}}">
-      <text class="label">密码</text>
-      <view class="input-wrap">
-        <input class="input" password placeholder="请输入密码" value="{{password}}" bindinput="onInput" data-field="password" />
-      </view>
-      <view class="forgot-pwd">
-        <text class="small-text" bindtap="switchLoginType">验证码登录</text>
-        <text class="small-text">忘记密码？</text>
-      </view>
-    </view>
-
-    <view class="form-item" wx:if="{{loginType === 'sms'}}">
-      <text class="label">验证码</text>
-      <view class="sms-row">
-        <view class="input-wrap sms-input-wrap">
-          <input class="input" type="number" maxlength="6" placeholder="请输入验证码" value="{{code}}" bindinput="onInput" data-field="code" />
+    <view class="fade-in-up">
+      <view class="form-item">
+        <text class="label">账号</text>
+        <view class="input-wrap">
+          <input class="input" placeholder="请输入账号 / 手机号" value="{{account}}" bindinput="onInput" data-field="account" />
         </view>
-        <button class="sms-btn" bindtap="onSend" disabled="{{smsSending}}">{{smsText}}</button>
       </view>
-      <view class="forgot-pwd">
-        <text class="small-text" bindtap="switchLoginType">密码登录</text>
+      
+      <view class="form-item" wx:if="{{loginType === 'password'}}">
+        <text class="label">密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请输入密码" value="{{password}}" bindinput="onInput" data-field="password" />
+        </view>
+        <view class="forgot-pwd">
+          <text class="small-text" bindtap="switchLoginType">验证码登录</text>
+          <text class="small-text">忘记密码？</text>
+        </view>
       </view>
-    </view>
 
-    <view class="action-btns">
-      <button class="btn-primary" bindtap="onLogin">登录</button>
-      <button class="btn-secondary" bindtap="toggleRegister">注册</button>
-    </view>
+      <view class="form-item" wx:if="{{loginType === 'sms'}}">
+        <text class="label">验证码</text>
+        <view class="sms-row">
+          <view class="input-wrap sms-input-wrap">
+            <input class="input" type="number" maxlength="6" placeholder="请输入验证码" value="{{code}}" bindinput="onInput" data-field="code" />
+          </view>
+          <button class="sms-btn" bindtap="onSend" disabled="{{smsSending}}">{{smsText}}</button>
+        </view>
+        <view class="forgot-pwd">
+          <text class="small-text" bindtap="switchLoginType">密码登录</text>
+        </view>
+      </view>
 
-    <view class="extra-actions">
-      <text class="link-text" bindtap="onWxLogin">微信一键登录</text>
-      <text class="divider">|</text>
-      <text class="link-text" bindtap="onSkip">跳过登录（调试）</text>
+      <view class="action-btns">
+        <button class="btn-primary" bindtap="onLogin">登录</button>
+        <button class="btn-secondary" bindtap="toggleRegister">注册</button>
+      </view>
+
+      <view class="extra-actions">
+        <text class="link-text" bindtap="onWxLogin">微信一键登录</text>
+        <text class="divider">|</text>
+        <text class="link-text" bindtap="onSkip">跳过登录（调试）</text>
+      </view>
     </view>
   </view>
 
   <!-- Register Form -->
   <view class="form-card" wx:else>
-    <view class="form-item">
-      <text class="label">用户名</text>
-      <view class="input-wrap">
-        <input class="input" placeholder="请输入用户名" value="{{regUsername}}" bindinput="onInput" data-field="regUsername" />
+    <view class="fade-in-up">
+      <view class="form-item">
+        <text class="label">用户名</text>
+        <view class="input-wrap">
+          <input class="input" placeholder="请输入用户名" value="{{regUsername}}" bindinput="onInput" data-field="regUsername" />
+        </view>
       </view>
-    </view>
-    <view class="form-item">
-      <text class="label">手机号</text>
-      <view class="input-wrap">
-        <input class="input" type="number" maxlength="11" placeholder="请输入手机号" value="{{regPhone}}" bindinput="onInput" data-field="regPhone" />
+      <view class="form-item">
+        <text class="label">手机号</text>
+        <view class="input-wrap">
+          <input class="input" type="number" maxlength="11" placeholder="请输入手机号" value="{{regPhone}}" bindinput="onInput" data-field="regPhone" />
+        </view>
       </view>
-    </view>
-    <view class="form-item">
-      <text class="label">密码</text>
-      <view class="input-wrap">
-        <input class="input" password placeholder="请输入密码" value="{{regPassword}}" bindinput="onInput" data-field="regPassword" />
+      <view class="form-item">
+        <text class="label">密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请输入密码" value="{{regPassword}}" bindinput="onInput" data-field="regPassword" />
+        </view>
       </view>
-    </view>
-    <view class="form-item">
-      <text class="label">再次输入密码</text>
-      <view class="input-wrap">
-        <input class="input" password placeholder="请再次输入密码" value="{{regPasswordConfirm}}" bindinput="onInput" data-field="regPasswordConfirm" />
+      <view class="form-item">
+        <text class="label">再次输入密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请再次输入密码" value="{{regPasswordConfirm}}" bindinput="onInput" data-field="regPasswordConfirm" />
+        </view>
       </view>
-    </view>
-    
-    <view class="action-btns">
-      <button class="btn-primary" bindtap="onRegister">注册</button>
-      <button class="btn-secondary" bindtap="toggleRegister">登录</button>
+      
+      <view class="action-btns">
+        <button class="btn-primary" bindtap="onRegister">注册</button>
+        <button class="btn-secondary" bindtap="toggleRegister">登录</button>
+      </view>
     </view>
   </view>
 

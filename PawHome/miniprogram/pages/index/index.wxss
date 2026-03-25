@@ -24,10 +24,10 @@ page {
     transform: translate(0, 0) scale(1) rotate(0deg);
   }
   33% {
-    transform: translate(15rpx, -15rpx) scale(1.05) rotate(5deg);
+    transform: translate(12rpx, -12rpx) scale(1.03) rotate(3deg);
   }
   66% {
-    transform: translate(-10rpx, 10rpx) scale(0.95) rotate(-5deg);
+    transform: translate(-8rpx, 8rpx) scale(0.97) rotate(-3deg);
   }
   100% {
     transform: translate(0, 0) scale(1) rotate(0deg);

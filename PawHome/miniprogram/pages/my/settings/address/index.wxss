@@ -1,0 +1,73 @@
+page {
+  background: #f7f8fa;
+}
+
+.addr-item {
+  align-items: stretch;
+}
+
+.addr-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.addr-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.addr-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  flex: 1;
+}
+
+.addr-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addr-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 84rpx;
+  height: 52rpx;
+  padding: 0 18rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 122, 36, 0.08);
+  color: #ff7a24;
+}
+
+.addr-meta {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.addr-desc {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: #475569;
+  line-height: 1.6;
+  word-break: break-all;
+}

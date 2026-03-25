@@ -26,8 +26,11 @@ Page({
     const statusBarHeight = sys.statusBarHeight || 0
     const navHeight = statusBarHeight + 44
 
-    const conversationId = options.id || ''
+    // 优先使用传过来的 id 作为 conversationId，如果没有（比如从主页来）就生成一个与 peerId 强绑定的稳定 ID
+    // 这样保证同一个 peerId 永远对应同一个本地 mock conversationId
     const peerId = options.peerId ? decodeURIComponent(options.peerId) : ''
+    const conversationId = options.id || (peerId ? `conv_mock_${peerId}` : '')
+    
     const title = options.nickname ? decodeURIComponent(options.nickname) : '私信'
     const peerAvatar = options.avatarUrl ? decodeURIComponent(options.avatarUrl) : 'https://picsum.photos/seed/peer/100'
 
@@ -42,7 +45,9 @@ Page({
     })
 
     await this.loadMessages()
-    await markConversationRead(conversationId)
+    if (conversationId) {
+      await markConversationRead(conversationId)
+    }
     this.scrollToBottom()
   },
 

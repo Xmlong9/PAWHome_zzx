@@ -1,0 +1,93 @@
+<view class="settings-page">
+  <view class="group-title">账号与安全</view>
+  <view class="list-group">
+    <view class="list-item" bindtap="goPassword">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/修改密码.png" mode="aspectFit" />
+        <text class="label">修改密码</text>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+    <view class="list-item" bindtap="goPhone">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/手机号验证.png" mode="aspectFit" />
+        <text class="label">手机号验证</text>
+      </view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+
+  <view class="group-title">购物设置</view>
+  <view class="list-group">
+    <view class="list-item" bindtap="goAddress">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/收货地址.png" mode="aspectFit" />
+        <text class="label">收货地址</text>
+      </view>
+      <view class="item-right">
+        <text class="value-text"></text>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group-title">宠物信息管理</view>
+  <view class="list-group">
+    <view class="list-item" bindtap="goPets">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/宠物档案.png" mode="aspectFit" />
+        <text class="label">宠物档案</text>
+      </view>
+      <view class="item-right">
+        <text class="value-text">{{petCount}} 只宠物</text>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group-title">通知设置</view>
+  <view class="list-group">
+    <view class="list-item">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/推送通知.png" mode="aspectFit" />
+        <text class="label">推送通知</text>
+      </view>
+      <switch checked="{{settings.pushNotice}}" data-field="pushNotice" bindchange="onNoticeChange" color="#ff9e59" />
+    </view>
+    <view class="list-item">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/互动提醒.png" mode="aspectFit" />
+        <text class="label">互动提醒</text>
+      </view>
+      <switch checked="{{settings.interactNotice}}" data-field="interactNotice" bindchange="onNoticeChange" color="#ff9e59" />
+    </view>
+  </view>
+
+  <view class="group-title">隐私设置</view>
+  <view class="list-group">
+    <view class="list-item" bindtap="onChangeHomeAccess">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/主页访问权限.png" mode="aspectFit" />
+        <text class="label">主页访问权限</text>
+      </view>
+      <view class="item-right">
+        <text class="value-text">{{settings.homeAccess}}</text>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+    <view class="list-item" bindtap="onChangeCommentAccess">
+      <view class="item-left">
+        <image class="icon" src="/assets/images/mine/评论权限.png" mode="aspectFit" />
+        <text class="label">评论权限</text>
+      </view>
+      <view class="item-right">
+        <text class="value-text">{{settings.commentAccess}}</text>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="btn-wrap">
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </view>
+</view>

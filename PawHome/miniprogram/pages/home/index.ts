@@ -11,9 +11,36 @@ Page({
     indicatorBars: [],
     safeTop: 0,
     promo: null as any,
-    communityCard: null as any
+    communityCard: null as any,
+    showBlob: false
   },
-  goSearch(){ wx.switchTab({ url: '/pages/community/index' }); },
+  onShow() {
+    this.setData({ showBlob: true });
+  },
+  onHide() {
+    this.setData({ showBlob: false });
+  },
+  goSearch() {
+    wx.navigateTo({ url: "/pages/search/index?type=community" });
+  },
+
+  scanCode() {
+    wx.scanCode({
+      success: (res) => {
+        wx.showToast({ title: '扫码成功', icon: 'none' });
+      }
+    });
+  },
+
+  chooseLocation() {
+    wx.chooseLocation({
+      success: (res) => {
+        if (res.name) {
+          this.setData({ location: res.name });
+        }
+      }
+    });
+  },
   goCommunity(){ wx.switchTab({ url: '/pages/community/index' }); },
   goShop(){ wx.switchTab({ url: '/pages/shop/index' }); },
   goService(){ wx.navigateTo({ url: '/pages/service/index' }); },

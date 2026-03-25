@@ -13,7 +13,8 @@ Page({
     page: 1,
     pageSize: 10,
     loading: false,
-    hasMore: true
+    hasMore: true,
+    showBlob: false
   },
 
   onLoad() {
@@ -24,6 +25,14 @@ Page({
     });
 
     this.loadPosts(true);
+  },
+
+  onShow() {
+    this.setData({ showBlob: true });
+  },
+
+  onHide() {
+    this.setData({ showBlob: false });
   },
 
   onPullDownRefresh() {
@@ -120,6 +129,15 @@ Page({
     });
   },
 
+  goUserProfile(e: WechatMiniprogram.TouchEvent) {
+    const userId = e.currentTarget.dataset.userid;
+    if (userId) {
+      wx.navigateTo({
+        url: `/pages/user-profile/index?id=${userId}`
+      });
+    }
+  },
+
   goCreatePost() {
     wx.navigateTo({
       url: '/pages/post-create/index'
@@ -130,5 +148,9 @@ Page({
     wx.navigateTo({
       url: '/pages/messages/index'
     });
+  },
+
+  goSearch() {
+    wx.navigateTo({ url: "/pages/search/index?type=community" });
   }
 });

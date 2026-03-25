@@ -20,6 +20,18 @@
     "pages/shop/favorites",
     "pages/service/index",
     "pages/my/index",
+    "pages/my/edit-profile/index",
+    "pages/my/settings/index",
+    "pages/my/settings/password/index",
+    "pages/my/settings/phone/index",
+    "pages/my/settings/address/index",
+    "pages/my/settings/pets/index",
+    "pages/my/settings/pets/add/index",
+    "pages/my/settings/pets/detail/index",
+    "pages/my/favorites/index",
+    "pages/my/history/index",
+    "pages/user-profile/index",
+    "pages/search/index",
     "pages/logs/logs"
   ],
   "window": {
@@ -29,8 +41,7 @@
   },
   "style": "v2",
   "componentFramework": "glass-easel",
-  "lazyCodeLoading": "requiredComponents"
-  ,
+  "lazyCodeLoading": "requiredComponents",
   "tabBar": {
     "color": "#666666",
     "selectedColor": "#07c160",

@@ -19,7 +19,8 @@ Page({
       { id: "favorites", title: "收藏", icon: "/assets/icons/shop/收藏.png", url: "/pages/shop/favorites" }
     ] as ShopEntry[],
     products: [] as ShopProduct[],
-    loading: false
+    loading: false,
+    showBlob: false
   },
   onSearchInput(e: WechatMiniprogram.Input) {
     this.setData({ searchText: e.detail.value || "" })
@@ -31,7 +32,14 @@ Page({
     })
   },
   onShow() {
+    this.setData({ showBlob: true });
     this.loadProducts()
+  },
+  onHide() {
+    this.setData({ showBlob: false });
+  },
+  goSearch() {
+    wx.navigateTo({ url: "/pages/search/index?type=shop" });
   },
   async loadProducts() {
     this.setData({ loading: true })

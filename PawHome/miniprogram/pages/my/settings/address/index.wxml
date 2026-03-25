@@ -1,0 +1,32 @@
+<view class="ui-page ui-page--with-bottom">
+  <view class="ui-hero">
+    <text class="ui-title">收货地址</text>
+    <text class="ui-subtitle">用于订单配送与售后服务</text>
+  </view>
+
+  <scroll-view scroll-y class="ui-list" wx:if="{{addresses.length > 0}}">
+    <view class="ui-item addr-item" wx:for="{{addresses}}" wx:key="id" data-id="{{item.id}}" bindtap="onEdit">
+      <view class="addr-main">
+        <view class="addr-top">
+          <view class="addr-left">
+            <text class="addr-name">{{item.name}}</text>
+            <text class="ui-chip" wx:if="{{item.isDefault}}">默认</text>
+          </view>
+          <view class="addr-edit" data-id="{{item.id}}" catchtap="onEdit">编辑</view>
+        </view>
+        <view class="addr-meta">{{item.phone}}</view>
+        <view class="addr-desc">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="ui-empty" wx:else>
+    <view class="ui-empty-illus"></view>
+    <text class="ui-empty-title">暂无收货地址</text>
+    <text class="ui-empty-desc">添加一个地址，下单更快捷</text>
+  </view>
+
+  <view class="ui-bottom-bar">
+    <button class="ui-btn-primary" bindtap="onAdd">新增收货地址</button>
+  </view>
+</view>

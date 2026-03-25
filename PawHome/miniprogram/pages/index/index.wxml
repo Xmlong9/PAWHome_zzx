@@ -1,11 +1,26 @@
 <view class="login-container">
   <!-- Top Section -->
   <view class="top-section {{isRegister ? 'register-top' : ''}}">
-    <view class="bg-circle-orange">
-      <text class="welcome-text" wx:if="{{isRegister}}">欢迎来到\n爱宠家！</text>
+    <!-- SVG Filter for Gooey Effect -->
+    <view style="display: none;">
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
     </view>
-    <view class="bg-circle-grey">
-      <text class="hi-text" wx:if="{{!isRegister}}">Hi!</text>
+    
+    <view class="gooey-container">
+      <view class="bg-circle-orange">
+        <text class="welcome-text" style="opacity: {{isRegister ? 1 : 0}}; transform: scale({{isRegister ? 1 : 0.5}});">欢迎来到\n爱宠家！</text>
+      </view>
+      <view class="bg-circle-grey">
+        <text class="hi-text" style="opacity: {{!isRegister ? 1 : 0}}; transform: scale({{!isRegister ? 1 : 0.5}}) rotate(-10deg);">Hi!</text>
+      </view>
     </view>
     <image class="cat-image" src="/assets/images/login/cat.png" mode="aspectFit"></image>
   </view>

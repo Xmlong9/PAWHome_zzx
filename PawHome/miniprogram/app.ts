@@ -12,11 +12,11 @@ App<IAppOption>({
           const data = await code2Session(r.code);
           setToken(data.token);
         } catch (e) {
-          wx.redirectTo({ url: "/pages/login/index" });
+          wx.redirectTo({ url: "/pages/index/index" });
         }
       },
       fail: () => {
-        wx.redirectTo({ url: "/pages/login/index" });
+        wx.redirectTo({ url: "/pages/index/index" });
       }
     });
   },

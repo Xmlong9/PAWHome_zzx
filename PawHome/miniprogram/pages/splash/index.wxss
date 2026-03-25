@@ -15,13 +15,17 @@
 }
 
 .skip-btn {
-  position: absolute;
-  top: 100rpx; /* safe area top + margin */
-  right: 40rpx;
-  background-color: rgba(0, 0, 0, 0.3);
+  position: fixed;
+  bottom: 32rpx;
+  right: 32rpx;
+  background-color: rgba(0, 0, 0, 0.6);
   color: #fff;
   font-size: 26rpx;
   padding: 8rpx 24rpx;
   border-radius: 30rpx;
   z-index: 10;
+}
+
+.skip-btn-hover {
+  opacity: 0.8;
 }

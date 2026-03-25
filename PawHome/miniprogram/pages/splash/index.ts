@@ -1,19 +1,14 @@
 Page({
   data: {
-    countdown: 2,
+    countdown: 3,
     timer: null as any
   },
 
   onLoad() {
-    // 动态调整跳过按钮的安全距离
-    const sysInfo = wx.getSystemInfoSync();
-    this.setData({
-      safeTop: (sysInfo.statusBarHeight || 20) + 10
-    });
+    this.startTimer();
   },
 
   onShow() {
-    this.startTimer();
   },
 
   onHide() {
@@ -50,10 +45,8 @@ Page({
   },
 
   goToLogin() {
-    // 判断是否已经登录过，或者直接跳转到 login
-    // 如果想要以后加判断，这里可以拦截
     wx.redirectTo({
-      url: '/pages/login/index'
+      url: '/pages/index/index'
     });
   }
 });

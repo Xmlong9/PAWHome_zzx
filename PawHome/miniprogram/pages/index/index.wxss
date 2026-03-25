@@ -155,7 +155,7 @@ page {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(40rpx);
+    transform: translateY(120rpx);
   }
   to {
     opacity: 1;
@@ -164,7 +164,7 @@ page {
 }
 
 .fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .form-item {

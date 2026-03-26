@@ -47,7 +47,7 @@ def _resolve_sku(product: dict[str, Any], spec: str | None) -> dict[str, Any] | 
   )
   if spec:
     q = q.eq("spec", spec)
-  res = q.order("id", desc=False).limit(1).execute()
+  res: Any = q.order("id", desc=False).limit(1).execute()
   return (res.data or [None])[0]
 
 
@@ -56,7 +56,7 @@ def _get_or_create_cart_id() -> int:
   found: Any = client.table("carts").select("id").eq("user_id", g.user_id).maybe_single().execute()
   if found.data and found.data.get("id"):
     return int(found.data["id"])
-  created = client.table("carts").insert({"user_id": g.user_id}).execute()
+  created: Any = client.table("carts").insert({"user_id": g.user_id}).execute()
   return int(created.data[0]["id"])
 
 
@@ -115,7 +115,7 @@ def _build_preview(from_: str, product_id: str | None, count: int | None) -> dic
     items = [{"product": product, "sku": sku, "count": int(count or 1)}]
   else:
     cart_id = _get_or_create_cart_id()
-    rows = (
+    rows: Any = (
       client.table("cart_items")
       .select("sku_id,quantity,checked,invalid,skus(id,spec,price,market_price,products(id,code,name,cover_url))")
       .eq("cart_id", cart_id)
@@ -137,7 +137,7 @@ def _build_preview(from_: str, product_id: str | None, count: int | None) -> dic
 def list_products():
   p = to_range_query(request.args.get("page"), request.args.get("pageSize"))
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("products")
     .select("id,code,name,description,cover_url,sold_count,rating", count=CountMethod.exact)
     .eq("status", 1)
@@ -154,7 +154,7 @@ def get_product(product_id_or_code: str):
   if not product:
     raise AppError(code="not_found", message="商品不存在", status_code=404)
   client = get_supabase_user()
-  skus = client.table("skus").select("id,spec,price,market_price,stock").eq("product_id", product["id"]).eq("status", 1).order("id").execute()
+  skus: Any = client.table("skus").select("id,spec,price,market_price,stock").eq("product_id", product["id"]).eq("status", 1).order("id").execute()
   return ok({"product": product, "skus": skus.data or []})
 
 
@@ -162,7 +162,7 @@ def get_product(product_id_or_code: str):
 @require_auth
 def list_favorites():
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("product_favorites")
     .select("product_id,products(id,code,name,description,cover_url,sold_count,rating)")
     .eq("user_id", g.user_id)
@@ -183,7 +183,7 @@ def toggle_favorite(product_id_or_code: str):
   if not product:
     raise AppError(code="not_found", message="商品不存在", status_code=404)
   client = get_supabase_user()
-  existing = (
+  existing: Any = (
     client.table("product_favorites")
     .select("id")
     .eq("user_id", g.user_id)
@@ -203,7 +203,7 @@ def toggle_favorite(product_id_or_code: str):
 def list_cart():
   cart_id = _get_or_create_cart_id()
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("cart_items")
     .select("sku_id,quantity,checked,invalid,skus(id,spec,price,market_price,products(id,code,name,cover_url))")
     .eq("cart_id", cart_id)
@@ -225,7 +225,7 @@ def add_to_cart():
     raise AppError(code="not_found", message="SKU 不存在", status_code=404)
   cart_id = _get_or_create_cart_id()
   client = get_supabase_user()
-  existing = (
+  existing: Any = (
     client.table("cart_items")
     .select("id,quantity")
     .eq("cart_id", cart_id)
@@ -304,7 +304,7 @@ def submit_order():
   order_no = f"SO{uuid.uuid4().hex[:10].upper()}"
 
   client = get_supabase_user()
-  inserted = (
+  inserted: Any = (
     client.table("orders")
     .insert(
       {
@@ -354,7 +354,7 @@ def list_orders():
   q = client.table("orders").select("id,order_no,status,pay_amount,created_at,address_snapshot")
   if status != "all":
     q = q.eq("status", status)
-  res = q.eq("buyer_id", g.user_id).order("created_at", desc=True).execute()
+  res: Any = q.eq("buyer_id", g.user_id).order("created_at", desc=True).execute()
   return ok({"list": res.data or []})
 
 

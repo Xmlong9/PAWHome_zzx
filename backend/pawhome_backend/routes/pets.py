@@ -46,7 +46,7 @@ class UpdatePetBody(BaseModel):
 def list_pets():
   p = to_range_query(request.args.get("page"), request.args.get("pageSize"))
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("pets")
     .select("id,name,avatar_url,type,breed,gender,weight_kg,is_sterilized,birthday,description,created_at", count=CountMethod.exact)
     .eq("owner_id", g.user_id)
@@ -65,7 +65,7 @@ def create_pet():
   client = get_supabase_user()
   payload = body.model_dump()
   payload["owner_id"] = g.user_id
-  res = client.table("pets").insert(payload).execute()
+  res: Any = client.table("pets").insert(payload).execute()
   return ok(res.data[0] if res.data else None, status_code=201)
 
 
@@ -73,7 +73,7 @@ def create_pet():
 @require_auth
 def get_pet(pet_id: str):
   client = get_supabase_user()
-  res = client.table("pets").select("*").eq("id", pet_id).maybe_single().execute()
+  res: Any = client.table("pets").select("*").eq("id", pet_id).maybe_single().execute()
   return ok(res.data)
 
 
@@ -85,7 +85,7 @@ def update_pet(pet_id: str):
   patch: dict[str, Any] = {k: v for k, v in body.model_dump().items() if v is not None}
   if not patch:
     return ok({"ok": True})
-  res = client.table("pets").update(patch).eq("id", pet_id).execute()
+  res: Any = client.table("pets").update(patch).eq("id", pet_id).execute()
   return ok({"ok": True, "data": res.data})
 
 
@@ -93,5 +93,5 @@ def update_pet(pet_id: str):
 @require_auth
 def delete_pet(pet_id: str):
   client = get_supabase_user()
-  res = client.table("pets").update({"deleted_at": datetime.now(timezone.utc).isoformat()}).eq("id", pet_id).execute()
+  res: Any = client.table("pets").update({"deleted_at": datetime.now(timezone.utc).isoformat()}).eq("id", pet_id).execute()
   return ok({"ok": True, "data": res.data})

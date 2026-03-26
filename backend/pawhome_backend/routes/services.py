@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flask import Blueprint, g, request
 from pydantic import BaseModel, Field
 
@@ -26,7 +28,7 @@ class CreateAppointmentBody(BaseModel):
 def list_orgs():
   p = to_range_query(request.args.get("page"), request.args.get("pageSize"))
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("service_orgs")
     .select("id,name,address,phone,geo_lat,geo_lng", count=CountMethod.exact)
     .eq("status", 1)
@@ -44,7 +46,7 @@ def list_service_items():
   q = client.table("service_items").select("id,org_id,type_code,name,price,duration_min")
   if org_id:
     q = q.eq("org_id", int(org_id))
-  res = q.eq("status", 1).order("id").execute()
+  res: Any = q.eq("status", 1).order("id").execute()
   return ok({"list": res.data or []})
 
 
@@ -55,7 +57,7 @@ def list_schedules():
   q = client.table("schedules").select("id,org_id,service_item_id,start_time,end_time,capacity,reserved")
   if service_item_id:
     q = q.eq("service_item_id", int(service_item_id))
-  res = q.eq("status", 1).order("start_time").execute()
+  res: Any = q.eq("status", 1).order("start_time").execute()
   return ok({"list": res.data or []})
 
 
@@ -64,7 +66,7 @@ def list_schedules():
 def create_appointment():
   body = parse_json(CreateAppointmentBody)
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("appointments")
     .insert(
       {
@@ -84,7 +86,7 @@ def create_appointment():
 @require_auth
 def list_my_appointments():
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("appointments")
     .select("id,org_id,service_item_id,schedule_id,status,created_at")
     .eq("user_id", g.user_id)

@@ -44,9 +44,9 @@ def _parse_post_id(value: str) -> int:
 
 def _recount_post_counts(post_id: int) -> dict[str, int]:
   admin = get_supabase_admin()
-  likes = admin.table("post_likes").select("id", count="exact").eq("post_id", post_id).execute()
-  comments = admin.table("comments").select("id", count="exact").eq("post_id", post_id).execute()
-  favorites = admin.table("post_favorites").select("id", count="exact").eq("post_id", post_id).execute()
+  likes: Any = admin.table("post_likes").select("id", count=CountMethod.exact).eq("post_id", post_id).execute()
+  comments: Any = admin.table("comments").select("id", count=CountMethod.exact).eq("post_id", post_id).execute()
+  favorites: Any = admin.table("post_favorites").select("id", count=CountMethod.exact).eq("post_id", post_id).execute()
   counts = {
     "like_count": int(likes.count or 0),
     "comment_count": int(comments.count or 0),
@@ -74,7 +74,7 @@ def list_posts():
   else:
     q = q.order("like_count", desc=True).order("created_at", desc=True)
 
-  res = q.range(p.start, p.end).execute()
+  res: Any = q.range(p.start, p.end).execute()
   return ok({"list": res.data or [], "page": p.page, "pageSize": p.page_size, "total": res.count or 0})
 
 
@@ -82,7 +82,7 @@ def list_posts():
 def get_post(post_id: str):
   pid = _parse_post_id(post_id)
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("posts")
     .select(
       "id,author_id,title,content,pet_type,visibility,status,like_count,comment_count,favorite_count,created_at,"
@@ -110,7 +110,7 @@ def create_post():
     "location_name": body.location_name,
     "location_address": body.location_address,
   }
-  post_res = client.table("posts").insert(payload).execute()
+  post_res: Any = client.table("posts").insert(payload).execute()
   post = post_res.data[0]
   pid = post["id"]
 
@@ -128,7 +128,7 @@ def create_post():
       )
     client.table("post_media").insert(media_payload).execute()
 
-  full = (
+  full: Any = (
     client.table("posts")
     .select(
       "id,author_id,title,content,pet_type,visibility,status,like_count,comment_count,favorite_count,created_at,"
@@ -147,7 +147,7 @@ def list_comments(post_id: str):
   pid = _parse_post_id(post_id)
   p = to_range_query(request.args.get("page"), request.args.get("pageSize"), max_page_size=100)
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("comments")
     .select("id,post_id,author_id,parent_id,content,like_count,created_at,profiles(id,nickname,avatar_url)", count=CountMethod.exact)
     .eq("post_id", pid)
@@ -164,7 +164,7 @@ def add_comment(post_id: str):
   pid = _parse_post_id(post_id)
   body = parse_json(CreateCommentBody)
   client = get_supabase_user()
-  res = (
+  res: Any = (
     client.table("comments")
     .insert({"post_id": pid, "author_id": g.user_id, "content": body.content, "parent_id": body.parent_id})
     .execute()

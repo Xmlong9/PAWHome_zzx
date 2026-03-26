@@ -39,7 +39,24 @@ def upload_file():
 
   admin = get_supabase_admin()
   options: FileOptions = {"content-type": content_type, "x-upsert": "false"}
-  admin.storage.from_(bucket).upload(key, data, options)
+  try:
+    admin.storage.from_(bucket).upload(key, data, options)
+  except Exception as e:
+    print(
+      f"[uploads.upload_file] request_id={getattr(g, 'request_id', None)} user_id={getattr(g, 'user_id', None)} bucket={bucket} path={key} content_type={content_type} bytes={len(data)} error_type={type(e).__name__} error={e}"
+    )
+    raise AppError(
+      code="upload_failed",
+      message=str(e) or "上传失败",
+      status_code=500,
+      details={
+        "bucket": bucket,
+        "path": key,
+        "content_type": content_type,
+        "bytes": len(data),
+        "type": type(e).__name__,
+      },
+    ) from e
 
   s = get_settings()
   public_url = f"{s.supabase_url}/storage/v1/object/public/{bucket}/{key}"

@@ -95,7 +95,7 @@ function refreshSessionHttp(refresh_token: string): Promise<import("./session").
   });
 }
 
-async function requestOnce<T>(options: WechatMiniprogram.RequestOption): Promise<{ statusCode: number; body: any }> {
+async function requestOnce(options: WechatMiniprogram.RequestOption): Promise<{ statusCode: number; body: any }> {
   const token = getAccessToken();
   return new Promise((resolve, reject) => {
     wx.request({
@@ -124,11 +124,11 @@ export async function request<T>(options: WechatMiniprogram.RequestOption & { re
     throw new ApiRequestError("缺少 Bearer Token", { statusCode: 401, apiError: { code: "unauthorized", message: "缺少 Bearer Token" } });
   }
 
-  const { statusCode, body } = await requestOnce<T>(options);
+  const { statusCode, body } = await requestOnce(options);
   if (statusCode === 401 && retryOnUnauthorized) {
     const next = await ensureFreshSession(refreshSessionHttp);
     if (next?.access_token) {
-      const r2 = await requestOnce<T>({ ...options, retryOnUnauthorized: false } as any);
+      const r2 = await requestOnce({ ...options, retryOnUnauthorized: false } as any);
       return unwrapOrThrow<T>(r2.statusCode, r2.body);
     }
   }

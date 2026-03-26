@@ -92,10 +92,14 @@ def register():
 def login():
   body = parse_json(LoginBody)
   anon = get_supabase_user()
+  res: Any | None = None
   try:
-    res: Any = anon.auth.sign_in_with_password({"email": body.email, "password": body.password})
+    res = anon.auth.sign_in_with_password({"email": body.email, "password": body.password})
   except Exception as e:
     _raise_auth_error(e)
+    raise
+  if res is None:
+    raise AppError(code="auth_error", message="登录失败", status_code=400)
   session = getattr(res, "session", None)
   if session and getattr(session, "access_token", None) and getattr(getattr(session, "user", None), "id", None):
     _ensure_profile(session.access_token, session.user.id, getattr(session.user, "email", None), None)
@@ -106,10 +110,14 @@ def login():
 def refresh():
   body = parse_json(RefreshBody)
   anon = get_supabase_user()
+  res: Any | None = None
   try:
-    res: Any = anon.auth.refresh_session(body.refresh_token)
+    res = anon.auth.refresh_session(body.refresh_token)
   except Exception as e:
     _raise_auth_error(e)
+    raise
+  if res is None:
+    raise AppError(code="auth_error", message="刷新失败", status_code=400)
   session = getattr(res, "session", None)
   if session and getattr(session, "access_token", None) and getattr(getattr(session, "user", None), "id", None):
     _ensure_profile(session.access_token, session.user.id, getattr(session.user, "email", None), None)

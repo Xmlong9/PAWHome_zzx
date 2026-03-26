@@ -6,6 +6,7 @@ from flask import Blueprint, g, request
 from pydantic import BaseModel, Field
 
 from pawhome_backend.common.auth import require_auth
+from pawhome_backend.common.errors import AppError
 from pawhome_backend.common.pagination import to_range_query
 from pawhome_backend.common.responses import ok
 from pawhome_backend.common.validation import parse_json
@@ -110,9 +111,21 @@ def create_post():
     "location_name": body.location_name,
     "location_address": body.location_address,
   }
-  post_res: Any = client.table("posts").insert(payload).execute()
-  post = post_res.data[0]
-  pid = post["id"]
+
+  try:
+    post_res: Any = client.table("posts").insert(payload).execute()
+    post = post_res.data[0]
+    pid = post["id"]
+  except Exception as e:
+    print(
+      f"[posts.create_post] request_id={getattr(g, 'request_id', None)} stage=insert_post user_id={getattr(g, 'user_id', None)} error_type={type(e).__name__} error={e}"
+    )
+    raise AppError(
+      code="post_create_failed",
+      message=str(e) or "创建帖子失败",
+      status_code=500,
+      details={"stage": "insert_post", "type": type(e).__name__},
+    ) from e
 
   if body.media:
     media_payload = []
@@ -126,19 +139,42 @@ def create_post():
           "sort_order": m.sort_order if m.sort_order is not None else idx,
         }
       )
-    client.table("post_media").insert(media_payload).execute()
+    try:
+      client.table("post_media").insert(media_payload).execute()
+    except Exception as e:
+      print(
+        f"[posts.create_post] request_id={getattr(g, 'request_id', None)} stage=insert_media post_id={pid} user_id={getattr(g, 'user_id', None)} media_count={len(media_payload)} error_type={type(e).__name__} error={e}"
+      )
+      raise AppError(
+        code="post_create_failed",
+        message=str(e) or "创建帖子媒体失败",
+        status_code=500,
+        details={"stage": "insert_media", "type": type(e).__name__, "post_id": pid},
+      ) from e
 
-  full: Any = (
-    client.table("posts")
-    .select(
-      "id,author_id,title,content,pet_type,visibility,status,like_count,comment_count,favorite_count,created_at,"
-      "profiles(id,nickname,avatar_url),"
-      "post_media(id,type,url,cover_url,sort_order)",
+  try:
+    full: Any = (
+      client.table("posts")
+      .select(
+        "id,author_id,title,content,pet_type,visibility,status,like_count,comment_count,favorite_count,created_at,"
+        "profiles(id,nickname,avatar_url),"
+        "post_media(id,type,url,cover_url,sort_order)",
+      )
+      .eq("id", pid)
+      .maybe_single()
+      .execute()
     )
-    .eq("id", pid)
-    .maybe_single()
-    .execute()
-  )
+  except Exception as e:
+    print(
+      f"[posts.create_post] request_id={getattr(g, 'request_id', None)} stage=select_full post_id={pid} user_id={getattr(g, 'user_id', None)} error_type={type(e).__name__} error={e}"
+    )
+    raise AppError(
+      code="post_create_failed",
+      message=str(e) or "查询帖子失败",
+      status_code=500,
+      details={"stage": "select_full", "type": type(e).__name__, "post_id": pid},
+    ) from e
+
   return ok(full.data, status_code=201)
 
 

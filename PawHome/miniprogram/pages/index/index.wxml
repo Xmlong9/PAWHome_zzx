@@ -1,7 +1,117 @@
-<!--index.wxml-->
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    <view class="userinfo">
+<view class="login-container">
+  <!-- Top Section -->
+  <view class="top-section {{isRegister ? 'register-top' : ''}}">
+    <!-- SVG Filter for Gooey Effect -->
+    <view style="display: none;">
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
+    </view>
+    
+    <view class="gooey-container">
+      <view class="bg-circle-orange">
+        <text class="welcome-text" style="opacity: {{isRegister ? 1 : 0}}; transform: scale({{isRegister ? 1 : 0.5}});">欢迎来到
+爱宠家！</text>
+      </view>
+      <view class="bg-circle-grey">
+        <text class="hi-text" style="opacity: {{!isRegister ? 1 : 0}}; transform: scale({{!isRegister ? 1 : 0.5}}) rotate(-10deg);">Hi!</text>
+      </view>
+    </view>
+    <image class="cat-image" src="/assets/images/login/cat.png" mode="aspectFit"></image>
+  </view>
+
+  <!-- Login Form -->
+  <view class="form-card" wx:if="{{!isRegister}}">
+    <view class="fade-in-up">
+      <view class="form-item">
+        <text class="label">账号</text>
+        <view class="input-wrap">
+          <input class="input" placeholder="请输入账号 / 手机号" value="{{account}}" bindinput="onInput" data-field="account" />
+        </view>
+      </view>
+      
+      <view class="form-item" wx:if="{{loginType === 'password'}}">
+        <text class="label">密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请输入密码" value="{{password}}" bindinput="onInput" data-field="password" />
+        </view>
+        <view class="forgot-pwd">
+          <text class="small-text" bindtap="switchLoginType">验证码登录</text>
+          <text class="small-text">忘记密码？</text>
+        </view>
+      </view>
+
+      <view class="form-item" wx:if="{{loginType === 'sms'}}">
+        <text class="label">验证码</text>
+        <view class="sms-row">
+          <view class="input-wrap sms-input-wrap">
+            <input class="input" type="number" maxlength="6" placeholder="请输入验证码" value="{{code}}" bindinput="onInput" data-field="code" />
+          </view>
+          <button class="sms-btn" bindtap="onSend" disabled="{{smsSending}}">{{smsText}}</button>
+        </view>
+        <view class="forgot-pwd">
+          <text class="small-text" bindtap="switchLoginType">密码登录</text>
+        </view>
+      </view>
+
+      <view class="action-btns">
+        <button class="btn-primary" bindtap="onLogin">登录</button>
+        <button class="btn-secondary" bindtap="toggleRegister">注册</button>
+      </view>
+
+      <view class="extra-actions">
+        <text class="link-text" bindtap="onWxLogin">微信一键登录</text>
+        <text class="divider">|</text>
+        <text class="link-text" bindtap="onSkip">跳过登录（调试）</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Register Form -->
+  <view class="form-card" wx:else>
+    <view class="fade-in-up">
+      <view class="form-item">
+        <text class="label">用户名</text>
+        <view class="input-wrap">
+          <input class="input" placeholder="请输入用户名" value="{{regUsername}}" bindinput="onInput" data-field="regUsername" />
+        </view>
+      </view>
+      <view class="form-item">
+        <text class="label">手机号</text>
+        <view class="input-wrap">
+          <input class="input" type="number" maxlength="11" placeholder="请输入手机号" value="{{regPhone}}" bindinput="onInput" data-field="regPhone" />
+        </view>
+      </view>
+      <view class="form-item">
+        <text class="label">密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请输入密码" value="{{regPassword}}" bindinput="onInput" data-field="regPassword" />
+        </view>
+      </view>
+      <view class="form-item">
+        <text class="label">再次输入密码</text>
+        <view class="input-wrap">
+          <input class="input" password placeholder="请再次输入密码" value="{{regPasswordConfirm}}" bindinput="onInput" data-field="regPasswordConfirm" />
+        </view>
+      </view>
+      
+      <view class="action-btns">
+        <button class="btn-primary" bindtap="onRegister">注册</button>
+        <button class="btn-secondary" bindtap="toggleRegister">登录</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- User Info Section (Original index.wxml logic) -->
+  <view class="userinfo-modal" wx:if="{{showUserInfo}}">
+    <view class="userinfo-content">
+      <text class="modal-title">获取头像昵称</text>
       <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
         <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
           <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
@@ -15,16 +125,7 @@
         <button wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile"> 获取头像昵称 </button>
         <view wx:else> 请使用2.10.4及以上版本基础库 </view>
       </block>
-      <block wx:else>
-        <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
-        <text class="userinfo-nickname">{{userInfo.nickName}}</text>
-      </block>
+      <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goMain">完成</button>
     </view>
-    <view class="usermotto">
-      <text class="user-motto">{{motto}}</text>
   </view>
-  <view style="margin:24rpx">
-    <button class="enter-btn" bindtap="goMain">进入主页面</button>
-  </view>
-  </view>
-</scroll-view>
+</view>

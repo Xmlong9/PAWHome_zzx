@@ -308,6 +308,26 @@
   line-height: 1.6;
 }
 
+/* 页面淡入过渡动画 */
+@keyframes pageFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(15rpx);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageFadeIn 0.35s ease-out forwards;
+}
+
+.page-hidden {
+  opacity: 0 !important;
+}
+
 /* 页面顶部圆弧背景进场动画：从右边滚到左边（首页、社区） */
 @keyframes rollFromRightToLeft {
   0% {

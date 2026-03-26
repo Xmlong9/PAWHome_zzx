@@ -1,0 +1,7 @@
+<view class="splash-container">
+  <image class="splash-bg" src="/assets/images/login/splash-bg.png" mode="aspectFill"></image>
+
+  <view class="skip-btn" hover-class="skip-btn-hover" bindtap="onSkip">
+    跳过 {{countdown}}s
+  </view>
+</view>

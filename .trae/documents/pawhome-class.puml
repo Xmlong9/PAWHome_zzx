@@ -1,0 +1,110 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Profile {
+  +id: uuid
+  +nickname: string
+  +avatar_url: string
+  +location: string
+  +signature: string
+  +gender: string
+  +birthday: date
+}
+
+class Pet {
+  +id: uuid
+  +owner_id: uuid
+  +name: string
+  +breed: string
+  +weight_kg: number
+}
+
+class Post {
+  +id: bigint
+  +author_id: uuid
+  +title: string
+  +content: string
+  +visibility: enum
+  +status: enum
+}
+
+class PostMedia {
+  +id: bigint
+  +post_id: bigint
+  +type: enum
+  +url: string
+}
+
+class Comment {
+  +id: bigint
+  +post_id: bigint
+  +author_id: uuid
+  +parent_id: bigint
+  +content: string
+}
+
+class Product {
+  +id: bigint
+  +code: string
+  +name: string
+  +cover_url: string
+}
+
+class Sku {
+  +id: bigint
+  +product_id: bigint
+  +spec: string
+  +price: number
+}
+
+class Order {
+  +id: bigint
+  +order_no: string
+  +buyer_id: uuid
+  +status: enum
+  +pay_amount: number
+}
+
+class OrderItem {
+  +id: bigint
+  +order_id: bigint
+  +sku_id: bigint
+  +quantity: int
+}
+
+class ServiceOrg {
+  +id: bigint
+  +name: string
+  +geo_lat: number
+  +geo_lng: number
+}
+
+class ServiceItem {
+  +id: bigint
+  +org_id: bigint
+  +type_code: string
+  +name: string
+  +price: number
+}
+
+class Appointment {
+  +id: bigint
+  +user_id: uuid
+  +service_item_id: bigint
+  +schedule_id: bigint
+  +status: enum
+}
+
+Profile "1" -- "*" Pet
+Profile "1" -- "*" Post
+Post "1" -- "*" PostMedia
+Post "1" -- "*" Comment
+Product "1" -- "*" Sku
+Profile "1" -- "*" Order
+Order "1" -- "*" OrderItem
+ServiceOrg "1" -- "*" ServiceItem
+Profile "1" -- "*" Appointment
+ServiceItem "1" -- "*" Appointment
+
+@enduml
+

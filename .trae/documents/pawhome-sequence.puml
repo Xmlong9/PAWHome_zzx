@@ -1,0 +1,48 @@
+@startuml
+
+title 发帖（含多图上传）
+actor User
+participant MiniProgram as MP
+participant Backend as API
+participant Storage as SupabaseStorage
+participant DB as SupabaseDB
+
+User -> MP: 选择图片/输入内容
+MP -> API: POST /uploads/presign (N 个文件)
+API -> Storage: 生成上传凭证/路径
+Storage --> API: 上传信息（bucket/path）
+API --> MP: 返回 uploadUrls / objectPaths
+MP -> Storage: 直接上传文件到 Storage
+MP -> API: POST /posts (content, mediaPaths, visibility)
+API -> DB: INSERT posts / post_media
+DB --> API: 新帖子 id
+API --> MP: 返回帖子详情
+
+newpage
+title 下单（从购物车/详情页）
+User -> MP: 进入结算页
+MP -> API: POST /shop/order/preview
+API -> DB: 查询 sku/库存/优惠
+DB --> API: 预览金额
+API --> MP: 返回预览
+User -> MP: 提交订单
+MP -> API: POST /shop/order
+API -> DB: INSERT orders/order_items; 预占库存
+DB --> API: order_no
+API --> MP: 返回订单信息
+User -> MP: 发起支付
+MP -> API: POST /shop/pay
+API -> DB: INSERT payments
+API --> MP: 返回支付参数
+
+newpage
+title 私信发送消息
+User -> MP: 输入文本并发送
+MP -> API: POST /im/messages
+API -> DB: INSERT dm_messages; 更新 dm_conversations.last_message
+DB --> API: message_id
+API --> MP: 返回消息
+API -> MP: (Realtime) 推送给对方新消息事件
+
+@enduml
+

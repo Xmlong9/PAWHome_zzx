@@ -6,11 +6,11 @@
   - [x] SubTask 1.3: 编写 Supabase 数据库迁移 SQL 文件（`supabase/migrations/`），包含所有表的创建、外键约束与 RLS 策略定义。
   - [x] SubTask 1.4: 执行数据库迁移，初始化 Supabase 项目结构。
 
-- [ ] Task 2: Flask 后端基础工程搭建
-  - [ ] SubTask 2.1: 初始化 Flask 项目，配置 `requirements.txt`，集成 `supabase-py`。
-  - [ ] SubTask 2.2: 搭建项目基础结构（路由、控制器、服务层、统一配置）。
-  - [ ] SubTask 2.3: 实现全局中间件：统一响应格式封装、全局异常错误处理。
-  - [ ] SubTask 2.4: 实现安全与控制中间件：输入校验、JWT/Supabase 权限校验、接口速率限制。
+- [x] Task 2: Flask 后端基础工程搭建
+  - [x] SubTask 2.1: 初始化 Flask 项目，配置 `requirements.txt`，集成 `supabase-py`。
+  - [x] SubTask 2.2: 搭建项目基础结构（路由、控制器、服务层、统一配置）。
+  - [x] SubTask 2.3: 实现全局中间件：统一响应格式封装、全局异常错误处理。
+  - [x] SubTask 2.4: 实现安全与控制中间件：输入校验、JWT/Supabase 权限校验、接口速率限制。
 
 - [ ] Task 3: 后端核心业务 API 开发
   - [ ] SubTask 3.1: 开发用户认证模块接口（注册、登录、登出、Token刷新）。

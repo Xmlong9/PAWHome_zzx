@@ -194,3 +194,46 @@ def unlike_post(post_id: str):
   client.table("post_likes").delete().eq("user_id", g.user_id).eq("post_id", pid).execute()
   counts = _recount_post_counts(pid)
   return ok({"ok": True, "post_counts": counts})
+
+
+@bp.post("/posts/<post_id>/favorite")
+@require_auth
+def favorite_post(post_id: str):
+  pid = _parse_post_id(post_id)
+  client = get_supabase_user()
+  try:
+    client.table("post_favorites").insert({"user_id": g.user_id, "post_id": pid}).execute()
+  except Exception:
+    pass
+  counts = _recount_post_counts(pid)
+  return ok({"ok": True, "post_counts": counts})
+
+
+@bp.delete("/posts/<post_id>/favorite")
+@require_auth
+def unfavorite_post(post_id: str):
+  pid = _parse_post_id(post_id)
+  client = get_supabase_user()
+  client.table("post_favorites").delete().eq("user_id", g.user_id).eq("post_id", pid).execute()
+  counts = _recount_post_counts(pid)
+  return ok({"ok": True, "post_counts": counts})
+
+
+@bp.get("/users/me/posts")
+@require_auth
+def list_my_posts():
+  p = to_range_query(request.args.get("page"), request.args.get("pageSize"))
+  client = get_supabase_user()
+  q = (
+    client.table("posts")
+    .select(
+      "id,author_id,title,content,pet_type,visibility,status,like_count,comment_count,favorite_count,created_at,"
+      "profiles(id,nickname,avatar_url),"
+      "post_media(id,type,url,cover_url,sort_order)",
+      count=CountMethod.exact,
+    )
+    .eq("author_id", g.user_id)
+    .order("created_at", desc=True)
+  )
+  res: Any = q.range(p.start, p.end).execute()
+  return ok({"list": res.data or [], "page": p.page, "pageSize": p.page_size, "total": res.count or 0})

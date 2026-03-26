@@ -139,7 +139,7 @@ def list_products():
   client = get_supabase_user()
   res: Any = (
     client.table("products")
-    .select("id,code,name,description,cover_url,sold_count,rating", count=CountMethod.exact)
+    .select("id,code,name,description,cover_url,sold_count,rating,skus(id,spec,price,market_price,stock)", count=CountMethod.exact)
     .eq("status", 1)
     .order("created_at", desc=True)
     .range(p.start, p.end)
@@ -164,7 +164,7 @@ def list_favorites():
   client = get_supabase_user()
   res: Any = (
     client.table("product_favorites")
-    .select("product_id,products(id,code,name,description,cover_url,sold_count,rating)")
+    .select("product_id,products(id,code,name,description,cover_url,sold_count,rating,skus(id,spec,price,market_price,stock))")
     .eq("user_id", g.user_id)
     .execute()
   )
@@ -351,7 +351,10 @@ def submit_order():
 def list_orders():
   status = request.args.get("status", "all")
   client = get_supabase_user()
-  q = client.table("orders").select("id,order_no,status,pay_amount,created_at,address_snapshot")
+  q = client.table("orders").select(
+    "id,order_no,status,pay_amount,created_at,address_snapshot,"
+    "order_items(product_id,product_name,sku_spec,price,quantity)"
+  )
   if status != "all":
     q = q.eq("status", status)
   res: Any = q.eq("buyer_id", g.user_id).order("created_at", desc=True).execute()

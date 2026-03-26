@@ -13,6 +13,8 @@ from pawhome_backend.common.errors import AppError
 from pawhome_backend.common.responses import fail, ok
 from pawhome_backend.config import get_settings
 from pawhome_backend.routes.auth import bp as auth_bp
+from pawhome_backend.routes.banners import bp as banners_bp
+from pawhome_backend.routes.comments import bp as comments_bp
 from pawhome_backend.routes.health import bp as health_bp
 from pawhome_backend.routes.pets import bp as pets_bp
 from pawhome_backend.routes.posts import bp as posts_bp
@@ -53,6 +55,8 @@ def create_app() -> Flask:
   api = s.api_prefix.rstrip("/")
   app.register_blueprint(auth_bp, url_prefix=api)
   app.register_blueprint(health_bp, url_prefix=api)
+  app.register_blueprint(banners_bp, url_prefix=api)
+  app.register_blueprint(comments_bp, url_prefix=api)
   app.register_blueprint(profiles_bp, url_prefix=api)
   app.register_blueprint(pets_bp, url_prefix=api)
   app.register_blueprint(posts_bp, url_prefix=api)

@@ -1,5 +1,4 @@
 import { request } from "./request"
-import { MOCK_USERS } from "./user"
 
 export type IMConversation = {
   id: string

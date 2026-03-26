@@ -9,9 +9,9 @@
 - 个人中心：资料与安全设置、宠物信息卡、收藏与历史、订单与预约
 
 ## 技术栈
-- 前端：微信小程序原生框架 + TypeScript + Vant Weapp/WeUI（可选）
-- 后端：Flask 微服务（设计文档与接口规范已产出）
-- 数据库：MySQL + Redis
+- 前端：微信小程序原生框架 + TypeScript
+- 后端：Flask（REST API）
+- 数据库/存储：Supabase（PostgreSQL + Storage + RLS）
 
 ## 项目结构
 ```
@@ -41,10 +41,24 @@ PawHome/
 - 导入项目：使用微信开发者工具导入 `PawHome/miniprogram` 目录
 - 设置 `appid`：在 `project.config.json` 中替换为你的小程序 `appid`
 - 域名校验：开发阶段 `project.config.json` 已关闭 `urlCheck`
-- 运行预览：编译并预览，登录页支持验证码登录、微信登录与调试跳过
+- 运行预览：编译并预览，登录页为邮箱/密码登录与注册（保留调试跳过）
+
+### 启动后端
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate  # Windows 用 .venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+```
 
 ## 环境配置
-- 接口地址：修改 `miniprogram/config/env.ts` 中的 `BASE_URL`
+- 小程序接口地址：修改 `PawHome/miniprogram/config/env.ts` 的 `API_BASE_URL_BY_ENV`
+- 后端环境变量（`backend/.env`）：
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - 可选：`API_PREFIX`（默认 `/api/v1`）
 - 字体：`miniprogram/app.wxss` 已声明 `@font-face` 并在主页标题应用，如在真机上不生效，建议转换为 `woff2` 并使用 `wx.loadFontFace` 远程加载（需配置下载文件合法域名）
 
 ## 主页说明

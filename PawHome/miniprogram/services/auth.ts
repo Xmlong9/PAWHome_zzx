@@ -1,47 +1,60 @@
 import { request } from "./request";
+import { AuthSession, clearSession, getAccessToken, getSession, setSession } from "./session";
 
-const MOCK = true;
-
-export function code2Session(code: string) {
-  if (MOCK) {
-    return Promise.resolve({
-      token: "mock-token-123456",
-      openid: "mock-openid-123456"
-    });
-  }
-  return request<{ token: string; openid: string }>({
-    url: "/auth/code2session",
+export async function register(email: string, password: string, nickname?: string): Promise<AuthSession | null> {
+  const res = await request<{ session: AuthSession | null }>({
+    url: "/auth/register",
     method: "POST",
-    data: { code }
+    data: { email, password, nickname }
   });
+  setSession(res.session);
+  return res.session;
 }
 
-export function sendSms(phone: string) {
-  if (MOCK) {
-    return Promise.resolve({ ok: true });
-  }
-  return request<{ ok: boolean }>({
-    url: "/auth/sms/send",
+export async function login(email: string, password: string): Promise<AuthSession | null> {
+  const res = await request<{ session: AuthSession | null }>({
+    url: "/auth/login",
     method: "POST",
-    data: { phone }
+    data: { email, password }
   });
+  setSession(res.session);
+  return res.session;
 }
 
-export function loginSms(phone: string, code: string) {
-  if (MOCK) {
-    return Promise.resolve({ token: "mock-token-123456" });
-  }
-  return request<{ token: string }>({
-    url: "/auth/login/sms",
+export async function refresh(): Promise<AuthSession | null> {
+  const current = getSession();
+  if (!current?.refresh_token) return null;
+  const res = await request<{ session: AuthSession | null }>({
+    url: "/auth/refresh",
     method: "POST",
-    data: { phone, code }
+    data: { refresh_token: current.refresh_token },
+    retryOnUnauthorized: false
   });
+  setSession(res.session);
+  return res.session;
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await request<{ ok: boolean }>({ url: "/auth/logout", method: "POST", retryOnUnauthorized: false });
+  } finally {
+    clearSession();
+  }
 }
 
 export function setToken(token: string) {
-  wx.setStorageSync("token", token);
+  const s = getSession();
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const session: AuthSession = {
+    access_token: token,
+    refresh_token: s?.refresh_token || "",
+    expires_at: s?.expires_at || nowSeconds + 3600,
+    token_type: s?.token_type || "bearer",
+    user: s?.user
+  };
+  setSession(session);
 }
 
 export function getToken(): string {
-  return wx.getStorageSync("token");
+  return getAccessToken();
 }

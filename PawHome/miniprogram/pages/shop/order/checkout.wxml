@@ -1,6 +1,14 @@
 <view class="checkout-page" wx:if="{{preview}}">
   <!-- Address Section -->
-  <view class="address-section" wx:if="{{address}}">
+  <view class="address-section" bindtap="goChooseAddress">
+    <view class="address-empty" wx:if="{{!address}}">
+      <view class="address-empty-text">
+        <view class="address-empty-title">请选择收货地址</view>
+        <view class="address-empty-desc">支持地图选点与默认地址</view>
+      </view>
+      <view class="arrow-right">›</view>
+    </view>
+    <block wx:else>
     <view class="address-left">
       <view class="user-info">
         <text class="user-name">{{address.name}}</text>
@@ -12,6 +20,7 @@
       </view>
     </view>
     <view class="arrow-right">›</view>
+    </block>
   </view>
 
   <!-- Goods List -->

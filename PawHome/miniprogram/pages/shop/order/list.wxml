@@ -9,7 +9,8 @@
 
   <view class="order-list">
     <block wx:for="{{list}}" wx:key="id">
-      <view class="order-card {{highlight===item.id ? 'highlight' : ''}}" data-id="{{item.id}}" bindtap="goToDetail">
+      <view class="order-card-shell {{item.status==='pending_pay' ? 'pending' : ''}}">
+        <view class="order-card {{highlight===item.id ? 'highlight' : ''}}" data-id="{{item.id}}" bindtap="goToDetail">
         <view class="card-header">
           <view class="shop-info">
             <text class="platform-tag">自营</text>
@@ -54,6 +55,7 @@
               <view class="btn outline" catchtap="stopProp" wx:elif="{{item.status === 'done'}}">评价</view>
             </view>
           </view>
+        </view>
         </view>
       </view>
     </block>

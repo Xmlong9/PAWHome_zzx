@@ -19,7 +19,7 @@
 
   <!-- Pet Card Section -->
   <view class="pet-card-wrap">
-    <image class="cat-head-decor" src="/assets/images/mine/猫头.png" mode="aspectFit"></image>
+    <image class="cat-head-decor" src="/assets/images/login/cat.png" mode="aspectFit"></image>
     <view class="pet-card">
       <view class="pet-card-title">宠家卡</view>
       <view class="pet-content" wx:if="{{petInfo}}" bindtap="goPetDetail">

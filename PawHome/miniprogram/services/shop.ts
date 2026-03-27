@@ -72,6 +72,11 @@ const PRODUCT_IMAGE_MAP: Record<string, string> = {
 
 const now = () => Date.now()
 
+const unwrapData = <T>(input: any): T => {
+  if (input && typeof input === "object" && "data" in input) return (input as any).data as T
+  return input as T
+}
+
 const readJSON = <T>(key: string, fallback: T): T => {
   const value = wx.getStorageSync(key)
   if (!value) return fallback
@@ -219,37 +224,12 @@ export const listAddresses = async (): Promise<UserAddress[]> => {
     const res = await request<{ list: UserAddress[] }>({ url: "/user/addresses", method: "GET" })
     return res.list || []
   }
-  return [
-    {
-      id: "addr_1",
-      name: "张子轩",
-      phone: "19510370909",
-      province: "浙江省",
-      city: "杭州市",
-      district: "余杭区",
-      detail: "杭州师范大学",
-      isDefault: true
-    },
-    {
-      id: "addr_2",
-      name: "李小明",
-      phone: "13800138000",
-      province: "浙江省",
-      city: "杭州市",
-      district: "西湖区",
-      detail: "文一西路888号",
-      isDefault: false
-    }
-  ]
+  ensureSeed()
+  return [...mockAddresses]
 }
 
-export const getDefaultAddress = async (): Promise<UserAddress | null> => {
-  if (!MOCK()) {
-    const res = await request<{ data: UserAddress }>({ url: "/user/address/default", method: "GET" })
-    return res.data || null
-  }
-  // Mock data as requested
-  return {
+let mockAddresses: UserAddress[] = [
+  {
     id: "addr_1",
     name: "张子轩",
     phone: "19510370909",
@@ -258,7 +238,84 @@ export const getDefaultAddress = async (): Promise<UserAddress | null> => {
     district: "余杭区",
     detail: "杭州师范大学",
     isDefault: true
+  },
+  {
+    id: "addr_2",
+    name: "李小明",
+    phone: "13800138000",
+    province: "浙江省",
+    city: "杭州市",
+    district: "西湖区",
+    detail: "文一西路888号",
+    isDefault: false
   }
+]
+
+export const createAddress = async (payload: Omit<UserAddress, "id">): Promise<UserAddress> => {
+  if (!MOCK()) {
+    const res = await request<any>({ url: "/user/addresses", method: "POST", data: payload })
+    return unwrapData<UserAddress>(res)
+  }
+  const created: UserAddress = { ...payload, id: `addr_${Date.now()}` }
+  if (created.isDefault) {
+    mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: false }))
+  }
+  mockAddresses = [created, ...mockAddresses]
+  return created
+}
+
+export const updateAddress = async (id: string, payload: Partial<Omit<UserAddress, "id">>): Promise<UserAddress> => {
+  if (!MOCK()) {
+    const res = await request<any>({ url: `/user/addresses/${encodeURIComponent(id)}`, method: "PUT", data: payload })
+    return unwrapData<UserAddress>(res)
+  }
+  const idx = mockAddresses.findIndex((a) => a.id === id)
+  if (idx === -1) throw new Error("address not found")
+  const next = { ...mockAddresses[idx], ...payload } as UserAddress
+  if (next.isDefault) {
+    mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: a.id === id }))
+  } else {
+    mockAddresses[idx] = next
+  }
+  mockAddresses = mockAddresses.map((a) => (a.id === id ? next : a))
+  return next
+}
+
+export const deleteAddress = async (id: string): Promise<{ ok: boolean }> => {
+  if (!MOCK()) {
+    const res = await request<any>({ url: `/user/addresses/${encodeURIComponent(id)}`, method: "DELETE" })
+    const out = unwrapData<{ ok?: boolean }>(res)
+    return { ok: out?.ok !== false }
+  }
+  mockAddresses = mockAddresses.filter((a) => a.id !== id)
+  if (!mockAddresses.some((a) => a.isDefault) && mockAddresses[0]) {
+    mockAddresses[0] = { ...mockAddresses[0], isDefault: true }
+  }
+  return { ok: true }
+}
+
+export const setDefaultAddress = async (id: string): Promise<{ ok: boolean }> => {
+  if (!MOCK()) {
+    const res = await request<any>({ url: "/user/address/default", method: "PUT", data: { id } })
+    const out = unwrapData<{ ok?: boolean }>(res)
+    return { ok: out?.ok !== false }
+  }
+  mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: a.id === id }))
+  return { ok: true }
+}
+
+export const getAddressById = async (id: string): Promise<UserAddress | null> => {
+  const list = await listAddresses()
+  return list.find((a) => a.id === id) || null
+}
+
+export const getDefaultAddress = async (): Promise<UserAddress | null> => {
+  if (!MOCK()) {
+    const res = await request<any>({ url: "/user/address/default", method: "GET" })
+    return unwrapData<UserAddress | null>(res) || null
+  }
+  ensureSeed()
+  return mockAddresses.find((a) => a.isDefault) || mockAddresses[0] || null
 }
 
 export const listProducts = async (): Promise<ShopProduct[]> => {
@@ -392,7 +449,7 @@ export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; pr
   return { items: list, goodsAmount, freight, discount, payableAmount }
 }
 
-export const submitOrder = async (params: { from: "cart" | "detail"; productId?: string; count?: number; address: string; payType: "wx" | "balance" }): Promise<ShopOrder> => {
+export const submitOrder = async (params: { from: "cart" | "detail"; productId?: string; count?: number; address: string; payType: "wx" | "alipay" | "balance" }): Promise<ShopOrder> => {
   if (!MOCK()) {
     return await request<ShopOrder>({ url: "/shop/order", method: "POST", data: params })
   }

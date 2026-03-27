@@ -9,9 +9,12 @@ Page({
   },
   onShow() {
     this.setData({ showBlob: true });
-    if (wx.getStorageSync('petListNeedRefresh')) {
+    const petListNeedRefresh = wx.getStorageSync('petListNeedRefresh')
+    const userProfileNeedRefresh = wx.getStorageSync("userProfileNeedRefresh")
+    if (petListNeedRefresh || userProfileNeedRefresh) {
       this.fetchData();
       wx.removeStorageSync('petListNeedRefresh');
+      wx.removeStorageSync("userProfileNeedRefresh");
     }
   },
   onHide() {

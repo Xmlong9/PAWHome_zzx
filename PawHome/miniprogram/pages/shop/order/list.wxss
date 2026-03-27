@@ -35,15 +35,50 @@
   padding: 24rpx;
 }
 
+.order-card-shell {
+  border-radius: 26rpx;
+  padding: 2rpx;
+  margin-bottom: 24rpx;
+}
+
+.order-card-shell.pending {
+  background: linear-gradient(
+    120deg,
+    rgba(255, 122, 36, 0.05),
+    rgba(255, 122, 36, 0.55),
+    rgba(255, 225, 156, 0.75),
+    rgba(255, 122, 36, 0.55),
+    rgba(255, 122, 36, 0.05)
+  );
+  background-size: 300% 300%;
+  animation: pendingBorderFlow 2.6s linear infinite;
+  box-shadow: 0 10rpx 24rpx rgba(255, 122, 36, 0.14);
+}
+
+.order-card-shell.pending:active {
+  opacity: 0.96;
+}
+
 .order-card {
   background: #fff;
   border-radius: 24rpx;
   padding: 28rpx 24rpx;
-  margin-bottom: 24rpx;
 }
 
 .order-card.highlight {
   box-shadow: 0 0 0 2rpx #ff9e59 inset;
+}
+
+@keyframes pendingBorderFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .card-header {

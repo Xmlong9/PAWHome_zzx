@@ -33,14 +33,16 @@ def _cents(amount) -> int:
 
 
 def _product_to_dict(p: ShopProduct, favorite: bool) -> dict:
-    image_url = ""
+    image_url = "/assets/images/shop/问号猫.png"
     if p.images_json:
         try:
             v = json.loads(p.images_json)
             if isinstance(v, list) and v:
-                image_url = str(v[0])
+                first = v[0]
+                if isinstance(first, str) and first:
+                    image_url = first
         except json.JSONDecodeError:
-            image_url = ""
+            image_url = "/assets/images/shop/问号猫.png"
     return {
         "id": p.id,
         "name": p.title,
@@ -247,8 +249,8 @@ def register_routes(bp) -> None:
             return fail(code="BAD_REQUEST", message="from required", status_code=400)
         if not isinstance(address_text, str) or not address_text.strip():
             return fail(code="BAD_REQUEST", message="address required", status_code=400)
-        if pay_type not in {"wx", "balance"}:
-            return fail(code="BAD_REQUEST", message="payType required", status_code=400)
+        if pay_type not in {"wx", "alipay", "balance"}:
+            return fail(code="BAD_REQUEST", message="payType invalid", status_code=400)
 
         preview = preview_order()
         if isinstance(preview, tuple):
@@ -344,6 +346,9 @@ def register_routes(bp) -> None:
         orders = []
         for o in q.all():
             items = ShopOrderItem.query.filter_by(order_id=o.id).all()
+            product_ids = [it.product_id for it in items if isinstance(it.product_id, str)]
+            products = ShopProduct.query.filter(ShopProduct.id.in_(product_ids)).all() if product_ids else []
+            image_map = {p.id: _product_to_dict(p, False).get("imageUrl", "") for p in products}
             orders.append(
                 {
                     "id": o.id,
@@ -356,7 +361,7 @@ def register_routes(bp) -> None:
                             "id": it.product_id,
                             "name": it.title_snapshot,
                             "price": _money(it.price_cents),
-                            "imageUrl": "",
+                            "imageUrl": image_map.get(it.product_id) or "/assets/images/shop/问号猫.png",
                             "count": it.quantity,
                             "spec": "默认",
                         }
@@ -467,4 +472,106 @@ def register_routes(bp) -> None:
             a = Address.query.filter_by(user_id=me.id).order_by(Address.created_at.desc()).first()
         if a is None:
             return fail(code="NOT_FOUND", message="address not found", status_code=404)
+        return ok(_address_to_dict(a))
+
+    @bp.post("/user/addresses")
+    @require_auth
+    def create_address():
+        me: User = g.current_user
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        phone = data.get("phone")
+        detail = data.get("detail")
+        if not isinstance(name, str) or not name.strip():
+            return fail(code="BAD_REQUEST", message="name required", status_code=400)
+        if not isinstance(phone, str) or not phone.strip():
+            return fail(code="BAD_REQUEST", message="phone required", status_code=400)
+        if not isinstance(detail, str) or not detail.strip():
+            return fail(code="BAD_REQUEST", message="detail required", status_code=400)
+        is_default = bool(data.get("isDefault"))
+        if is_default:
+            Address.query.filter_by(user_id=me.id, is_default=True).update({"is_default": False})
+        a = Address(
+            user_id=me.id,
+            receiver_name=name.strip(),
+            phone=phone.strip(),
+            province=(data.get("province") or "") if isinstance(data.get("province"), str) else "",
+            city=(data.get("city") or "") if isinstance(data.get("city"), str) else "",
+            district=(data.get("district") or "") if isinstance(data.get("district"), str) else "",
+            address_line=detail.strip(),
+            is_default=is_default,
+        )
+        db.session.add(a)
+        db.session.commit()
         return ok({"data": _address_to_dict(a)})
+
+    @bp.put("/user/addresses/<address_id>")
+    @require_auth
+    def update_address(address_id: str):
+        me: User = g.current_user
+        a = Address.query.filter_by(user_id=me.id, id=address_id).first()
+        if a is None:
+            return fail(code="NOT_FOUND", message="address not found", status_code=404)
+        data = request.get_json(silent=True) or {}
+        if "name" in data:
+            name = data.get("name")
+            if not isinstance(name, str) or not name.strip():
+                return fail(code="BAD_REQUEST", message="name required", status_code=400)
+            a.receiver_name = name.strip()
+        if "phone" in data:
+            phone = data.get("phone")
+            if not isinstance(phone, str) or not phone.strip():
+                return fail(code="BAD_REQUEST", message="phone required", status_code=400)
+            a.phone = phone.strip()
+        if "province" in data:
+            a.province = (data.get("province") or "") if isinstance(data.get("province"), str) else ""
+        if "city" in data:
+            a.city = (data.get("city") or "") if isinstance(data.get("city"), str) else ""
+        if "district" in data:
+            a.district = (data.get("district") or "") if isinstance(data.get("district"), str) else ""
+        if "detail" in data:
+            detail = data.get("detail")
+            if not isinstance(detail, str) or not detail.strip():
+                return fail(code="BAD_REQUEST", message="detail required", status_code=400)
+            a.address_line = detail.strip()
+        if "isDefault" in data:
+            is_default = bool(data.get("isDefault"))
+            if is_default:
+                Address.query.filter_by(user_id=me.id, is_default=True).update({"is_default": False})
+            a.is_default = is_default
+        db.session.commit()
+        return ok({"data": _address_to_dict(a)})
+
+    @bp.delete("/user/addresses/<address_id>")
+    @require_auth
+    def delete_address(address_id: str):
+        me: User = g.current_user
+        a = Address.query.filter_by(user_id=me.id, id=address_id).first()
+        if a is None:
+            return ok({"ok": True})
+        was_default = bool(a.is_default)
+        db.session.delete(a)
+        db.session.commit()
+        if was_default:
+            fallback = Address.query.filter_by(user_id=me.id).order_by(Address.created_at.desc()).first()
+            if fallback is not None:
+                Address.query.filter_by(user_id=me.id, is_default=True).update({"is_default": False})
+                fallback.is_default = True
+                db.session.commit()
+        return ok({"ok": True})
+
+    @bp.put("/user/address/default")
+    @require_auth
+    def set_default_address():
+        me: User = g.current_user
+        data = request.get_json(silent=True) or {}
+        address_id = data.get("id")
+        if not isinstance(address_id, str) or not address_id:
+            return fail(code="BAD_REQUEST", message="id required", status_code=400)
+        a = Address.query.filter_by(user_id=me.id, id=address_id).first()
+        if a is None:
+            return fail(code="NOT_FOUND", message="address not found", status_code=404)
+        Address.query.filter_by(user_id=me.id, is_default=True).update({"is_default": False})
+        a.is_default = True
+        db.session.commit()
+        return ok({"ok": True, "data": _address_to_dict(a)})

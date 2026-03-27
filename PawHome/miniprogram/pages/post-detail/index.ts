@@ -28,8 +28,8 @@ Page({
 
   onLoad(options: { id: string }) {
     if (options.id) {
-      this.loadPost(Number(options.id));
-      this.loadComments(Number(options.id));
+      this.loadPost(options.id);
+      this.loadComments(options.id);
     }
     
     // Get safe area
@@ -69,7 +69,7 @@ Page({
     }
   },
 
-  async loadPost(id: number) {
+  async loadPost(id: string) {
     try {
       const post = await getPost(id);
       this.setData({
@@ -84,7 +84,7 @@ Page({
     }
   },
 
-  async loadComments(postId: number) {
+  async loadComments(postId: string) {
     this.setData({ loadingComments: true });
     try {
       const res = await getComments(postId);
@@ -139,6 +139,7 @@ Page({
       } else {
         await likePost(id);
       }
+      wx.setStorageSync("community_need_refresh", true)
     } catch (err) {
       this.setData({ 
         'post.isLiked': isLiked,
@@ -165,6 +166,7 @@ Page({
       } else {
         await favoritePost(id);
       }
+      wx.setStorageSync("community_need_refresh", true)
     } catch (err) {
       this.setData({ 
         'post.isFavorited': isFavorited,
@@ -248,6 +250,7 @@ Page({
         replyTo: null,
         'post.commentCount': (this.data.post.commentCount || 0) + 1
       });
+      wx.setStorageSync("community_need_refresh", true)
       
       wx.hideLoading();
       wx.showToast({ title: '发送成功', icon: 'success' });

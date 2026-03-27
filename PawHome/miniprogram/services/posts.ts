@@ -1,13 +1,15 @@
 import { request } from "./request"
 import { MOCK_USERS } from "./user"
+import { isMockEnabled } from "./mock"
 
 export type Post = {
-  id: number
+  id: string
   userId: string
   user?: { id: string; nickname: string; avatarUrl: string }
   title?: string
   content: string
   images: string[]
+  videoUrl?: string
   petType?: string
   visibility?: string
   status?: string
@@ -21,7 +23,7 @@ export type Post = {
   updatedAt?: string
 }
 
-const MOCK = true
+const MOCK = () => isMockEnabled()
 
 // 全局缓存已经生成的 mock 帖子，保证内外一致
 let cachedPosts: Post[] = [];
@@ -39,7 +41,7 @@ const generateMockPosts = (page: number, pageSize: number, type?: string): Post[
   
   // Create a base list
   const list = Array.from({ length: Math.min(pageSize, 10) }).map((_, i) => {
-    const id = baseId + i + 1;
+    const id = String(baseId + i + 1);
     let timeOffset;
 
     if (type === '最新') {
@@ -97,20 +99,23 @@ const generateMockPosts = (page: number, pageSize: number, type?: string): Post[
 };
 
 export async function getPosts(page = 1, pageSize = 10, type = '推荐'): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
-  if (MOCK) {
+  if (MOCK()) {
     const list = generateMockPosts(page, pageSize, type);
     return { list, page, pageSize, total: 100 }
   }
+  let serverType = "all"
+  if (type === "猫咪") serverType = "cat"
+  if (type === "狗狗") serverType = "dog"
   const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ 
     url: "/posts", 
     method: "GET", 
-    data: { page, pageSize, type } 
+    data: { page, pageSize, type: serverType } 
   })
   return res
 }
 
 export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
-  if (MOCK) {
+  if (MOCK()) {
     const list = generateMockPosts(page, pageSize);
     return { list, page, pageSize, total: 20 }
   }
@@ -118,18 +123,51 @@ export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[
   return res
 }
 
-export async function getPost(id: number): Promise<Post>{
-  if (MOCK) {
-    let post = cachedPosts.find(p => p.id === Number(id));
+export async function getUserPosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
+  if (MOCK()) {
+    const list = generateMockPosts(page, pageSize)
+    return { list, total: 20 }
+  }
+  return request({ url: `/users/${encodeURIComponent(userId)}/posts`, method: "GET", data: { page, pageSize } })
+}
+
+export async function getUserLikedPosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
+  if (MOCK()) {
+    const list = generateMockPosts(page, pageSize)
+    return { list, total: 20 }
+  }
+  return request({ url: `/users/${encodeURIComponent(userId)}/likes/posts`, method: "GET", data: { page, pageSize } })
+}
+
+export async function getUserFavoritePosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
+  if (MOCK()) {
+    const list = generateMockPosts(page, pageSize)
+    return { list, total: 20 }
+  }
+  return request({ url: `/users/${encodeURIComponent(userId)}/favorites/posts`, method: "GET", data: { page, pageSize } })
+}
+
+export async function getMyHistoryPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
+  if (MOCK()) {
+    const list = generateMockPosts(page, pageSize)
+    return { list, total: 20 }
+  }
+  return request({ url: "/users/me/history/posts", method: "GET", data: { page, pageSize } })
+}
+
+export async function getPost(id: string): Promise<Post>{
+  if (MOCK()) {
+    const numericId = Number(id)
+    let post = cachedPosts.find(p => p.id === String(id));
     
     if (!post) {
       // 如果直接从详情进，缓存没有，则生成一个对应的
       const userIds = Object.keys(MOCK_USERS);
-      const userId = userIds[id % userIds.length];
+      const userId = userIds[(numericId || 0) % userIds.length];
       const user = MOCK_USERS[userId];
       
       post = {
-        id: Number(id),
+        id: String(id),
         userId,
         user: { 
           id: userId, 
@@ -138,7 +176,7 @@ export async function getPost(id: number): Promise<Post>{
         },
         title: "这是一个分享帖",
         content: "这是一段很长很长的文字。今天天气真好，带猫猫出去晒了晒太阳。家里养的涛涛又不听话了 :( 真的不知道该怎么办才好，大家有什么好办法吗？",
-        images: [`https://picsum.photos/seed/${id}/600/400`],
+        images: [`https://picsum.photos/seed/${numericId || 0}/600/400`],
         petType: "cat",
         visibility: "public",
         status: "approved",
@@ -161,30 +199,66 @@ export async function getPost(id: number): Promise<Post>{
     
     return post;
   }
-  const res = await request<Post>({ url: `/posts/${id}`, method: "GET" })
+  const res = await request<Post>({ url: `/posts/${encodeURIComponent(id)}`, method: "GET" })
   return res
 }
 
-export async function likePost(id: number): Promise<{ ok: boolean }>{
-  if (MOCK) return { ok: true }
-  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/like`, method: "POST" })
+export async function likePost(id: string): Promise<{ ok: boolean }>{
+  if (MOCK()) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${encodeURIComponent(id)}/like`, method: "POST" })
   return res
 }
 
-export async function unlikePost(id: number): Promise<{ ok: boolean }>{
-  if (MOCK) return { ok: true }
-  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/like`, method: "DELETE" })
+export async function unlikePost(id: string): Promise<{ ok: boolean }>{
+  if (MOCK()) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${encodeURIComponent(id)}/like`, method: "DELETE" })
   return res
 }
 
-export async function favoritePost(id: number): Promise<{ ok: boolean }>{
-  if (MOCK) return { ok: true }
-  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/favorite`, method: "POST" })
+export async function favoritePost(id: string): Promise<{ ok: boolean }>{
+  if (MOCK()) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${encodeURIComponent(id)}/favorite`, method: "POST" })
   return res
 }
 
-export async function unfavoritePost(id: number): Promise<{ ok: boolean }>{
-  if (MOCK) return { ok: true }
-  const res = await request<{ ok: boolean }>({ url: `/posts/${id}/favorite`, method: "DELETE" })
+export async function unfavoritePost(id: string): Promise<{ ok: boolean }>{
+  if (MOCK()) return { ok: true }
+  const res = await request<{ ok: boolean }>({ url: `/posts/${encodeURIComponent(id)}/favorite`, method: "DELETE" })
   return res
+}
+
+export async function createPost(data: {
+  content: string
+  images?: string[]
+  videoUrl?: string
+  coverUrl?: string
+  location?: string
+  visibility?: string
+  type?: string
+}): Promise<Post> {
+  if (MOCK()) {
+    const userId = Object.keys(MOCK_USERS)[0]
+    const user = MOCK_USERS[userId]
+    return {
+      id: String(Date.now()),
+      userId,
+      user: { id: userId, nickname: user.nickname, avatarUrl: user.avatarUrl },
+      title: null,
+      content: data.content,
+      images: data.images || (data.coverUrl ? [data.coverUrl] : []),
+      videoUrl: data.videoUrl,
+      petType: data.type || "all",
+      visibility: data.visibility || "public",
+      status: "approved",
+      likeCount: 0,
+      commentCount: 0,
+      favoriteCount: 0,
+      isLiked: false,
+      isFavorited: false,
+      isFollowed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  }
+  return request({ url: "/posts", method: "POST", data })
 }

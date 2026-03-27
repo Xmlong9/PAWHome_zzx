@@ -1,5 +1,5 @@
-import { getUserProfile, UserProfile } from "../../services/user";
-import { Post, getPosts } from "../../services/posts";
+import { followUser, getUserProfile, unfollowUser, UserProfile } from "../../services/user";
+import { Post, getUserFavoritePosts, getUserLikedPosts, getUserPosts } from "../../services/posts";
 
 Page({
   data: {
@@ -43,6 +43,7 @@ Page({
       
       // 如果没传 userId，就默认查自己
       const queryId = this.data.userId || myId;
+      this.setData({ userId: queryId })
       const userInfo = await getUserProfile(queryId); 
       
       if (isSelf && userInfo) {
@@ -63,14 +64,15 @@ Page({
   },
 
   async loadTabData(tabName: string) {
-    // 模拟加载对应的数据
     try {
-      const res = await getPosts(1, 10);
       if (tabName === '帖子') {
+        const res = await getUserPosts(this.data.userId, 1, 10)
         this.setData({ posts: res.list });
       } else if (tabName === '点赞') {
+        const res = await getUserLikedPosts(this.data.userId, 1, 10)
         this.setData({ likes: res.list });
       } else if (tabName === '收藏') {
+        const res = await getUserFavoritePosts(this.data.userId, 1, 10)
         this.setData({ favorites: res.list });
       }
     } catch (e) {
@@ -88,12 +90,20 @@ Page({
   },
 
   onFollow() {
-    // 关注/取消关注逻辑
-    this.setData({ isFollowing: !this.data.isFollowing });
-    wx.showToast({
-      title: this.data.isFollowing ? '已关注' : '已取消关注',
-      icon: 'none'
-    });
+    if (this.data.isSelf) return
+    const next = !this.data.isFollowing
+    this.setData({ isFollowing: next })
+    const userId = this.data.userId
+    Promise.resolve()
+      .then(() => (next ? followUser(userId) : unfollowUser(userId)))
+      .then(() => {
+        wx.showToast({ title: next ? '已关注' : '已取消关注', icon: 'none' })
+      })
+      .catch((e) => {
+        console.error(e)
+        this.setData({ isFollowing: !next })
+        wx.showToast({ title: '操作失败', icon: 'none' })
+      })
   },
 
   onMessage() {

@@ -29,6 +29,11 @@ Page({
 
   onShow() {
     this.setData({ showBlob: true });
+    const needRefresh = wx.getStorageSync("community_need_refresh")
+    if (needRefresh) {
+      wx.setStorageSync("community_need_refresh", false)
+      this.loadPosts(true)
+    }
   },
 
   onHide() {

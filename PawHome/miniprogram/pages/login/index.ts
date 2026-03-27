@@ -1,5 +1,6 @@
 import { loginSms, sendSms, setToken, code2Session } from "../../services/auth";
 import { isPhone } from "../../utils/validators";
+import { getUserProfile } from "../../services/user";
 
 Page({
   data: {
@@ -52,6 +53,14 @@ Page({
     try {
       const r = await loginSms(phone, code);
       setToken(r.token);
+      try {
+        const me = await getUserProfile()
+        wx.setStorageSync("userId", me.id)
+      } catch {
+        setToken("")
+        wx.showToast({ title: "登录验证失败，请检查服务是否可用", icon: "none" })
+        return
+      }
       wx.showToast({ title: "登录成功" });
       wx.reLaunch({ url: "/pages/index/index" });
     } catch (e) {
@@ -66,6 +75,14 @@ Page({
         try {
           const data = await code2Session(r.code);
           setToken(data.token);
+          try {
+            const me = await getUserProfile()
+            wx.setStorageSync("userId", me.id)
+          } catch {
+            setToken("")
+            wx.showToast({ title: "登录验证失败，请检查服务是否可用", icon: "none" })
+            return
+          }
           wx.showToast({ title: "登录成功" });
           wx.reLaunch({ url: "/pages/index/index" });
         } catch (e) {

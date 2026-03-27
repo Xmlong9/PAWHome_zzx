@@ -1,3 +1,5 @@
+import { searchCommunity, searchShop } from "../../services/search"
+
 Page({
   data: {
     safeTop: 0,
@@ -83,53 +85,39 @@ Page({
     this.loadResults();
   },
 
-  loadResults() {
-    // 模拟搜索结果
-    wx.showLoading({ title: '搜索中...' });
-    setTimeout(() => {
-      let mockResults = [];
+  async loadResults() {
+    const kw = this.data.keyword.trim()
+    if (!kw) return
+    wx.showLoading({ title: '搜索中...' })
+    try {
       if (this.data.searchType === 'community') {
-        mockResults = [
-          {
-            id: 1,
-            title: '如何让猫咪适应新环境？分享我的经验',
-            summary: '刚带回家的猫咪总是躲在角落不愿意出来，教你几个实用的驯养技巧...',
-            image: 'https://picsum.photos/seed/cat1/200/200',
-            likes: '1.2k',
-            comments: '328'
-          },
-          {
-            id: 2,
-            title: '狗狗的日常护理要点大全',
-            summary: '从梳毛、洗澡到牙齿护理，让你的爱犬保持健康美丽...',
-            image: 'https://picsum.photos/seed/dog1/200/200',
-            likes: '856',
-            comments: '234'
-          },
-          {
-            id: 3,
-            title: '兔子饲养指南：新手必看',
-            summary: '详细介绍兔子的饮食、运动和日常照顾注意事项...',
-            image: 'https://picsum.photos/seed/rabbit1/200/200',
-            likes: '632',
-            comments: '156'
-          }
-        ];
+        const res = await searchCommunity(kw, 1, 10)
+        const results = res.list.map((r) => ({
+          id: r.id,
+          title: r.title,
+          summary: r.summary,
+          image: r.image,
+          likes: String(r.likes ?? 0),
+          comments: String(r.comments ?? 0)
+        }))
+        this.setData({ results })
       } else {
-        // 商店搜索 mock
-        mockResults = [
-          {
-            id: 101,
-            title: '全期全价猫粮 2.5kg 保护肠胃',
-            summary: '销量 1.2w+ · 99%好评',
-            image: 'https://picsum.photos/seed/food1/200/200',
-            price: '¥ 128.00'
-          }
-        ];
+        const res = await searchShop(kw, 1, 10)
+        const results = res.list.map((r) => ({
+          id: r.id,
+          title: r.title,
+          summary: r.summary,
+          image: r.image,
+          price: `¥ ${(r.price ?? 0).toFixed(2)}`
+        }))
+        this.setData({ results })
       }
-      
-      this.setData({ results: mockResults });
-      wx.hideLoading();
-    }, 500);
+    } catch (e) {
+      console.error(e)
+      wx.showToast({ title: '搜索失败', icon: 'none' })
+      this.setData({ results: [] })
+    } finally {
+      wx.hideLoading()
+    }
   }
 });

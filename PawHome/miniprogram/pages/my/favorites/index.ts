@@ -1,4 +1,4 @@
-import { getPosts, Post } from "../../../services/posts"
+import { getUserFavoritePosts, Post } from "../../../services/posts"
 
 Page({
   data: {
@@ -6,10 +6,9 @@ Page({
   },
   async onShow() {
     try {
-      const posts = await getPosts()
-      // 模拟过滤出我收藏的帖子（目前只要 isFavorited 为 true 的）
-      const favPosts = posts.filter(p => p.isFavorited)
-      this.setData({ list: favPosts })
+      const userId = wx.getStorageSync("userId") as string
+      const res = await getUserFavoritePosts(userId, 1, 20)
+      this.setData({ list: res.list })
     } catch (e) {
       console.error(e)
     }

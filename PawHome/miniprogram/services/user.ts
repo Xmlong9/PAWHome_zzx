@@ -1,6 +1,7 @@
 import { request } from "./request";
+import { isMockEnabled } from "./mock";
 
-const MOCK = true;
+const MOCK = () => isMockEnabled();
 
 export type UserProfile = {
   id: string;
@@ -97,7 +98,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
 };
 
 export async function getUserProfile(userId?: string): Promise<UserProfile> {
-  if (MOCK) {
+  if (MOCK()) {
     if (userId && MOCK_USERS[userId]) {
       return MOCK_USERS[userId];
     }
@@ -109,11 +110,14 @@ export async function getUserProfile(userId?: string): Promise<UserProfile> {
     // 默认返回自己（淡水鱼）
     return MOCK_USERS["324666"];
   }
+  if (userId) {
+    return request({ url: `/users/${encodeURIComponent(userId)}`, method: "GET" });
+  }
   return request({ url: "/users/me", method: "GET" });
 }
 
 export async function updateUserProfile(data: Partial<UserProfile>): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
+  if (MOCK()) return { ok: true };
   return request({ url: "/users/me", method: "PUT", data });
 }
 
@@ -132,14 +136,14 @@ let mockPets: PetProfile[] = [
 ];
 
 export async function getPetList(): Promise<PetProfile[]> {
-  if (MOCK) {
+  if (MOCK()) {
     return [...mockPets];
   }
   return request({ url: "/users/me/pets", method: "GET" });
 }
 
 export async function getPetProfile(id?: string): Promise<PetProfile> {
-  if (MOCK) {
+  if (MOCK()) {
     if (id) {
       return mockPets.find(p => p.id === id) || mockPets[0];
     }
@@ -149,7 +153,7 @@ export async function getPetProfile(id?: string): Promise<PetProfile> {
 }
 
 export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok: boolean; data: PetProfile }> {
-  if (MOCK) {
+  if (MOCK()) {
     const newPet: PetProfile = {
       ...data,
       id: `pet_${Date.now()}`
@@ -161,7 +165,7 @@ export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok:
 }
 
 export async function updatePetProfile(id: string, data: Partial<Omit<PetProfile, "id">>): Promise<{ ok: boolean; data: PetProfile | null }> {
-  if (MOCK) {
+  if (MOCK()) {
     const index = mockPets.findIndex(p => p.id === id);
     if (index === -1) {
       return { ok: false, data: null };
@@ -190,26 +194,36 @@ let mockSettings: UserSettings = {
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
-  if (MOCK) {
+  if (MOCK()) {
     return mockSettings;
   }
   return request({ url: "/users/me/settings", method: "GET" });
 }
 
 export async function updateUserSettings(data: Partial<UserSettings>): Promise<{ ok: boolean }> {
-  if (MOCK) {
+  if (MOCK()) {
     mockSettings = { ...mockSettings, ...data };
     return { ok: true };
   }
   return request({ url: "/users/me/settings", method: "PUT", data });
 }
 
-export async function followUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "POST" });
+export async function followUser(userId: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true };
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "POST" });
 }
 
-export async function unfollowUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "DELETE" });
+export async function unfollowUser(userId: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true };
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "DELETE" });
+}
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true }
+  return request({ url: "/users/me/password", method: "PUT", data: { oldPassword, newPassword } })
+}
+
+export async function changePhone(phone: string, code: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true }
+  return request({ url: "/users/me/phone", method: "PUT", data: { phone, code } })
 }

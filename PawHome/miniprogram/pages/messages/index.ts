@@ -1,4 +1,5 @@
 import { formatTime, listConversations } from "../../services/im"
+import { listNotifications } from "../../services/notifications"
 
 type LikeMsg = {
   id: string
@@ -6,7 +7,7 @@ type LikeMsg = {
   nickname: string
   time: string
   text: string
-  postId?: number
+  postId?: string
   thumbUrl?: string
 }
 
@@ -17,7 +18,7 @@ type CommentMsg = {
   time: string
   text: string
   content?: string
-  postId?: number
+  postId?: string
   thumbUrl?: string
 }
 
@@ -51,10 +52,48 @@ Page({
     this.setData({
       statusBarHeight,
       navHeight,
-      likeList: this.getMockLikeList(),
-      commentList: this.getMockCommentList()
+      likeList: [],
+      commentList: []
     })
+
+    await this.loadNotifications()
     await this.loadDMConversations()
+  },
+
+  async loadNotifications() {
+    try {
+      const likeRes = await listNotifications("like", 1, 20)
+      const favRes = await listNotifications("favorite", 1, 20)
+      const commentRes = await listNotifications("comment", 1, 20)
+
+      const likeList: LikeMsg[] = [...likeRes.list, ...favRes.list]
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+        .map((n) => ({
+          id: n.id,
+          avatarUrl: n.avatarUrl,
+          nickname: n.nickname,
+          time: formatTime(n.createdAt),
+          text: n.text,
+          postId: n.postId || undefined,
+          thumbUrl: n.thumbUrl || undefined
+        }))
+
+      const commentList: CommentMsg[] = commentRes.list.map((n) => ({
+        id: n.id,
+        avatarUrl: n.avatarUrl,
+        nickname: n.nickname,
+        time: formatTime(n.createdAt),
+        text: n.text,
+        content: n.content || "",
+        postId: n.postId || undefined,
+        thumbUrl: n.thumbUrl || undefined
+      }))
+
+      this.setData({ likeList, commentList })
+    } catch (e) {
+      console.error(e)
+      this.setData({ likeList: [], commentList: [] })
+    }
   },
 
   async loadDMConversations() {
@@ -109,53 +148,6 @@ Page({
     }
   },
 
-  getMockLikeList(): LikeMsg[] {
-    return [
-      {
-        id: 'l1',
-        avatarUrl: 'https://picsum.photos/seed/u101/100',
-        nickname: '淡水鱼鱼鱼鱼鱼鱼鱼',
-        time: '10分钟前',
-        text: '赞了你的帖子',
-        postId: 1,
-        thumbUrl: 'https://picsum.photos/seed/p1/120/120'
-      },
-      {
-        id: 'l2',
-        avatarUrl: 'https://picsum.photos/seed/u102/100',
-        nickname: '赵嘉航',
-        time: '2小时前',
-        text: '收藏了你的帖子',
-        postId: 2,
-        thumbUrl: 'https://picsum.photos/seed/p2/120/120'
-      }
-    ]
-  },
-
-  getMockCommentList(): CommentMsg[] {
-    return [
-      {
-        id: 'c1',
-        avatarUrl: 'https://picsum.photos/seed/u201/100',
-        nickname: '赵嘉航',
-        time: '1小时前',
-        text: '评论了你的帖子',
-        content: '哈哈哈哈哈哈哈我家那只也经常这样！',
-        postId: 1,
-        thumbUrl: 'https://picsum.photos/seed/p1/120/120'
-      },
-      {
-        id: 'c2',
-        avatarUrl: 'https://picsum.photos/seed/u202/100',
-        nickname: '用户202',
-        time: '昨天',
-        text: '@了你',
-        content: '快来看这个！',
-        postId: 2,
-        thumbUrl: 'https://picsum.photos/seed/p2/120/120'
-      }
-    ]
-  },
 
   getMockDMList(): DMMsg[] {
     return [

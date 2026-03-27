@@ -1,3 +1,6 @@
+import { createPost } from "../../services/posts"
+import { uploadFile } from "../../services/upload"
+
 Page({
   data: {
     statusBarHeight: 0,
@@ -36,7 +39,7 @@ Page({
 
   chooseMedia() {
     const { postType, mediaList } = this.data;
-    const count = 9 - mediaList.length;
+    const count = postType === "video" ? 1 : 9 - mediaList.length;
     
     if (count <= 0) return;
 
@@ -49,9 +52,12 @@ Page({
       mediaType,
       sourceType: ['album', 'camera'],
       success: (res) => {
-        this.setData({
-          mediaList: [...this.data.mediaList, ...res.tempFiles]
-        });
+        if (postType === "video") {
+          const v = res.tempFiles.find((f: any) => f.fileType === "video")
+          this.setData({ mediaList: v ? [v] : [] })
+          return
+        }
+        this.setData({ mediaList: [...this.data.mediaList, ...res.tempFiles] });
       }
     });
   },
@@ -130,13 +136,61 @@ Page({
 
     wx.showLoading({ title: '发布中...' });
 
-    // Mock publish
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({ title: '发布成功' });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
-    }, 1500);
+    Promise.resolve()
+      .then(async () => {
+        if (this.data.postType === "video") {
+          const video = this.data.mediaList.find((m: any) => m.fileType === "video")
+          if (!video?.tempFilePath) {
+            wx.hideLoading()
+            wx.showToast({ title: "请选择视频", icon: "none" })
+            throw new Error("video required")
+          }
+          const videoUrl = await uploadFile(video.tempFilePath)
+          const coverPath = (video as any).thumbTempFilePath
+          const coverUrl = typeof coverPath === "string" && coverPath ? await uploadFile(coverPath) : undefined
+          await createPost({
+            content: this.data.content,
+            videoUrl,
+            coverUrl,
+            location: this.data.location?.name,
+            visibility: this.data.visibility,
+            type: this.data.pet
+          })
+          return
+        }
+
+        const imagePaths = this.data.mediaList
+          .filter((m: any) => m.fileType === "image")
+          .map((m: any) => m.tempFilePath)
+        const imageUrls: string[] = []
+        for (const p of imagePaths) {
+          imageUrls.push(await uploadFile(p))
+        }
+        await createPost({
+          content: this.data.content,
+          images: imageUrls,
+          location: this.data.location?.name,
+          visibility: this.data.visibility,
+          type: this.data.pet
+        })
+      })
+      .then(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '发布成功' });
+        setTimeout(() => {
+          wx.setStorageSync("community_need_refresh", true)
+          wx.navigateBack({
+            delta: 1,
+            fail: () => {
+              wx.switchTab({ url: "/pages/community/index" })
+            }
+          });
+        }, 800);
+      })
+      .catch((e) => {
+        console.error(e)
+        wx.hideLoading();
+        wx.showToast({ title: '发布失败', icon: 'none' });
+      })
   }
 });

@@ -1,4 +1,5 @@
 import { request } from "./request"
+import { isMockEnabled } from "./mock"
 
 export type ShopProduct = {
   id: string
@@ -58,7 +59,7 @@ export type CheckoutPreview = {
   payableAmount: number
 }
 
-const MOCK = true
+const MOCK = () => isMockEnabled()
 const STORAGE_PRODUCTS = "shop_products"
 const STORAGE_CART = "shop_cart"
 const STORAGE_ORDERS = "shop_orders"
@@ -214,7 +215,7 @@ const getOrdersSync = () => readJSON<ShopOrder[]>(STORAGE_ORDERS, [])
 const setOrdersSync = (list: ShopOrder[]) => writeJSON(STORAGE_ORDERS, list)
 
 export const listAddresses = async (): Promise<UserAddress[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: UserAddress[] }>({ url: "/user/addresses", method: "GET" })
     return res.list || []
   }
@@ -243,7 +244,7 @@ export const listAddresses = async (): Promise<UserAddress[]> => {
 }
 
 export const getDefaultAddress = async (): Promise<UserAddress | null> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ data: UserAddress }>({ url: "/user/address/default", method: "GET" })
     return res.data || null
   }
@@ -261,7 +262,7 @@ export const getDefaultAddress = async (): Promise<UserAddress | null> => {
 }
 
 export const listProducts = async (): Promise<ShopProduct[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/products", method: "GET" })
     return res.list || []
   }
@@ -270,7 +271,7 @@ export const listProducts = async (): Promise<ShopProduct[]> => {
 }
 
 export const getProductDetail = async (id: string): Promise<ShopProduct | null> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     return await request<ShopProduct>({ url: `/shop/products/${encodeURIComponent(id)}`, method: "GET" })
   }
   ensureSeed()
@@ -279,7 +280,7 @@ export const getProductDetail = async (id: string): Promise<ShopProduct | null> 
 }
 
 export const listFavorites = async (): Promise<ShopProduct[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/favorites", method: "GET" })
     return res.list || []
   }
@@ -288,7 +289,7 @@ export const listFavorites = async (): Promise<ShopProduct[]> => {
 }
 
 export const toggleFavorite = async (productId: string): Promise<boolean> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ favorite: boolean }>({ url: `/shop/favorites/${encodeURIComponent(productId)}`, method: "POST" })
     return !!res.favorite
   }
@@ -300,7 +301,7 @@ export const toggleFavorite = async (productId: string): Promise<boolean> => {
 }
 
 export const listCartItems = async (): Promise<Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }>> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }> }>({ url: "/shop/cart", method: "GET" })
     return res.list || []
   }
@@ -315,7 +316,7 @@ export const listCartItems = async (): Promise<Array<{ product: ShopProduct | nu
 }
 
 export const addToCart = async (productId: string, count = 1): Promise<void> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     await request<void>({ url: "/shop/cart", method: "POST", data: { productId, count } })
     return
   }
@@ -331,7 +332,7 @@ export const addToCart = async (productId: string, count = 1): Promise<void> => 
 }
 
 export const updateCartItem = async (productId: string, payload: { count?: number; checked?: boolean }): Promise<void> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     await request<void>({ url: `/shop/cart/${encodeURIComponent(productId)}`, method: "PATCH", data: payload })
     return
   }
@@ -347,7 +348,7 @@ export const updateCartItem = async (productId: string, payload: { count?: numbe
 }
 
 export const setAllCartChecked = async (checked: boolean): Promise<void> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     await request<void>({ url: "/shop/cart/check-all", method: "POST", data: { checked } })
     return
   }
@@ -357,7 +358,7 @@ export const setAllCartChecked = async (checked: boolean): Promise<void> => {
 }
 
 export const clearInvalidCartItems = async (): Promise<void> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     await request<void>({ url: "/shop/cart/invalid", method: "DELETE" })
     return
   }
@@ -366,7 +367,7 @@ export const clearInvalidCartItems = async (): Promise<void> => {
 }
 
 export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; productId?: string; count?: number }): Promise<CheckoutPreview> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     return await request<CheckoutPreview>({ url: "/shop/order/preview", method: "POST", data: params })
   }
   ensureSeed()
@@ -392,7 +393,7 @@ export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; pr
 }
 
 export const submitOrder = async (params: { from: "cart" | "detail"; productId?: string; count?: number; address: string; payType: "wx" | "balance" }): Promise<ShopOrder> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     return await request<ShopOrder>({ url: "/shop/order", method: "POST", data: params })
   }
   ensureSeed()
@@ -422,14 +423,20 @@ export const submitOrder = async (params: { from: "cart" | "detail"; productId?:
 }
 
 export const deleteOrder = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK()) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}`, method: "DELETE" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(orders.filter((o) => o.id !== id))
 }
 
 export const confirmOrderReceipt = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK()) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}/confirm-receipt`, method: "POST" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(
@@ -443,7 +450,10 @@ export const confirmOrderReceipt = async (id: string): Promise<void> => {
 }
 
 export const payOrderMock = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK()) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}/pay`, method: "POST" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(
@@ -457,7 +467,7 @@ export const payOrderMock = async (id: string): Promise<void> => {
 }
 
 export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: ShopOrder[] }>({ url: "/shop/orders", method: "GET", data: { status } })
     return res.list || []
   }
@@ -468,7 +478,7 @@ export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> 
 }
 
 export const listRechargeOptions = async (): Promise<Array<{ id: string; amount: number; bonus: number }>> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: Array<{ id: string; amount: number; bonus: number }> }>({ url: "/shop/recharge/options", method: "GET" })
     return res.list || []
   }
@@ -481,7 +491,7 @@ export const listRechargeOptions = async (): Promise<Array<{ id: string; amount:
 }
 
 export const submitRecharge = async (optionId: string): Promise<{ balance: number }> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     return await request<{ balance: number }>({ url: "/shop/recharge", method: "POST", data: { optionId } })
   }
   const option = (await listRechargeOptions()).find((item) => item.id === optionId)
@@ -493,7 +503,7 @@ export const submitRecharge = async (optionId: string): Promise<{ balance: numbe
 }
 
 export const listFaqs = async (): Promise<Array<{ id: string; q: string; a: string }>> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: Array<{ id: string; q: string; a: string }> }>({ url: "/shop/customer-service/faqs", method: "GET" })
     return res.list || []
   }

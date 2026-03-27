@@ -1,4 +1,4 @@
-import { getPosts, Post } from "../../../services/posts"
+import { getMyHistoryPosts, Post } from "../../../services/posts"
 
 Page({
   data: {
@@ -6,10 +6,8 @@ Page({
   },
   async onShow() {
     try {
-      const posts = await getPosts()
-      // 模拟过滤出浏览过的帖子（这里取前 5 个作为浏览历史的 mock 数据）
-      const historyPosts = posts.slice(0, 5)
-      this.setData({ list: historyPosts })
+      const res = await getMyHistoryPosts(1, 20)
+      this.setData({ list: res.list })
     } catch (e) {
       console.error(e)
     }

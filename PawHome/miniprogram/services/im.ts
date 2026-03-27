@@ -1,5 +1,6 @@
 import { request } from "./request"
 import { MOCK_USERS } from "./user"
+import { isMockEnabled } from "./mock"
 
 export type IMConversation = {
   id: string
@@ -22,7 +23,7 @@ export type IMMessage = {
 }
 
 // TODO: 后端上线后，把 MOCK 设为 false，并将下面的接口路径改为你们真实的后端路由。
-const MOCK = true
+const MOCK = () => isMockEnabled()
 
 const STORAGE_CONVERSATIONS = "im_conversations"
 const storageMessagesKey = (conversationId: string) => `im_messages_${conversationId}`
@@ -141,7 +142,7 @@ export const formatTime = (ts: number) => {
 }
 
 export const listConversations = async (): Promise<IMConversation[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: IMConversation[] }>({ url: "/im/conversations", method: "GET" })
     return res.list || []
   }
@@ -151,7 +152,7 @@ export const listConversations = async (): Promise<IMConversation[]> => {
 }
 
 export const listMessages = async (conversationId: string): Promise<IMMessage[]> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<{ list: IMMessage[] }>({ url: "/im/messages", method: "GET", data: { conversationId } })
     return res.list || []
   }
@@ -160,7 +161,7 @@ export const listMessages = async (conversationId: string): Promise<IMMessage[]>
 }
 
 export const markConversationRead = async (conversationId: string): Promise<void> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     await request<void>({ url: `/im/conversations/${encodeURIComponent(conversationId)}/read`, method: "POST" })
     return
   }
@@ -176,7 +177,7 @@ export const sendTextMessage = async (params: {
   text: string
   clientMsgId: string
 }): Promise<IMMessage> => {
-  if (!MOCK) {
+  if (!MOCK()) {
     const res = await request<IMMessage>({ url: "/im/messages", method: "POST", data: params })
     return res
   }

@@ -1,4 +1,5 @@
-import { loginSms, sendSms, setToken, code2Session } from "../../services/auth";
+import { loginSms, sendSms, setToken, code2Session, loginPassword, registerUser } from "../../services/auth";
+import { getUserProfile } from "../../services/user";
 import { isPhone } from "../../utils/validators";
 
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
@@ -97,6 +98,14 @@ Page({
       try {
         const r = await loginSms(account, code);
         setToken(r.token);
+        try {
+          const me = await getUserProfile()
+          wx.setStorageSync("userId", me.id)
+        } catch {
+          setToken("")
+          wx.showToast({ title: "登录验证失败，请检查服务是否可用", icon: "none" })
+          return
+        }
         wx.showToast({ title: "登录成功" });
         this.goMain();
       } catch (e) {
@@ -105,23 +114,46 @@ Page({
         this.setData({ logging: false });
       }
     } else {
-      // Password login logic (mock)
       const { account, password } = this.data;
       if (!account || !password) {
         wx.showToast({ title: "请输入账号和密码", icon: "none" });
         return;
       }
       this.setData({ logging: true });
-      setTimeout(() => {
-        setToken("mock-token-password");
-        wx.showToast({ title: "登录成功" });
-        this.goMain();
-        this.setData({ logging: false });
-      }, 1000);
+      try {
+        const r = await loginPassword(account, password)
+        setToken(r.token)
+        try {
+          const me = await getUserProfile()
+          wx.setStorageSync("userId", me.id)
+        } catch {
+          setToken("")
+          wx.showToast({ title: "登录验证失败，请检查服务是否可用", icon: "none" })
+          return
+        }
+        wx.showToast({ title: "登录成功" })
+        this.goMain()
+      } catch (e: any) {
+        if (e?.code === "PASSWORD_NOT_SET") {
+          wx.showToast({ title: e?.message || "该账号未设置密码，请用验证码登录", icon: "none" })
+          this.setData({
+            loginType: "sms",
+            account,
+            password: "",
+            code: ""
+          })
+          return
+        }
+
+        const msg = e?.message || "登录失败"
+        wx.showToast({ title: msg, icon: "none" })
+      } finally {
+        this.setData({ logging: false })
+      }
     }
   },
 
-  onRegister() {
+  async onRegister() {
     const { regUsername, regPhone, regPassword, regPasswordConfirm } = this.data;
     if (!regUsername || !regPhone || !regPassword || !regPasswordConfirm) {
       wx.showToast({ title: "请填写完整信息", icon: "none" });
@@ -131,8 +163,39 @@ Page({
       wx.showToast({ title: "两次密码不一致", icon: "none" });
       return;
     }
-    wx.showToast({ title: "注册成功，请登录", icon: "none" });
-    this.toggleRegister();
+    this.setData({ logging: true })
+    try {
+      const r = await registerUser(regPhone, regPassword, regUsername)
+      setToken(r.token)
+      try {
+        const me = await getUserProfile()
+        wx.setStorageSync("userId", me.id)
+      } catch {
+        setToken("")
+        wx.showToast({ title: "注册验证失败，请检查服务是否可用", icon: "none" })
+        return
+      }
+      wx.showToast({ title: "注册成功" })
+      this.goMain()
+    } catch (e: any) {
+      const statusCode = e?.statusCode
+      if (statusCode === 409) {
+        wx.showToast({ title: "该手机号已注册，请登录", icon: "none" })
+        this.setData({
+          isRegister: false,
+          loginType: "password",
+          account: regPhone,
+          password: "",
+          code: ""
+        })
+        return
+      }
+
+      const msg = e?.message || "注册失败"
+      wx.showToast({ title: msg, icon: "none" })
+    } finally {
+      this.setData({ logging: false })
+    }
   },
 
   onWxLogin() {
@@ -141,6 +204,11 @@ Page({
         try {
           const data = await code2Session(r.code);
           setToken(data.token);
+          try {
+            const me = await getUserProfile()
+            wx.setStorageSync("userId", me.id)
+          } catch {
+          }
           wx.showToast({ title: "登录成功" });
           
           // Optionally show user profile modal here if needed, or just go to main

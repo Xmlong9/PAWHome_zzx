@@ -262,6 +262,10 @@ def register_routes(bp) -> None:
     def get_pet_by_query():
         user: User = g.current_user
         pet_id = request.args.get("id")
+        if isinstance(pet_id, str):
+            pet_id = pet_id.strip()
+            if pet_id in ("", "undefined", "null"):
+                pet_id = None
         q = Pet.query.filter_by(user_id=user.id)
         if pet_id:
             p = q.filter_by(id=pet_id).first()

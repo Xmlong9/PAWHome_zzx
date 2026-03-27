@@ -149,7 +149,9 @@ export async function getPetProfile(id?: string): Promise<PetProfile> {
     }
     return mockPets[0];
   }
-  return request({ url: "/users/me/pet", method: "GET", data: { id } });
+  const safeId = typeof id === "string" ? id.trim() : ""
+  const data = safeId && safeId !== "undefined" && safeId !== "null" ? { id: safeId } : {}
+  return request({ url: "/users/me/pet", method: "GET", data });
 }
 
 export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok: boolean; data: PetProfile }> {

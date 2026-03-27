@@ -68,6 +68,8 @@ def test_api_smoke_big(client, app, user1_token, user2_token):
 
     r = client.get("/api/v1/users/me/pets", headers=h1)
     assert r.status_code == 200
+    r = client.get("/api/v1/users/me/pet", headers=h1, query_string={"id": "undefined"})
+    assert r.status_code == 200
     r = client.get("/api/v1/users/me/pet", headers=h1, query_string={"id": pet_id})
     assert r.status_code == 200
     r = client.put(f"/api/v1/users/me/pets/{pet_id}", headers=h1, json={"birthday": "bad"})

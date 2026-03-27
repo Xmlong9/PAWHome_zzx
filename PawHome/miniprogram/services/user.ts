@@ -1,7 +1,5 @@
 import { request } from "./request";
 
-const MOCK = true;
-
 export type UserProfile = {
   id: string;
   nickname: string;
@@ -28,151 +26,118 @@ export type PetProfile = {
   birthday: string;
 }
 
-export const MOCK_USERS: Record<string, UserProfile> = {
-  "324666": {
-    id: "324666",
-    nickname: "淡水鱼",
-    avatarUrl: "/assets/images/mine/头像.jpg",
-    location: "浙江杭州",
-    signature: "热爱生活，善待动物，希望能在这里认识更多爱宠物的朋友~",
-    gender: "男",
-    birthday: "2000-01-01",
-    postCount: 128,
-    followingCount: 256,
-    followerCount: 512,
-    likeCount: 1024
-  },
-  "101": {
-    id: "101",
-    nickname: "赵嘉航",
-    avatarUrl: "https://picsum.photos/seed/user2/100",
-    location: "北京",
-    signature: "一名普通的铲屎官，家里有一只调皮的狗狗。",
-    gender: "男",
-    birthday: "1995-05-15",
-    postCount: 42,
-    followingCount: 128,
-    followerCount: 356,
-    likeCount: 888
-  },
-  "102": {
-    id: "102",
-    nickname: "李华",
-    avatarUrl: "https://picsum.photos/seed/user3/100",
-    location: "上海",
-    signature: "猫咪就是正义！",
-    gender: "女",
-    birthday: "1998-08-08",
-    postCount: 56,
-    followingCount: 200,
-    followerCount: 890,
-    likeCount: 2341
-  },
-  "103": {
-    id: "103",
-    nickname: "王小明",
-    avatarUrl: "https://picsum.photos/seed/user4/100",
-    location: "广州",
-    signature: "爬宠爱好者，欢迎交流。",
-    gender: "男",
-    birthday: "1992-12-12",
-    postCount: 12,
-    followingCount: 45,
-    followerCount: 120,
-    likeCount: 340
-  },
-  "104": {
-    id: "104",
-    nickname: "张伟",
-    avatarUrl: "https://picsum.photos/seed/user5/100",
-    location: "深圳",
-    signature: "专注水族造景10年。",
-    gender: "男",
-    birthday: "1988-03-03",
-    postCount: 89,
-    followingCount: 300,
-    followerCount: 1500,
-    likeCount: 5600
-  }
-};
+const DEFAULT_AVATAR_URL = "/assets/images/mine/头像.jpg";
+
+function toUserProfile(raw: any): UserProfile {
+  return {
+    id: raw?.id || "",
+    nickname: raw?.nickname || "用户",
+    avatarUrl: raw?.avatar_url || DEFAULT_AVATAR_URL,
+    location: raw?.location || "",
+    signature: raw?.signature || "",
+    gender: (raw?.gender as any) || undefined,
+    birthday: raw?.birthday || undefined,
+    postCount: Number(raw?.post_count || 0),
+    followingCount: Number(raw?.following_count || 0),
+    followerCount: Number(raw?.follower_count || 0),
+    likeCount: Number(raw?.like_count || 0)
+  };
+}
+
+function parseWeightKg(value: string): number | null {
+  if (!value) return null;
+  const n = Number(String(value).replace(/kg/i, "").trim());
+  if (Number.isFinite(n) && n > 0) return n;
+  return null;
+}
+
+function toPetProfile(raw: any): PetProfile {
+  const weight = raw?.weight_kg != null ? `${raw.weight_kg}kg` : "";
+  return {
+    id: raw?.id || "",
+    name: raw?.name || "",
+    avatarUrl: raw?.avatar_url || "/assets/images/mine/宠物.png",
+    type: raw?.type || undefined,
+    breed: raw?.breed || undefined,
+    gender: raw?.gender === "美女" ? "美女" : "帅哥",
+    weight,
+    isSterilized: raw?.is_sterilized ? "是" : "否",
+    birthday: raw?.birthday ? String(raw.birthday) : ""
+  };
+}
 
 export async function getUserProfile(userId?: string): Promise<UserProfile> {
-  if (MOCK) {
-    if (userId && MOCK_USERS[userId]) {
-      return MOCK_USERS[userId];
-    }
-    // 兼容名字匹配（赵嘉航）
-    if (userId === '赵嘉航') {
-       return MOCK_USERS["101"];
-    }
-    
-    // 默认返回自己（淡水鱼）
-    return MOCK_USERS["324666"];
+  if (!userId) {
+    const res = await request<any>({ url: "/users/me/profile", method: "GET" });
+    return toUserProfile(res);
   }
-  return request({ url: "/users/me", method: "GET" });
+  const res = await request<any>({ url: `/users/${encodeURIComponent(userId)}/profile`, method: "GET" });
+  return toUserProfile(res);
 }
 
 export async function updateUserProfile(data: Partial<UserProfile>): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: "/users/me", method: "PUT", data });
+  const payload: any = {};
+  if (data.nickname != null) payload.nickname = data.nickname;
+  if (data.avatarUrl != null) payload.avatar_url = data.avatarUrl;
+  if (data.location != null) payload.location = data.location;
+  if (data.signature != null) payload.signature = data.signature;
+  if (data.gender != null) payload.gender = data.gender;
+  if (data.birthday != null) payload.birthday = data.birthday;
+  return request({ url: "/users/me/profile", method: "PUT", data: payload });
 }
 
-let mockPets: PetProfile[] = [
-  {
-    id: "pet_1",
-    name: "涛涛",
-    avatarUrl: "/assets/images/mine/宠物.png",
-    type: "水族",
-    breed: "热带鱼",
-    gender: "帅哥",
-    weight: "4kg",
-    isSterilized: "是",
-    birthday: "2022.5.20"
-  }
-];
-
 export async function getPetList(): Promise<PetProfile[]> {
-  if (MOCK) {
-    return [...mockPets];
-  }
-  return request({ url: "/users/me/pets", method: "GET" });
+  const res = await request<{ list: any[] }>({ url: "/pets", method: "GET", data: { page: 1, pageSize: 100 } });
+  return (res.list || []).map(toPetProfile);
 }
 
 export async function getPetProfile(id?: string): Promise<PetProfile> {
-  if (MOCK) {
-    if (id) {
-      return mockPets.find(p => p.id === id) || mockPets[0];
-    }
-    return mockPets[0];
+  if (!id) {
+    const list = await getPetList();
+    if (list.length) return list[0];
+    return {
+      id: "",
+      name: "",
+      avatarUrl: "/assets/images/mine/宠物.png",
+      gender: "帅哥",
+      weight: "",
+      isSterilized: "否",
+      birthday: ""
+    };
   }
-  return request({ url: "/users/me/pet", method: "GET", data: { id } });
+  const res = await request<any>({ url: `/pets/${encodeURIComponent(id)}`, method: "GET" });
+  return toPetProfile(res);
 }
 
 export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok: boolean; data: PetProfile }> {
-  if (MOCK) {
-    const newPet: PetProfile = {
-      ...data,
-      id: `pet_${Date.now()}`
-    };
-    mockPets.push(newPet);
-    return { ok: true, data: newPet };
-  }
-  return request({ url: "/users/me/pets", method: "POST", data });
+  const payload: any = {
+    name: data.name,
+    avatar_url: data.avatarUrl,
+    type: data.type,
+    breed: data.breed,
+    gender: data.gender,
+    weight_kg: parseWeightKg(data.weight),
+    is_sterilized: data.isSterilized === "是",
+    birthday: data.birthday
+  };
+  const res = await request<any>({ url: "/pets", method: "POST", data: payload });
+  return { ok: true, data: toPetProfile(res) };
 }
 
 export async function updatePetProfile(id: string, data: Partial<Omit<PetProfile, "id">>): Promise<{ ok: boolean; data: PetProfile | null }> {
-  if (MOCK) {
-    const index = mockPets.findIndex(p => p.id === id);
-    if (index === -1) {
-      return { ok: false, data: null };
-    }
-    mockPets[index] = {
-      ...mockPets[index],
-      ...data
-    };
-    return { ok: true, data: mockPets[index] };
-  }
-  return request({ url: `/users/me/pets/${id}`, method: "PUT", data });
+  const payload: any = {};
+  if (data.name != null) payload.name = data.name;
+  if (data.avatarUrl != null) payload.avatar_url = data.avatarUrl;
+  if (data.type != null) payload.type = data.type;
+  if (data.breed != null) payload.breed = data.breed;
+  if (data.gender != null) payload.gender = data.gender;
+  if (data.weight != null) payload.weight_kg = parseWeightKg(data.weight);
+  if (data.isSterilized != null) payload.is_sterilized = data.isSterilized === "是";
+  if (data.birthday != null) payload.birthday = data.birthday;
+
+  const res = await request<any>({ url: `/pets/${encodeURIComponent(id)}`, method: "PUT", data: payload });
+  const row = (res as any)?.data?.[0];
+  return { ok: true, data: row ? toPetProfile(row) : null };
 }
 
 export type UserSettings = {
@@ -182,34 +147,57 @@ export type UserSettings = {
   commentAccess: "所有人" | "仅关注者" | "关闭评论";
 }
 
-let mockSettings: UserSettings = {
-  pushNotice: true,
-  interactNotice: true,
-  homeAccess: "仅关注者可见",
-  commentAccess: "所有人"
-};
+function mapSettingsFromApi(raw: any): UserSettings {
+  const homeAccessMap: Record<string, UserSettings["homeAccess"]> = {
+    all: "所有人可见",
+    followers: "仅关注者可见",
+    self: "仅自己可见"
+  };
+  const commentAccessMap: Record<string, UserSettings["commentAccess"]> = {
+    all: "所有人",
+    followers: "仅关注者",
+    disabled: "关闭评论"
+  };
+  return {
+    pushNotice: !!raw?.pushNotice,
+    interactNotice: !!raw?.interactNotice,
+    homeAccess: homeAccessMap[String(raw?.homeAccess || "followers")] || "仅关注者可见",
+    commentAccess: commentAccessMap[String(raw?.commentAccess || "all")] || "所有人"
+  };
+}
+
+function mapSettingsToApi(data: Partial<UserSettings>): any {
+  const homeAccessMap: Record<UserSettings["homeAccess"], string> = {
+    "所有人可见": "all",
+    "仅关注者可见": "followers",
+    "仅自己可见": "self"
+  };
+  const commentAccessMap: Record<UserSettings["commentAccess"], string> = {
+    "所有人": "all",
+    "仅关注者": "followers",
+    "关闭评论": "disabled"
+  };
+  const payload: any = {};
+  if (data.pushNotice != null) payload.pushNotice = data.pushNotice;
+  if (data.interactNotice != null) payload.interactNotice = data.interactNotice;
+  if (data.homeAccess != null) payload.homeAccess = homeAccessMap[data.homeAccess];
+  if (data.commentAccess != null) payload.commentAccess = commentAccessMap[data.commentAccess];
+  return payload;
+}
 
 export async function getUserSettings(): Promise<UserSettings> {
-  if (MOCK) {
-    return mockSettings;
-  }
-  return request({ url: "/users/me/settings", method: "GET" });
+  const res = await request<any>({ url: "/users/me/settings", method: "GET" });
+  return mapSettingsFromApi(res);
 }
 
 export async function updateUserSettings(data: Partial<UserSettings>): Promise<{ ok: boolean }> {
-  if (MOCK) {
-    mockSettings = { ...mockSettings, ...data };
-    return { ok: true };
-  }
-  return request({ url: "/users/me/settings", method: "PUT", data });
+  return request({ url: "/users/me/settings", method: "PUT", data: mapSettingsToApi(data) });
 }
 
-export async function followUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "POST" });
+export async function followUser(userId: string): Promise<{ ok: boolean }> {
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "POST" });
 }
 
-export async function unfollowUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "DELETE" });
+export async function unfollowUser(userId: string): Promise<{ ok: boolean }> {
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "DELETE" });
 }

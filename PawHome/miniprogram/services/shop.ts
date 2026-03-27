@@ -58,7 +58,7 @@ export type CheckoutPreview = {
   payableAmount: number
 }
 
-const MOCK = true
+const MOCK = false
 const STORAGE_PRODUCTS = "shop_products"
 const STORAGE_CART = "shop_cart"
 const STORAGE_ORDERS = "shop_orders"
@@ -214,10 +214,6 @@ const getOrdersSync = () => readJSON<ShopOrder[]>(STORAGE_ORDERS, [])
 const setOrdersSync = (list: ShopOrder[]) => writeJSON(STORAGE_ORDERS, list)
 
 export const listAddresses = async (): Promise<UserAddress[]> => {
-  if (!MOCK) {
-    const res = await request<{ list: UserAddress[] }>({ url: "/user/addresses", method: "GET" })
-    return res.list || []
-  }
   return [
     {
       id: "addr_1",
@@ -243,10 +239,6 @@ export const listAddresses = async (): Promise<UserAddress[]> => {
 }
 
 export const getDefaultAddress = async (): Promise<UserAddress | null> => {
-  if (!MOCK) {
-    const res = await request<{ data: UserAddress }>({ url: "/user/address/default", method: "GET" })
-    return res.data || null
-  }
   // Mock data as requested
   return {
     id: "addr_1",
@@ -260,10 +252,46 @@ export const getDefaultAddress = async (): Promise<UserAddress | null> => {
   }
 }
 
+type BackendSku = { id: number; spec?: string | null; price: number; market_price?: number | null; stock?: number | null };
+type BackendProduct = {
+  id: number;
+  code?: string | null;
+  name: string;
+  description?: string | null;
+  cover_url?: string | null;
+  sold_count?: number | null;
+  rating?: number | null;
+  skus?: BackendSku[] | null;
+};
+
+function toShopProduct(raw: BackendProduct, opts?: { favorite?: boolean; sku?: BackendSku | null }): ShopProduct {
+  const id = (raw.code || String(raw.id)) as string;
+  const sku = opts?.sku || (raw.skus || [])[0] || null;
+  const specs = (raw.skus || []).map(s => s.spec).filter((v): v is string => !!v);
+
+  return {
+    id,
+    name: raw.name,
+    desc: raw.description || "",
+    price: Number(sku?.price || 0),
+    marketPrice: Number(sku?.market_price || sku?.price || 0),
+    imageUrl: raw.cover_url || "/assets/images/shop/商品1.jpg",
+    soldCount: Number(raw.sold_count || 0),
+    tags: [],
+    rating: Number(raw.rating || 0),
+    favorite: !!opts?.favorite,
+    specs: specs.length ? specs : sku?.spec ? [sku.spec] : []
+  }
+}
+
 export const listProducts = async (): Promise<ShopProduct[]> => {
   if (!MOCK) {
-    const res = await request<{ list: ShopProduct[] }>({ url: "/shop/products", method: "GET" })
-    return res.list || []
+    const [productsRes, favRes] = await Promise.all([
+      request<{ list: BackendProduct[] }>({ url: "/shop/products", method: "GET", data: { page: 1, pageSize: 50 } }),
+      request<{ list: BackendProduct[] }>({ url: "/shop/favorites", method: "GET" })
+    ])
+    const favoriteSet = new Set((favRes.list || []).map(p => p.code || String(p.id)))
+    return (productsRes.list || []).map(p => toShopProduct(p, { favorite: favoriteSet.has(p.code || String(p.id)) }))
   }
   ensureSeed()
   return getProductsSync()
@@ -271,7 +299,12 @@ export const listProducts = async (): Promise<ShopProduct[]> => {
 
 export const getProductDetail = async (id: string): Promise<ShopProduct | null> => {
   if (!MOCK) {
-    return await request<ShopProduct>({ url: `/shop/products/${encodeURIComponent(id)}`, method: "GET" })
+    const res = await request<{ product: BackendProduct; skus: BackendSku[] }>({
+      url: `/shop/products/${encodeURIComponent(id)}`,
+      method: "GET"
+    })
+    const product = { ...res.product, skus: res.skus } as BackendProduct
+    return toShopProduct(product, { favorite: false })
   }
   ensureSeed()
   const product = getProductsSync().find((item) => item.id === id)
@@ -280,8 +313,8 @@ export const getProductDetail = async (id: string): Promise<ShopProduct | null> 
 
 export const listFavorites = async (): Promise<ShopProduct[]> => {
   if (!MOCK) {
-    const res = await request<{ list: ShopProduct[] }>({ url: "/shop/favorites", method: "GET" })
-    return res.list || []
+    const res = await request<{ list: BackendProduct[] }>({ url: "/shop/favorites", method: "GET" })
+    return (res.list || []).map((p) => toShopProduct(p, { favorite: true }))
   }
   ensureSeed()
   return getProductsSync().filter((item) => item.favorite)
@@ -301,8 +334,25 @@ export const toggleFavorite = async (productId: string): Promise<boolean> => {
 
 export const listCartItems = async (): Promise<Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }>> => {
   if (!MOCK) {
-    const res = await request<{ list: Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }> }>({ url: "/shop/cart", method: "GET" })
-    return res.list || []
+    const res = await request<{
+      list: Array<{
+        quantity: number
+        checked: boolean
+        invalid: boolean
+        skus: BackendSku & { products: BackendProduct }
+      }>
+    }>({ url: "/shop/cart", method: "GET" })
+
+    return (res.list || []).map((row) => {
+      const sku = row.skus as any
+      const product = sku?.products
+      return {
+        product: product ? toShopProduct({ ...product, skus: [sku] } as BackendProduct, { favorite: false, sku }) : null,
+        count: Number(row.quantity || 1),
+        checked: !!row.checked,
+        invalid: !!row.invalid
+      }
+    })
   }
   ensureSeed()
   const products = getProductsSync()
@@ -367,7 +417,24 @@ export const clearInvalidCartItems = async (): Promise<void> => {
 
 export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; productId?: string; count?: number }): Promise<CheckoutPreview> => {
   if (!MOCK) {
-    return await request<CheckoutPreview>({ url: "/shop/order/preview", method: "POST", data: params })
+    const res = await request<{
+      items: Array<{ product: BackendProduct; sku: BackendSku; count: number }>
+      goodsAmount: number
+      freight: number
+      discount: number
+      payableAmount: number
+    }>({ url: "/shop/order/preview", method: "POST", data: params })
+
+    return {
+      items: (res.items || []).map((it) => ({
+        product: toShopProduct({ ...it.product, skus: [it.sku] } as BackendProduct, { sku: it.sku }),
+        count: Number(it.count || 1)
+      })),
+      goodsAmount: Number(res.goodsAmount || 0),
+      freight: Number(res.freight || 0),
+      discount: Number(res.discount || 0),
+      payableAmount: Number(res.payableAmount || 0)
+    }
   }
   ensureSeed()
   const products = getProductsSync()
@@ -393,7 +460,24 @@ export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; pr
 
 export const submitOrder = async (params: { from: "cart" | "detail"; productId?: string; count?: number; address: string; payType: "wx" | "balance" }): Promise<ShopOrder> => {
   if (!MOCK) {
-    return await request<ShopOrder>({ url: "/shop/order", method: "POST", data: params })
+    const res = await request<{ order: any; orderItems: any[] }>({ url: "/shop/order", method: "POST", data: params })
+    const order = res.order
+    const items = (res.orderItems || []).map((it) => ({
+      id: String(it.product_id || it.sku_id || ""),
+      name: String(it.product_name || ""),
+      price: Number(it.price || 0),
+      imageUrl: "/assets/images/shop/商品1.jpg",
+      count: Number(it.quantity || 1),
+      spec: String(it.sku_spec || "默认")
+    }))
+    return {
+      id: String(order.order_no),
+      status: order.status,
+      amount: Number(order.pay_amount || 0),
+      createdAt: new Date(order.created_at).getTime(),
+      productNames: items.map(i => i.name),
+      items
+    }
   }
   ensureSeed()
   const preview = await buildCheckoutPreview({ from: params.from, productId: params.productId, count: params.count })
@@ -422,14 +506,20 @@ export const submitOrder = async (params: { from: "cart" | "detail"; productId?:
 }
 
 export const deleteOrder = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}`, method: "DELETE" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(orders.filter((o) => o.id !== id))
 }
 
 export const confirmOrderReceipt = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}/confirm`, method: "POST" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(
@@ -443,7 +533,10 @@ export const confirmOrderReceipt = async (id: string): Promise<void> => {
 }
 
 export const payOrderMock = async (id: string): Promise<void> => {
-  if (!MOCK) return
+  if (!MOCK) {
+    await request<void>({ url: `/shop/orders/${encodeURIComponent(id)}/pay_mock`, method: "POST" })
+    return
+  }
   ensureSeed()
   const orders = getOrdersSync()
   setOrdersSync(
@@ -458,8 +551,25 @@ export const payOrderMock = async (id: string): Promise<void> => {
 
 export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> => {
   if (!MOCK) {
-    const res = await request<{ list: ShopOrder[] }>({ url: "/shop/orders", method: "GET", data: { status } })
-    return res.list || []
+    const res = await request<{ list: any[] }>({ url: "/shop/orders", method: "GET", data: { status } })
+    return (res.list || []).map((o) => {
+      const items = (o.order_items || []).map((it: any) => ({
+        id: String(it.product_id || ""),
+        name: String(it.product_name || ""),
+        price: Number(it.price || 0),
+        imageUrl: "/assets/images/shop/商品1.jpg",
+        count: Number(it.quantity || 1),
+        spec: String(it.sku_spec || "默认")
+      }))
+      return {
+        id: String(o.order_no),
+        status: o.status,
+        amount: Number(o.pay_amount || 0),
+        createdAt: new Date(o.created_at).getTime(),
+        productNames: items.map(i => i.name),
+        items
+      } as ShopOrder
+    })
   }
   ensureSeed()
   const list = getOrdersSync()
@@ -468,10 +578,6 @@ export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> 
 }
 
 export const listRechargeOptions = async (): Promise<Array<{ id: string; amount: number; bonus: number }>> => {
-  if (!MOCK) {
-    const res = await request<{ list: Array<{ id: string; amount: number; bonus: number }> }>({ url: "/shop/recharge/options", method: "GET" })
-    return res.list || []
-  }
   return [
     { id: "r1", amount: 30, bonus: 0 },
     { id: "r2", amount: 68, bonus: 8 },
@@ -481,9 +587,6 @@ export const listRechargeOptions = async (): Promise<Array<{ id: string; amount:
 }
 
 export const submitRecharge = async (optionId: string): Promise<{ balance: number }> => {
-  if (!MOCK) {
-    return await request<{ balance: number }>({ url: "/shop/recharge", method: "POST", data: { optionId } })
-  }
   const option = (await listRechargeOptions()).find((item) => item.id === optionId)
   const current = Number(wx.getStorageSync("wallet_balance") || 0)
   const value = option ? option.amount + option.bonus : 0
@@ -493,10 +596,6 @@ export const submitRecharge = async (optionId: string): Promise<{ balance: numbe
 }
 
 export const listFaqs = async (): Promise<Array<{ id: string; q: string; a: string }>> => {
-  if (!MOCK) {
-    const res = await request<{ list: Array<{ id: string; q: string; a: string }> }>({ url: "/shop/customer-service/faqs", method: "GET" })
-    return res.list || []
-  }
   return [
     { id: "f1", q: "发货多久能到？", a: "常规地区 48 小时内发出，偏远地区以物流信息为准。" },
     { id: "f2", q: "支持7天无理由吗？", a: "未拆封且不影响二次销售的商品可申请。" },

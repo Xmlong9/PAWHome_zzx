@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "supabase:healthcheck": "node scripts/supabase-healthcheck.mjs"
+  },
   "devDependencies": {
     "dotenv": "^17.3.1"
   }

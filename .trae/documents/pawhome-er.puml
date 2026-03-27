@@ -1,0 +1,110 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+class profiles
+class roles
+class user_roles
+class user_settings
+class pets
+class follows
+
+class posts
+class post_media
+class tags
+class post_tags
+class topics
+class post_topics
+class comments
+class post_likes
+class post_favorites
+class comment_likes
+class histories
+
+class dm_conversations
+class dm_messages
+class notifications
+
+class categories
+class brands
+class products
+class skus
+class product_favorites
+class carts
+class cart_items
+class addresses
+class orders
+class order_items
+class payments
+class refunds
+class reviews
+class coupons
+class coupon_claims
+class wallet_accounts
+class wallet_transactions
+class recharge_options
+class faqs
+
+class service_orgs
+class service_types
+class service_items
+class schedules
+class appointments
+class service_orders
+class service_records
+class ratings
+
+class config_kv
+class banner_slots
+class banner_items
+class community_cards
+class audit_logs
+class risk_events
+class ban_list
+
+profiles "1" -- "*" pets
+profiles "1" -- "*" posts
+profiles "1" -- "*" comments
+profiles "1" -- "*" post_likes
+profiles "1" -- "*" post_favorites
+profiles "1" -- "*" comment_likes
+profiles "1" -- "*" histories
+profiles "1" -- "*" dm_conversations
+profiles "1" -- "*" notifications
+profiles "1" -- "*" addresses
+profiles "1" -- "*" orders
+profiles "1" -- "1" carts
+profiles "1" -- "1" user_settings
+
+profiles "*" -- "*" roles : user_roles
+profiles "*" -- "*" profiles : follows
+
+posts "1" -- "*" post_media
+posts "1" -- "*" comments
+posts "*" -- "*" tags : post_tags
+posts "*" -- "*" topics : post_topics
+
+dm_conversations "1" -- "*" dm_messages
+
+categories "1" -- "*" products
+brands "1" -- "*" products
+products "1" -- "*" skus
+products "1" -- "*" reviews
+orders "1" -- "*" order_items
+orders "1" -- "1" payments
+orders "1" -- "*" refunds
+carts "1" -- "*" cart_items
+coupons "1" -- "*" coupon_claims
+wallet_accounts "1" -- "*" wallet_transactions
+
+service_orgs "1" -- "*" service_items
+service_types "1" -- "*" service_items
+service_items "1" -- "*" schedules
+profiles "1" -- "*" appointments
+appointments "1" -- "1" service_orders
+appointments "1" -- "1" service_records
+
+banner_slots "1" -- "*" banner_items
+
+@enduml
+

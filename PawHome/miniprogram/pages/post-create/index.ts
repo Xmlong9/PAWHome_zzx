@@ -1,3 +1,6 @@
+import { createPost } from "../../services/posts";
+import { uploadFile } from "../../services/uploads";
+
 Page({
   data: {
     statusBarHeight: 0,
@@ -122,21 +125,47 @@ Page({
     });
   },
 
-  publish() {
+  async publish() {
     if (!this.data.content && this.data.mediaList.length === 0) {
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' });
       return;
     }
 
     wx.showLoading({ title: '发布中...' });
+    try {
+      const uploaded = [] as Array<{ type: "image" | "video"; url: string; coverUrl?: string; sortOrder?: number }>;
+      for (let i = 0; i < this.data.mediaList.length; i += 1) {
+        const m = this.data.mediaList[i];
+        const r = await uploadFile({
+          filePath: m.tempFilePath,
+          bucket: "media",
+          folder: "posts"
+        });
+        uploaded.push({
+          type: m.fileType === "video" ? "video" : "image",
+          url: r.publicUrl,
+          sortOrder: i
+        });
+      }
 
-    // Mock publish
-    setTimeout(() => {
+      await createPost({
+        title: this.data.topic || undefined,
+        content: this.data.content,
+        petType: this.data.pet || undefined,
+        visibility: this.data.visibility,
+        location: this.data.location,
+        media: uploaded
+      });
+
+      wx.setStorageSync("communityNeedRefresh", true);
       wx.hideLoading();
       wx.showToast({ title: '发布成功' });
       setTimeout(() => {
         wx.navigateBack();
-      }, 1500);
-    }, 1500);
+      }, 600);
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: '发布失败', icon: 'none' });
+    }
   }
 });

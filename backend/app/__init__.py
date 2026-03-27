@@ -46,4 +46,8 @@ def create_app(config_name: str | None = None) -> Flask:
         os.makedirs(upload_dir, exist_ok=True)
         return send_from_directory(upload_dir, filename)
 
+    @app.before_request
+    def _ensure_instance_upload_dir():
+        os.makedirs(os.path.join(app.instance_path, "uploads"), exist_ok=True)
+
     return app

@@ -34,6 +34,7 @@
           <view class="user-info">
             <view class="nickname" catchtap="goUserProfile" data-userid="{{item.userId}}">{{item.user.nickname}}</view>
             <view class="time">{{item.timeAgo}}</view>
+            <view class="time" wx:if="{{item.location}}">📍 {{item.location}}</view>
           </view>
         </view>
 

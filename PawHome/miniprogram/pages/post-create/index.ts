@@ -1,5 +1,6 @@
 import { createPost } from "../../services/posts"
 import { uploadFile } from "../../services/upload"
+import { getPetList } from "../../services/user"
 
 Page({
   data: {
@@ -110,7 +111,33 @@ Page({
   },
 
   tagPet() {
-    wx.showToast({ title: '宠物标记功能开发中', icon: 'none' });
+    getPetList()
+      .then((pets) => {
+        if (!pets.length) {
+          wx.showModal({
+            title: "暂无宠物",
+            content: "请先完善宠物档案后再标记宠物",
+            confirmText: "去添加",
+            success: (res) => {
+              if (res.confirm) {
+                wx.navigateTo({ url: "/pages/my/settings/pets/add/index" })
+              }
+            }
+          })
+          return
+        }
+        const names = pets.map((p) => p.name)
+        wx.showActionSheet({
+          itemList: names,
+          success: (res) => {
+            const selected = pets[res.tapIndex]
+            this.setData({ pet: selected.name })
+          }
+        })
+      })
+      .catch(() => {
+        wx.showToast({ title: "宠物列表加载失败", icon: "none" })
+      })
   },
 
   chooseVisibility() {
@@ -129,7 +156,14 @@ Page({
   },
 
   publish() {
-    if (!this.data.content && this.data.mediaList.length === 0) {
+    const contentParts = [
+      (this.data.content || "").trim(),
+      this.data.topic || "",
+      this.data.pet ? `#${this.data.pet}` : ""
+    ].filter(Boolean)
+    const finalContent = contentParts.join(" ").trim()
+
+    if (!finalContent && this.data.mediaList.length === 0) {
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' });
       return;
     }
@@ -149,12 +183,12 @@ Page({
           const coverPath = (video as any).thumbTempFilePath
           const coverUrl = typeof coverPath === "string" && coverPath ? await uploadFile(coverPath) : undefined
           await createPost({
-            content: this.data.content,
+            content: finalContent,
             videoUrl,
             coverUrl,
             location: this.data.location?.name,
             visibility: this.data.visibility,
-            type: this.data.pet
+            type: "all"
           })
           return
         }
@@ -167,11 +201,11 @@ Page({
           imageUrls.push(await uploadFile(p))
         }
         await createPost({
-          content: this.data.content,
+          content: finalContent,
           images: imageUrls,
           location: this.data.location?.name,
           visibility: this.data.visibility,
-          type: this.data.pet
+          type: "all"
         })
       })
       .then(() => {

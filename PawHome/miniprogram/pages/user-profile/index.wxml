@@ -72,7 +72,7 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
             </view>
           </view>
@@ -86,7 +86,7 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
             </view>
           </view>
@@ -100,7 +100,7 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
             </view>
           </view>

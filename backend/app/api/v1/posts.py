@@ -70,6 +70,7 @@ def _post_to_dict(p: Post, me_id: str | None) -> dict:
         else None,
         "title": None,
         "content": p.content,
+        "location": p.location_name,
         "images": images,
         "videoUrl": video_url,
         "petType": p.post_type,

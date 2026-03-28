@@ -105,3 +105,46 @@ def test_comment_like_state_is_returned_and_idempotent(client, user1_token, user
     c1 = next(x for x in items if x["id"] == comment_id)
     assert c1["likeCount"] == 1
     assert c1["isLiked"] is True
+
+
+def test_post_location_is_returned(client, user1_token):
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "with location", "location": "杭州滨江宝龙城"},
+    )
+    assert r.status_code == 201
+    post = r.get_json()["data"]
+    assert post["location"] == "杭州滨江宝龙城"
+
+
+def test_like_and_favorite_lists_return_my_interaction_state(client, user1_token, user2_token):
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "state test"},
+    )
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    me2 = client.get("/api/v1/users/me", headers=_auth(user2_token)).get_json()["data"]
+    user2_id = me2["id"]
+
+    r = client.post(f"/api/v1/posts/{post_id}/like", headers=_auth(user2_token))
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/users/{user2_id}/likes/posts", headers=_auth(user2_token))
+    assert r.status_code == 200
+    liked = next(p for p in r.get_json()["data"]["list"] if p["id"] == post_id)
+    assert liked["isLiked"] is True
+
+    r = client.delete(f"/api/v1/posts/{post_id}/like", headers=_auth(user2_token))
+    assert r.status_code == 200
+    r = client.post(f"/api/v1/posts/{post_id}/favorite", headers=_auth(user2_token))
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/users/{user2_id}/favorites/posts", headers=_auth(user2_token))
+    assert r.status_code == 200
+    fav = next(p for p in r.get_json()["data"]["list"] if p["id"] == post_id)
+    assert fav["isFavorited"] is True
+    assert fav["isLiked"] is False

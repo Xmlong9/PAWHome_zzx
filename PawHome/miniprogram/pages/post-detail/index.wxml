@@ -25,14 +25,14 @@
     <view class="tab-content" hidden="{{currentTab !== 'content'}}">
       <view class="post-detail" wx:if="{{post}}">
         <view class="media-carousel" wx:if="{{post.videoUrl}}" style="margin-top: 0;">
-          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls></video>
+          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls objectFit="contain"></video>
         </view>
 
-        <view class="media-carousel" wx:if="{{!post.videoUrl && post.images && post.images.length > 0}}" style="margin-top: 0;">
-          <swiper class="swiper" bindchange="onSwiperChange">
+        <view class="media-carousel" wx:if="{{!post.videoUrl && post.images && post.images.length > 0}}" style="margin-top: 0;background-color: {{mediaBgColor}};">
+          <swiper class="swiper" bindchange="onSwiperChange" style="height: {{mediaHeight}}px;">
             <block wx:for="{{post.images}}" wx:key="*this">
               <swiper-item>
-                <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-current="{{item}}"></image>
+                <image class="swiper-img" src="{{item}}" mode="aspectFit" bindtap="previewImage" data-current="{{item}}" data-index="{{index}}" bindload="onImageLoad"></image>
               </swiper-item>
             </block>
           </swiper>
@@ -45,7 +45,7 @@
             <view class="author-info" catchtap="goUserProfile" data-userid="{{post.userId}}">
               <view class="nickname">{{post.user.nickname}}</view>
             </view>
-            <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap">
+            <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap" wx:if="{{!isSelfPost}}">
               {{post.isFollowed ? '已关注' : '+ 关注'}}
             </view>
           </view>
@@ -53,6 +53,7 @@
           <view class="content-text">
             <view class="post-title" wx:if="{{post.title}}">{{post.title}}</view>
             <text class="text" user-select>{{post.content}}</text>
+            <view class="post-time" wx:if="{{post.location}}">📍 {{post.location}}</view>
             <view class="post-time">{{post.timeAgo}}</view>
           </view>
         </view>

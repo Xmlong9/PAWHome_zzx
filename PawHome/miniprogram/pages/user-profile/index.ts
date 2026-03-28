@@ -31,6 +31,24 @@ Page({
     this.initPage();
   },
 
+  onShow() {
+    const needRefresh = wx.getStorageSync("user_profile_need_refresh")
+    if (!needRefresh) return
+    wx.setStorageSync("user_profile_need_refresh", false)
+    const fallbackUserId = this.data.userId || this.data.userInfo?.id || wx.getStorageSync("userId") || ""
+    if (!fallbackUserId) return
+    if (fallbackUserId !== this.data.userId) {
+      this.setData({ userId: fallbackUserId })
+    }
+    Promise.all([
+      this.loadTabData("帖子"),
+      this.loadTabData("点赞"),
+      this.loadTabData("收藏")
+    ]).catch((e) => {
+      console.error("refresh profile tabs failed", e)
+    })
+  },
+
   async initPage() {
     this.setData({ loading: true });
     try {

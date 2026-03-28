@@ -8,6 +8,10 @@ const app = getApp<IAppOption>();
 Page({
   data: {
     post: null as (Post & { timeAgo: string }) | null,
+    isSelfPost: false,
+    mediaHeight: 300,
+    mediaBgColor: "#ffffff",
+    imageHeights: [] as number[],
     comments: [] as (Comment & { timeAgo: string })[],
     totalComments: 0,
     loadingComments: false,
@@ -34,9 +38,11 @@ Page({
     
     // Get safe area
     const sysInfo = wx.getSystemInfoSync();
+    const windowWidth = sysInfo.windowWidth || 375
     this.setData({
       safeAreaTop: sysInfo.statusBarHeight,
-      safeAreaBottom: sysInfo.screenHeight - sysInfo.safeArea.bottom
+      safeAreaBottom: sysInfo.screenHeight - sysInfo.safeArea.bottom,
+      mediaHeight: Math.round(windowWidth * 0.72)
     });
   },
 
@@ -46,7 +52,15 @@ Page({
   },
 
   onSwiperChange(e: WechatMiniprogram.SwiperChange) {
-    this.setData({ swiperCurrent: e.detail.current });
+    const current = e.detail.current
+    const heights = this.data.imageHeights || []
+    const images = this.data.post?.images || []
+    const currentUrl = images[current] || ""
+    this.setData({
+      swiperCurrent: current,
+      mediaHeight: heights[current] || this.data.mediaHeight,
+      mediaBgColor: this.getImageBgColor(currentUrl)
+    });
   },
 
   goBack() {
@@ -72,7 +86,12 @@ Page({
   async loadPost(id: string) {
     try {
       const post = await getPost(id);
+      const myUserId = wx.getStorageSync("userId") || ""
+      const firstImage = post.images?.[0] || ""
       this.setData({
+        isSelfPost: !!myUserId && post.userId === myUserId,
+        imageHeights: [],
+        mediaBgColor: this.getImageBgColor(firstImage),
         post: {
           ...post,
           timeAgo: formatTimeAgo(post.createdAt)
@@ -82,6 +101,30 @@ Page({
       console.error(err);
       wx.showToast({ title: '帖子加载失败', icon: 'none' });
     }
+  },
+
+  getImageBgColor(url: string) {
+    return "#ffffff"
+  },
+
+  onImageLoad(e: WechatMiniprogram.ImageLoad) {
+    const { width, height } = e.detail || { width: 0, height: 0 }
+    const index = Number((e.currentTarget as any)?.dataset?.index ?? -1)
+    if (!width || !height || index < 0) return
+    const windowWidth = wx.getSystemInfoSync().windowWidth || 375
+    const rawHeight = Math.round((windowWidth * height) / width)
+    const minHeight = Math.round(windowWidth * 0.45)
+    const maxHeight = Math.round(windowWidth * 1.35)
+    const fitHeight = Math.max(minHeight, Math.min(maxHeight, rawHeight))
+    const nextHeights = [...(this.data.imageHeights || [])]
+    nextHeights[index] = fitHeight
+    const nextState: Record<string, any> = { imageHeights: nextHeights }
+    if (index === this.data.swiperCurrent) {
+      nextState.mediaHeight = fitHeight
+      const images = this.data.post?.images || []
+      nextState.mediaBgColor = this.getImageBgColor(images[index] || "")
+    }
+    this.setData(nextState)
   },
 
   async loadComments(postId: string) {
@@ -105,7 +148,7 @@ Page({
 
   // Interactions
   async onFollowTap() {
-    if (!this.data.post) return;
+    if (!this.data.post || this.data.isSelfPost) return;
     const { userId, isFollowed } = this.data.post;
     
     // Optimistic update
@@ -140,6 +183,7 @@ Page({
         await likePost(id);
       }
       wx.setStorageSync("community_need_refresh", true)
+      wx.setStorageSync("user_profile_need_refresh", true)
     } catch (err) {
       this.setData({ 
         'post.isLiked': isLiked,
@@ -167,6 +211,7 @@ Page({
         await favoritePost(id);
       }
       wx.setStorageSync("community_need_refresh", true)
+      wx.setStorageSync("user_profile_need_refresh", true)
     } catch (err) {
       this.setData({ 
         'post.isFavorited': isFavorited,

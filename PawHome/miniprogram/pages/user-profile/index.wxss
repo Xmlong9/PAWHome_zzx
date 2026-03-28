@@ -241,7 +241,9 @@
   color: #999;
 }
 
-.like-icon {
+.like-icon-img {
+  width: 24rpx;
+  height: 24rpx;
   margin-right: 6rpx;
 }
 

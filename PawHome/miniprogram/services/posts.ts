@@ -8,6 +8,7 @@ export type Post = {
   user?: { id: string; nickname: string; avatarUrl: string }
   title?: string
   content: string
+  location?: string
   images: string[]
   videoUrl?: string
   petType?: string
@@ -73,6 +74,7 @@ const generateMockPosts = (page: number, pageSize: number, type?: string): Post[
       content: i % 2 === 0 
         ? "哈哈哈哈好可爱的猫猫 #猫猫探头" 
         : "家里养的涛涛又不听话了 :( 真的不知道该怎么办才好，大家有什么好办法吗？在线等挺急的。",
+      location: i % 2 === 0 ? "杭州" : "",
       images,
       petType: i % 2 === 0 ? "cat" : "dog",
       visibility: "public",
@@ -176,6 +178,7 @@ export async function getPost(id: string): Promise<Post>{
         },
         title: "这是一个分享帖",
         content: "这是一段很长很长的文字。今天天气真好，带猫猫出去晒了晒太阳。家里养的涛涛又不听话了 :( 真的不知道该怎么办才好，大家有什么好办法吗？",
+        location: "杭州",
         images: [`https://picsum.photos/seed/${numericId || 0}/600/400`],
         petType: "cat",
         visibility: "public",
@@ -245,6 +248,7 @@ export async function createPost(data: {
       user: { id: userId, nickname: user.nickname, avatarUrl: user.avatarUrl },
       title: null,
       content: data.content,
+      location: data.location,
       images: data.images || (data.coverUrl ? [data.coverUrl] : []),
       videoUrl: data.videoUrl,
       petType: data.type || "all",

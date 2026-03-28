@@ -101,8 +101,7 @@ Page({
     const isFavorited = !post.isFavorited;
     const favoriteCount = post.favoriteCount || 0;
 
-    // Optimistic update, prevent negative
-    const newCount = isFavorited ? Math.max(0, favoriteCount - 1) : favoriteCount + 1;
+    const newCount = isFavorited ? favoriteCount + 1 : Math.max(0, favoriteCount - 1);
     
     const upFavorited = `posts[${index}].isFavorited`;
     const upCount = `posts[${index}].favoriteCount`;

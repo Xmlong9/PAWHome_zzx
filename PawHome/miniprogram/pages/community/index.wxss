@@ -47,11 +47,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .mail-svg {
   width: 56rpx;
   height: 56rpx;
+}
+
+.mail-dot {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #ff4d4f;
 }
 
 /* Search Bar */

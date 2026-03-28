@@ -1,5 +1,9 @@
 import { formatTime, listConversations } from "../../services/im"
-import { listNotifications } from "../../services/notifications"
+import {
+  getNotificationUnreadSummary,
+  listNotifications,
+  markNotificationsRead
+} from "../../services/notifications"
 
 type LikeMsg = {
   id: string
@@ -39,7 +43,10 @@ Page({
     currentTab: 'like' as 'like' | 'comment' | 'dm',
     likeList: [] as LikeMsg[],
     commentList: [] as CommentMsg[],
-    dmList: [] as DMMsg[]
+    dmList: [] as DMMsg[],
+    hasUnreadLike: false,
+    hasUnreadComment: false,
+    hasUnreadDm: false
   },
 
   async onLoad() {
@@ -56,17 +63,31 @@ Page({
       commentList: []
     })
 
+    await this.refreshAll()
+  },
+
+  async onShow() {
+    await this.refreshAll()
+  },
+
+  async refreshAll() {
     await this.loadNotifications()
     await this.loadDMConversations()
+    await this.markCurrentTabRead(this.data.currentTab)
+    this.syncIconBadge()
   },
 
   async loadNotifications() {
     try {
-      const likeRes = await listNotifications("like", 1, 20)
-      const favRes = await listNotifications("favorite", 1, 20)
-      const commentRes = await listNotifications("comment", 1, 20)
+      const [summary, likeRes, favRes, followRes, commentRes] = await Promise.all([
+        getNotificationUnreadSummary(),
+        listNotifications("like", 1, 20),
+        listNotifications("favorite", 1, 20),
+        listNotifications("follow", 1, 20),
+        listNotifications("comment", 1, 20)
+      ])
 
-      const likeList: LikeMsg[] = [...likeRes.list, ...favRes.list]
+      const likeList: LikeMsg[] = [...likeRes.list, ...favRes.list, ...followRes.list]
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .map((n) => ({
           id: n.id,
@@ -89,11 +110,41 @@ Page({
         thumbUrl: n.thumbUrl || undefined
       }))
 
-      this.setData({ likeList, commentList })
+      this.setData({
+        likeList,
+        commentList,
+        hasUnreadLike: summary.like + summary.favorite + summary.follow > 0,
+        hasUnreadComment: summary.comment > 0
+      })
     } catch (e) {
       console.error(e)
-      this.setData({ likeList: [], commentList: [] })
+      this.setData({ likeList: [], commentList: [], hasUnreadLike: false, hasUnreadComment: false })
     }
+  },
+
+  async markCurrentTabRead(tab: 'like' | 'comment' | 'dm') {
+    try {
+      if (tab === "like") {
+        await Promise.all([
+          markNotificationsRead({ type: "like" }),
+          markNotificationsRead({ type: "favorite" }),
+          markNotificationsRead({ type: "follow" })
+        ])
+        this.setData({ hasUnreadLike: false })
+        return
+      }
+      if (tab === "comment") {
+        await markNotificationsRead({ type: "comment" })
+        this.setData({ hasUnreadComment: false })
+      }
+    } catch {
+    }
+  },
+
+  syncIconBadge() {
+    const totalUnreadDm = this.data.dmList.reduce((sum, item) => sum + item.unreadCount, 0)
+    const total = (this.data.hasUnreadLike ? 1 : 0) + (this.data.hasUnreadComment ? 1 : 0) + totalUnreadDm
+    wx.setStorageSync("community_message_unread_total", total)
   },
 
   async loadDMConversations() {
@@ -108,11 +159,10 @@ Page({
         lastMessage: c.lastMessage,
         unreadCount: c.unreadCount
       }))
-      
-      // 就算捕获到错误，我们也尽量合并本地真实缓存的对话列表和写死的 mock 列表
-      this.setData({ dmList })
+      this.setData({ dmList, hasUnreadDm: dmList.some((item) => item.unreadCount > 0) })
     } catch {
-      this.setData({ dmList: this.getMockDMList() })
+      const dmList = this.getMockDMList()
+      this.setData({ dmList, hasUnreadDm: dmList.some((item) => item.unreadCount > 0) })
     }
   },
 
@@ -125,9 +175,11 @@ Page({
     wx.switchTab({ url: '/pages/community/index' })
   },
 
-  switchTab(e: WechatMiniprogram.TouchEvent) {
+  async switchTab(e: WechatMiniprogram.TouchEvent) {
     const tab = e.currentTarget.dataset.tab as 'like' | 'comment' | 'dm'
     this.setData({ currentTab: tab })
+    await this.markCurrentTabRead(tab)
+    this.syncIconBadge()
   },
 
   openItem(e: WechatMiniprogram.TouchEvent) {

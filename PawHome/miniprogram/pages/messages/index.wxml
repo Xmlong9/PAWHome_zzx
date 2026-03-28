@@ -8,9 +8,18 @@
       <view class="nav-right"></view>
     </view>
     <view class="tabs">
-      <view class="tab {{currentTab === 'like' ? 'active' : ''}}" bindtap="switchTab" data-tab="like">点赞</view>
-      <view class="tab {{currentTab === 'comment' ? 'active' : ''}}" bindtap="switchTab" data-tab="comment">评论</view>
-      <view class="tab {{currentTab === 'dm' ? 'active' : ''}}" bindtap="switchTab" data-tab="dm">私信</view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="like">
+        <view class="tab {{currentTab === 'like' ? 'active' : ''}}">点赞</view>
+        <view class="tab-dot" wx:if="{{hasUnreadLike}}"></view>
+      </view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="comment">
+        <view class="tab {{currentTab === 'comment' ? 'active' : ''}}">评论</view>
+        <view class="tab-dot" wx:if="{{hasUnreadComment}}"></view>
+      </view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="dm">
+        <view class="tab {{currentTab === 'dm' ? 'active' : ''}}">私信</view>
+        <view class="tab-dot" wx:if="{{hasUnreadDm}}"></view>
+      </view>
     </view>
   </view>
 

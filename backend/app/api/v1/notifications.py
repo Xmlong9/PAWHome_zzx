@@ -3,8 +3,9 @@ from __future__ import annotations
 from flask import g, request
 
 from ...auth import require_auth
+from ...extensions import db
 from ...models import Notification, Post, User
-from ...responses import ok
+from ...responses import fail, ok
 
 
 def _int_arg(name: str, default: int) -> int:
@@ -53,3 +54,39 @@ def register_routes(bp) -> None:
 
         return ok({"list": [to_msg(n) for n in items], "total": total})
 
+    @bp.get("/notifications/unread-summary")
+    @require_auth
+    def unread_summary():
+        me: User = g.current_user
+        rows = (
+            Notification.query.filter_by(user_id=me.id, is_read=False)
+            .order_by(Notification.created_at.desc())
+            .all()
+        )
+        counts = {"like": 0, "favorite": 0, "comment": 0, "follow": 0}
+        for row in rows:
+            if row.notif_type in counts:
+                counts[row.notif_type] += 1
+        total = counts["like"] + counts["favorite"] + counts["comment"] + counts["follow"]
+        return ok({**counts, "total": total})
+
+    @bp.put("/notifications/read")
+    @require_auth
+    def mark_notifications_read():
+        me: User = g.current_user
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids")
+        notif_type = data.get("type")
+
+        q = Notification.query.filter_by(user_id=me.id, is_read=False)
+        if isinstance(ids, list) and ids:
+            valid_ids = [x for x in ids if isinstance(x, str) and x]
+            if not valid_ids:
+                return fail(code="BAD_REQUEST", message="invalid ids", status_code=400)
+            q = q.filter(Notification.id.in_(valid_ids))
+        elif isinstance(notif_type, str) and notif_type:
+            q = q.filter_by(notif_type=notif_type)
+
+        updated = q.update({"is_read": True}, synchronize_session=False)
+        db.session.commit()
+        return ok({"updated": int(updated)})

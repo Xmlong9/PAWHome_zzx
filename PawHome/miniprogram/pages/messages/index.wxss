@@ -63,6 +63,10 @@ page {
   box-sizing: border-box;
 }
 
+.tab-wrap {
+  position: relative;
+}
+
 .tab {
   font-size: 30rpx;
   color: #888;
@@ -85,6 +89,16 @@ page {
   height: 6rpx;
   background: #111;
   border-radius: 999rpx;
+}
+
+.tab-dot {
+  position: absolute;
+  top: -2rpx;
+  right: -14rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #ff4d4f;
 }
 
 .scroll {

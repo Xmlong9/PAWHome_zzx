@@ -7,7 +7,18 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Follow, Pet, Post, PostFavorite, PostHistory, PostLike, SmsCode, User, UserSettings
+from ...models import (
+    Follow,
+    Notification,
+    Pet,
+    Post,
+    PostFavorite,
+    PostHistory,
+    PostLike,
+    SmsCode,
+    User,
+    UserSettings,
+)
 from ...responses import fail, ok
 
 
@@ -364,6 +375,14 @@ def register_routes(bp) -> None:
             return fail(code="NOT_FOUND", message="user not found", status_code=404)
         if Follow.query.filter_by(follower_id=me.id, followee_id=user_id).first() is None:
             db.session.add(Follow(follower_id=me.id, followee_id=user_id))
+            db.session.add(
+                Notification(
+                    user_id=user_id,
+                    actor_id=me.id,
+                    notif_type="follow",
+                    text="关注了你",
+                )
+            )
             db.session.commit()
         return ok({"ok": True})
 

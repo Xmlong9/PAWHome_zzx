@@ -5,6 +5,7 @@
     <view class="header-content">
       <view class="mail-icon" bindtap="onMailTap">
         <image class="mail-svg" src="/assets/icons/community/mail.svg" mode="aspectFit"></image>
+        <view class="mail-dot" wx:if="{{hasUnreadMessage}}"></view>
       </view>
       <view class="search" bindtap="goSearch">
         <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>

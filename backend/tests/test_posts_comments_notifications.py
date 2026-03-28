@@ -3,6 +3,7 @@ def _auth(token: str) -> dict:
 
 
 def test_post_interactions_create_notifications(client, user1_token, user2_token):
+    me1 = client.get("/api/v1/users/me", headers=_auth(user1_token)).get_json()["data"]
     r = client.post(
         "/api/v1/posts",
         headers=_auth(user1_token),
@@ -24,6 +25,9 @@ def test_post_interactions_create_notifications(client, user1_token, user2_token
     )
     assert r.status_code == 201
 
+    r = client.post(f"/api/v1/users/{me1['id']}/follow", headers=_auth(user2_token))
+    assert r.status_code == 200
+
     r = client.get("/api/v1/notifications", headers=_auth(user1_token), query_string={"type": "like"})
     assert r.status_code == 200
     like_list = r.get_json()["data"]["list"]
@@ -39,6 +43,53 @@ def test_post_interactions_create_notifications(client, user1_token, user2_token
     comment_list = r.get_json()["data"]["list"]
     assert len(comment_list) == 1
     assert comment_list[0]["type"] == "comment"
+
+    r = client.get("/api/v1/notifications", headers=_auth(user1_token), query_string={"type": "follow"})
+    assert r.status_code == 200
+    follow_list = r.get_json()["data"]["list"]
+    assert len(follow_list) == 1
+    assert follow_list[0]["type"] == "follow"
+
+
+def test_notification_unread_summary_and_mark_read(client, user1_token, user2_token):
+    me1 = client.get("/api/v1/users/me", headers=_auth(user1_token)).get_json()["data"]
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "summary test", "images": ["/s.jpg"]},
+    )
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r = client.post(f"/api/v1/posts/{post_id}/like", headers=_auth(user2_token))
+    assert r.status_code == 200
+    r = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "summary comment"},
+    )
+    assert r.status_code == 201
+    r = client.post(f"/api/v1/users/{me1['id']}/follow", headers=_auth(user2_token))
+    assert r.status_code == 200
+
+    r = client.get("/api/v1/notifications/unread-summary", headers=_auth(user1_token))
+    assert r.status_code == 200
+    summary = r.get_json()["data"]
+    assert summary["like"] == 1
+    assert summary["comment"] == 1
+    assert summary["follow"] == 1
+    assert summary["total"] == 3
+
+    r = client.put("/api/v1/notifications/read", headers=_auth(user1_token), json={"type": "like"})
+    assert r.status_code == 200
+
+    r = client.get("/api/v1/notifications/unread-summary", headers=_auth(user1_token))
+    assert r.status_code == 200
+    summary = r.get_json()["data"]
+    assert summary["like"] == 0
+    assert summary["comment"] == 1
+    assert summary["follow"] == 1
+    assert summary["total"] == 2
 
 
 def test_history_favorites_and_likes_lists(client, user1_token, user2_token):

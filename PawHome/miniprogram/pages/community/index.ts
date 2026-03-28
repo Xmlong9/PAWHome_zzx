@@ -1,5 +1,7 @@
 // community page
 import { getPosts, favoritePost, unfavoritePost, Post } from "../../services/posts";
+import { listConversations } from "../../services/im";
+import { getNotificationUnreadSummary } from "../../services/notifications";
 import { formatTimeAgo } from "../../utils/date";
 
 const app = getApp<IAppOption>();
@@ -14,7 +16,8 @@ Page({
     pageSize: 10,
     loading: false,
     hasMore: true,
-    showBlob: false
+    showBlob: false,
+    hasUnreadMessage: false
   },
 
   onLoad() {
@@ -29,6 +32,7 @@ Page({
 
   onShow() {
     this.setData({ showBlob: true });
+    this.refreshMessageBadge()
     const needRefresh = wx.getStorageSync("community_need_refresh")
     if (needRefresh) {
       wx.setStorageSync("community_need_refresh", false)
@@ -152,6 +156,22 @@ Page({
     wx.navigateTo({
       url: '/pages/messages/index'
     });
+  },
+
+  async refreshMessageBadge() {
+    try {
+      const [summary, conversations] = await Promise.all([
+        getNotificationUnreadSummary(),
+        listConversations()
+      ])
+      const dmUnread = conversations.reduce((sum, item) => sum + (item.unreadCount || 0), 0)
+      const total = summary.total + dmUnread
+      this.setData({ hasUnreadMessage: total > 0 })
+      wx.setStorageSync("community_message_unread_total", total)
+    } catch {
+      const cached = Number(wx.getStorageSync("community_message_unread_total") || 0)
+      this.setData({ hasUnreadMessage: cached > 0 })
+    }
   },
 
   goSearch() {

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import string
+import subprocess
+import uuid
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
-from flask import g, request
+from flask import current_app, g, request
 
 from ...auth import require_auth
 from ...extensions import db
@@ -24,6 +28,16 @@ from ...models import (
 )
 from ...responses import fail, ok
 from ...timeutil import dt_to_bj_iso
+
+try:
+    import cv2  # type: ignore
+except Exception:
+    cv2 = None
+
+try:
+    import imageio_ffmpeg  # type: ignore
+except Exception:
+    imageio_ffmpeg = None
 
 
 def _int_arg(name: str, default: int) -> int:
@@ -119,6 +133,71 @@ def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) 
     if include_view_count:
         data["viewCount"] = _view_count(p.id)
     return data
+
+
+def _extract_local_upload_filename(url: str) -> str | None:
+    if not isinstance(url, str) or not url:
+        return None
+    try:
+        parsed = urlparse(url)
+        path = parsed.path or ""
+        base = os.path.basename(path)
+        if not base or base in {".", ".."}:
+            return None
+        return base
+    except Exception:
+        return None
+
+
+def _generate_cover_jpg(video_path: str, out_path: str) -> tuple[bool, str]:
+    if cv2 is not None:
+        cap = cv2.VideoCapture(video_path)
+        if not cap or not cap.isOpened():
+            return False, "cv2_open_failed"
+        try:
+            cap.set(cv2.CAP_PROP_POS_MSEC, 500)
+            ok1, frame = cap.read()
+            if not ok1 or frame is None:
+                cap.set(cv2.CAP_PROP_POS_MSEC, 0)
+                ok2, frame = cap.read()
+                if not ok2 or frame is None:
+                    return False, "cv2_read_failed"
+            ok_enc, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+            if not ok_enc:
+                return False, "cv2_encode_failed"
+            with open(out_path, "wb") as f:
+                f.write(buf.tobytes())
+            return True, "cv2"
+        finally:
+            cap.release()
+
+    if imageio_ffmpeg is None:
+        return False, "imageio_ffmpeg_missing"
+    try:
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        subprocess.run(
+            [
+                ffmpeg_exe,
+                "-y",
+                "-ss",
+                "0.5",
+                "-i",
+                video_path,
+                "-frames:v",
+                "1",
+                "-q:v",
+                "3",
+                out_path,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True,
+        )
+        if os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+            return True, "ffmpeg"
+        return False, "ffmpeg_no_output"
+    except Exception as e:
+        return False, f"ffmpeg_failed:{type(e).__name__}"
 
 
 def register_routes(bp) -> None:
@@ -218,6 +297,51 @@ def register_routes(bp) -> None:
         db.session.commit()
 
         return ok(_post_to_dict(p, me.id, include_view_count=(me.id == p.author_id)))
+
+    @bp.post("/posts/<post_id>/cover")
+    @require_auth
+    def ensure_post_cover(post_id: str):
+        me: User = g.current_user
+        p = Post.query.get(post_id)
+        if p is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not p.media_json:
+            return fail(code="BAD_REQUEST", message="post has no media", status_code=400)
+        try:
+            val = json.loads(p.media_json)
+        except json.JSONDecodeError:
+            return fail(code="BAD_REQUEST", message="invalid media json", status_code=400)
+        if not isinstance(val, dict) or val.get("type") != "video":
+            return fail(code="BAD_REQUEST", message="post is not a video", status_code=400)
+        if isinstance(val.get("coverUrl"), str) and val.get("coverUrl"):
+            return ok({"coverUrl": val.get("coverUrl")})
+        url = val.get("url")
+        if not isinstance(url, str) or not url:
+            return fail(code="BAD_REQUEST", message="video url missing", status_code=400)
+        filename = _extract_local_upload_filename(url)
+        if not filename or not filename.lower().endswith((".mp4", ".mov")):
+            return fail(code="BAD_REQUEST", message="unsupported video url", status_code=400)
+        upload_dir = os.path.join(current_app.instance_path, "uploads")
+        video_path = os.path.join(upload_dir, filename)
+        if not os.path.isfile(video_path):
+            return fail(code="NOT_FOUND", message="video file not found", status_code=404)
+        os.makedirs(upload_dir, exist_ok=True)
+        cover_name = f"{uuid.uuid4().hex}.jpg"
+        cover_path = os.path.join(upload_dir, cover_name)
+        ok_cover, reason = _generate_cover_jpg(video_path, cover_path)
+        if not ok_cover:
+            return fail(
+                code="UNSUPPORTED",
+                message="cover generation unavailable",
+                status_code=501,
+                details={"reason": reason, "hint": "pip install -r backend/requirements.txt"},
+            )
+        origin = request.host_url.rstrip("/")
+        cover_url = f"{origin}/media/{cover_name}"
+        val["coverUrl"] = cover_url
+        p.media_json = json.dumps(val)
+        db.session.commit()
+        return ok({"coverUrl": cover_url})
 
     @bp.post("/posts")
     @require_auth

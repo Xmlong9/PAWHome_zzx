@@ -500,3 +500,20 @@
 - `PawHome/miniprogram/pages/post-create/index.wxml`
 - `PawHome/miniprogram/pages/community/index.wxml`
 - `PawHome/miniprogram/pages/community/index.wxss`
+
+### 变更 2026-03-29：视频封面懒生成写回（打开帖子自动补齐）
+
+**需求**
+- 对历史/异常数据：视频帖没有 `coverUrl` 时，社区列表只能显示占位图；希望在用户点进帖子后自动生成封面并写回，后续列表展示为真实封面。
+
+**实现方案**
+- 后端新增 `POST /posts/<post_id>/cover`：
+  - 若视频帖已有 `coverUrl`：直接返回
+  - 若缺失：从本地 `instance/uploads` 的视频文件抽帧生成 jpg，写回 `Post.media_json.coverUrl` 并返回 `coverUrl`（优先使用 OpenCV；否则使用 `imageio-ffmpeg` 调用 ffmpeg）
+- 前端帖子详情页在加载视频帖且封面缺失时调用该接口；成功后更新 `post.images[0]`，并置位 `community_need_refresh` 触发返回列表刷新。
+
+**相关文件**
+- 后端：`backend/app/api/v1/posts.py`
+- 后端：`backend/requirements.txt`
+- 小程序：`PawHome/miniprogram/services/posts.ts`
+- 小程序：`PawHome/miniprogram/pages/post-detail/index.ts`

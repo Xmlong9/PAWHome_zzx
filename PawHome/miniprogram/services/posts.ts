@@ -296,6 +296,13 @@ export async function deletePost(id: string): Promise<{ ok: boolean }> {
   return request({ url: `/posts/${encodeURIComponent(id)}`, method: "DELETE" })
 }
 
+export async function ensurePostCover(postId: string): Promise<{ coverUrl: string }> {
+  if (MOCK()) {
+    return { coverUrl: "/assets/images/home/slideshow1@1x.png" }
+  }
+  return request({ url: `/posts/${encodeURIComponent(postId)}/cover`, method: "POST" })
+}
+
 export type ShareTarget = {
   id: string
   nickname: string

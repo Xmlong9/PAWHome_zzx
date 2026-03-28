@@ -6,6 +6,7 @@ import {
   unfavoritePost,
   updatePost,
   deletePost,
+  ensurePostCover,
   getPostShareTargets,
   getPostShareLink,
   pinPost,
@@ -156,6 +157,19 @@ Page({
           ...post,
           timeAgo: formatTimeAgo(post.createdAt)
         }
+      }, () => {
+        const p = this.data.post
+        if (!p?.videoUrl) return
+        const cover = p.images?.[0] || ""
+        if (cover && !cover.includes("/assets/images/")) return
+        ensurePostCover(p.id)
+          .then((res) => {
+            const coverUrl = String((res as any)?.coverUrl || "")
+            if (!coverUrl) return
+            this.setData({ "post.images": [coverUrl] })
+            wx.setStorageSync("community_need_refresh", true)
+          })
+          .catch(() => {})
       });
     } catch (err) {
       console.error(err);

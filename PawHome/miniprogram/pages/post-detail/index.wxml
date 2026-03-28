@@ -14,7 +14,8 @@
           <view class="tab-line" wx:if="{{currentTab === 'comments'}}"></view>
         </view>
       </view>
-      <view class="nav-right"></view>
+      <view class="nav-right" bindtap="onPostActionTap" wx:if="{{isSelfPost}}">•••</view>
+      <view class="nav-right" wx:else></view>
     </view>
   </view>
 
@@ -116,6 +117,7 @@
             <text class="c-nickname">{{item.user.nickname}}</text>
           </view>
           <view class="c-content" bindtap="onReplyTap" data-item="{{item}}">
+            <text class="pinned-tag" wx:if="{{item.isPinned}}">置顶</text>
             <text wx:if="{{item.replyTo}}">回复 <text class="reply-target">@{{item.replyTo.nickname}}</text>：</text>{{item.content}}
           </view>
           <view class="c-footer">
@@ -125,6 +127,8 @@
                 <image class="icon-img-sm" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
                 <text wx:if="{{item.likeCount > 0}}">{{item.likeCount}}</text>
               </view>
+              <text class="c-op" bindtap="onDeleteCommentTap" data-id="{{item.id}}" data-item="{{item}}" wx:if="{{item.canDelete}}">删除</text>
+              <text class="c-op" bindtap="onPinCommentTap" data-id="{{item.id}}" data-ispinned="{{item.isPinned}}" wx:if="{{isSelfPost}}">{{item.isPinned ? '取消置顶' : '置顶'}}</text>
             </view>
           </view>
         </view>

@@ -4,7 +4,7 @@ from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Comment, CommentLike, Notification, Post, User
+from ...models import Comment, CommentLike, CommentPin, Notification, Post, User
 from ...responses import fail, ok
 
 
@@ -16,7 +16,11 @@ def _int_arg(name: str, default: int) -> int:
         return default
 
 
-def _comment_to_dict(c: Comment, me_id: str | None) -> dict:
+def _ensure_comment_pin_table() -> None:
+    CommentPin.__table__.create(bind=db.engine, checkfirst=True)
+
+
+def _comment_to_dict(c: Comment, me_id: str | None, pinned_comment_id: str | None = None) -> dict:
     author = User.query.get(c.author_id)
     is_liked = False
     if me_id:
@@ -38,6 +42,7 @@ def _comment_to_dict(c: Comment, me_id: str | None) -> dict:
         "parentId": c.parent_id,
         "likeCount": c.like_count,
         "isLiked": is_liked,
+        "isPinned": bool(pinned_comment_id and c.id == pinned_comment_id),
         "createdAt": c.created_at.isoformat() if c.created_at else None,
     }
 
@@ -49,12 +54,24 @@ def register_routes(bp) -> None:
         me: User = g.current_user
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
+        _ensure_comment_pin_table()
         if Post.query.get(post_id) is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
-        q = Comment.query.filter_by(post_id=post_id).order_by(Comment.created_at.asc())
+        pin_row = CommentPin.query.filter_by(post_id=post_id).first()
+        pinned_comment_id = pin_row.comment_id if pin_row else None
+        q = Comment.query.filter_by(post_id=post_id)
+        if pinned_comment_id:
+            q = q.order_by((Comment.id != pinned_comment_id).asc(), Comment.created_at.asc())
+        else:
+            q = q.order_by(Comment.created_at.asc())
         total = q.count()
         items = q.offset((page - 1) * page_size).limit(page_size).all()
-        return ok({"list": [_comment_to_dict(c, me.id) for c in items], "total": total})
+        return ok(
+            {
+                "list": [_comment_to_dict(c, me.id, pinned_comment_id=pinned_comment_id) for c in items],
+                "total": total,
+            }
+        )
 
     @bp.post("/comments")
     @require_auth
@@ -123,3 +140,66 @@ def register_routes(bp) -> None:
             c.like_count = max(0, c.like_count - deleted)
         db.session.commit()
         return ok({"ok": True})
+
+    @bp.delete("/comments/<comment_id>")
+    @require_auth
+    def delete_comment(comment_id: str):
+        me: User = g.current_user
+        _ensure_comment_pin_table()
+        c = Comment.query.get(comment_id)
+        if c is None:
+            return fail(code="NOT_FOUND", message="comment not found", status_code=404)
+        post = Post.query.get(c.post_id)
+        if post is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if me.id != c.author_id and me.id != post.author_id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
+
+        queue = [c.id]
+        to_delete: list[str] = []
+        while queue:
+            cid = queue.pop(0)
+            to_delete.append(cid)
+            children = Comment.query.filter_by(parent_id=cid).all()
+            queue.extend([x.id for x in children])
+
+        CommentLike.query.filter(CommentLike.comment_id.in_(to_delete)).delete(
+            synchronize_session=False
+        )
+        Notification.query.filter(Notification.comment_id.in_(to_delete)).delete(
+            synchronize_session=False
+        )
+        CommentPin.query.filter(CommentPin.comment_id.in_(to_delete)).delete(
+            synchronize_session=False
+        )
+        Comment.query.filter(Comment.id.in_(to_delete)).delete(synchronize_session=False)
+        post.comment_count = max(0, post.comment_count - len(to_delete))
+        db.session.commit()
+        return ok({"ok": True, "deleted": len(to_delete)})
+
+    @bp.put("/comments/<comment_id>/pin")
+    @require_auth
+    def pin_comment(comment_id: str):
+        me: User = g.current_user
+        _ensure_comment_pin_table()
+        c = Comment.query.get(comment_id)
+        if c is None:
+            return fail(code="NOT_FOUND", message="comment not found", status_code=404)
+        post = Post.query.get(c.post_id)
+        if post is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if me.id != post.author_id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
+
+        data = request.get_json(silent=True) or {}
+        is_pinned = bool(data.get("isPinned", True))
+        row = CommentPin.query.filter_by(post_id=post.id).first()
+        if is_pinned:
+            if row is None:
+                db.session.add(CommentPin(post_id=post.id, comment_id=c.id))
+            else:
+                row.comment_id = c.id
+        else:
+            CommentPin.query.filter_by(post_id=post.id).delete(synchronize_session=False)
+        db.session.commit()
+        return ok({"ok": True, "isPinned": is_pinned})

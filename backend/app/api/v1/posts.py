@@ -7,7 +7,18 @@ from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Follow, Notification, Post, PostFavorite, PostHistory, PostLike, User
+from ...models import (
+    Comment,
+    CommentLike,
+    CommentPin,
+    Follow,
+    Notification,
+    Post,
+    PostFavorite,
+    PostHistory,
+    PostLike,
+    User,
+)
 from ...responses import fail, ok
 
 
@@ -21,6 +32,10 @@ def _int_arg(name: str, default: int) -> int:
 
 def _view_count(post_id: str) -> int:
     return PostHistory.query.filter_by(post_id=post_id).count()
+
+
+def _ensure_comment_pin_table() -> None:
+    CommentPin.__table__.create(bind=db.engine, checkfirst=True)
 
 
 def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) -> dict:
@@ -202,6 +217,55 @@ def register_routes(bp) -> None:
         db.session.add(p)
         db.session.commit()
         return ok(_post_to_dict(p, me.id, include_view_count=True), status_code=201)
+
+    @bp.put("/posts/<post_id>")
+    @require_auth
+    def update_post(post_id: str):
+        me: User = g.current_user
+        p = Post.query.get(post_id)
+        if p is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if p.author_id != me.id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
+
+        data = request.get_json(silent=True) or {}
+        content = data.get("content")
+        if not isinstance(content, str) or not content.strip():
+            return fail(code="BAD_REQUEST", message="content required", status_code=400)
+        p.content = content.strip()
+        db.session.commit()
+        return ok(_post_to_dict(p, me.id, include_view_count=True))
+
+    @bp.delete("/posts/<post_id>")
+    @require_auth
+    def delete_post(post_id: str):
+        me: User = g.current_user
+        _ensure_comment_pin_table()
+        p = Post.query.get(post_id)
+        if p is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if p.author_id != me.id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
+
+        comment_rows = Comment.query.filter_by(post_id=post_id).all()
+        comment_ids = [x.id for x in comment_rows]
+        if comment_ids:
+            CommentLike.query.filter(CommentLike.comment_id.in_(comment_ids)).delete(
+                synchronize_session=False
+            )
+            Notification.query.filter(Notification.comment_id.in_(comment_ids)).delete(
+                synchronize_session=False
+            )
+            Comment.query.filter(Comment.id.in_(comment_ids)).delete(synchronize_session=False)
+
+        Notification.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        PostLike.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        PostFavorite.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        PostHistory.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        CommentPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        db.session.delete(p)
+        db.session.commit()
+        return ok({"ok": True})
 
     @bp.post("/posts/<post_id>/like")
     @require_auth

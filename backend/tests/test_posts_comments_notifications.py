@@ -274,3 +274,143 @@ def test_following_and_followers_list_api(client, user1_token, user2_token):
     assert r.status_code == 200
     follower_list = r.get_json()["data"]["list"]
     assert any(x["id"] == me1["id"] for x in follower_list)
+
+
+def test_delete_post_requires_author_and_cleans_relations(client, user1_token, user2_token):
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "post to delete", "images": ["/d.jpg"]},
+    )
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r = client.post(f"/api/v1/posts/{post_id}/like", headers=_auth(user2_token))
+    assert r.status_code == 200
+    r = client.post(f"/api/v1/posts/{post_id}/favorite", headers=_auth(user2_token))
+    assert r.status_code == 200
+    r = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "will be removed"},
+    )
+    assert r.status_code == 201
+
+    r = client.delete(f"/api/v1/posts/{post_id}", headers=_auth(user2_token))
+    assert r.status_code == 403
+
+    r = client.delete(f"/api/v1/posts/{post_id}", headers=_auth(user1_token))
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/posts/{post_id}", headers=_auth(user1_token))
+    assert r.status_code == 404
+
+    r = client.get(f"/api/v1/posts/{post_id}/comments", headers=_auth(user1_token))
+    assert r.status_code == 404
+
+
+def test_edit_post_content_only_by_author(client, user1_token, user2_token):
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "before edit"},
+    )
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r = client.put(
+        f"/api/v1/posts/{post_id}",
+        headers=_auth(user2_token),
+        json={"content": "hacked"},
+    )
+    assert r.status_code == 403
+
+    r = client.put(
+        f"/api/v1/posts/{post_id}",
+        headers=_auth(user1_token),
+        json={"content": "after edit"},
+    )
+    assert r.status_code == 200
+    assert r.get_json()["data"]["content"] == "after edit"
+
+    r = client.get(f"/api/v1/posts/{post_id}", headers=_auth(user1_token))
+    assert r.status_code == 200
+    assert r.get_json()["data"]["content"] == "after edit"
+
+
+def test_delete_comment_by_self_or_post_author(client, user1_token, user2_token):
+    r = client.post("/api/v1/posts", headers=_auth(user1_token), json={"content": "comment delete test"})
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "cmt"},
+    )
+    assert r.status_code == 201
+    comment_id = r.get_json()["data"]["id"]
+
+    r = client.delete(f"/api/v1/comments/{comment_id}", headers=_auth(user1_token))
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/posts/{post_id}/comments", headers=_auth(user1_token))
+    assert r.status_code == 200
+    assert len(r.get_json()["data"]["list"]) == 0
+
+    r = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "cmt2"},
+    )
+    assert r.status_code == 201
+    comment2_id = r.get_json()["data"]["id"]
+
+    r = client.delete(f"/api/v1/comments/{comment2_id}", headers=_auth(user2_token))
+    assert r.status_code == 200
+    r = client.get(f"/api/v1/posts/{post_id}/comments", headers=_auth(user1_token))
+    assert r.status_code == 200
+    assert len(r.get_json()["data"]["list"]) == 0
+
+
+def test_pin_comment_by_post_author(client, user1_token, user2_token):
+    r = client.post("/api/v1/posts", headers=_auth(user1_token), json={"content": "pin test"})
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r1 = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "first"},
+    )
+    assert r1.status_code == 201
+    first_id = r1.get_json()["data"]["id"]
+
+    r2 = client.post(
+        "/api/v1/comments",
+        headers=_auth(user2_token),
+        json={"postId": post_id, "content": "second"},
+    )
+    assert r2.status_code == 201
+    second_id = r2.get_json()["data"]["id"]
+
+    r = client.put(
+        f"/api/v1/comments/{second_id}/pin",
+        headers=_auth(user2_token),
+        json={"isPinned": True},
+    )
+    assert r.status_code == 403
+
+    r = client.put(
+        f"/api/v1/comments/{second_id}/pin",
+        headers=_auth(user1_token),
+        json={"isPinned": True},
+    )
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/posts/{post_id}/comments", headers=_auth(user1_token))
+    assert r.status_code == 200
+    items = r.get_json()["data"]["list"]
+    assert items[0]["id"] == second_id
+    assert items[0]["isPinned"] is True
+    assert any(x["id"] == first_id and x["isPinned"] is False for x in items)

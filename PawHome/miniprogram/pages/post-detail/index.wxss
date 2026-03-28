@@ -36,6 +36,12 @@
   z-index: 101; 
 }
 
+.nav-right {
+  font-size: 36rpx;
+  color: #333;
+  font-weight: 600;
+}
+
 .back-icon {
   width: 24rpx;
   height: 24rpx;
@@ -240,6 +246,16 @@
   margin-bottom: 16rpx;
 }
 
+.pinned-tag {
+  display: inline-block;
+  margin-right: 8rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  background: #fff1f0;
+  color: #ff4d4f;
+  font-size: 20rpx;
+}
+
 .reply-target {
   color: #576b95;
 }
@@ -266,6 +282,11 @@
   gap: 8rpx;
   font-size: 24rpx;
   color: #999;
+}
+
+.c-op {
+  font-size: 24rpx;
+  color: #576b95;
 }
 
 /* Icons */

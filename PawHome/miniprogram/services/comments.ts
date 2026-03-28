@@ -19,6 +19,7 @@ export type Comment = {
   };
   likeCount: number;
   isLiked: boolean;
+  isPinned?: boolean;
   createdAt: string;
 };
 
@@ -104,4 +105,18 @@ export async function likeComment(commentId: string): Promise<{ ok: boolean }> {
 export async function unlikeComment(commentId: string): Promise<{ ok: boolean }> {
   if (MOCK()) return { ok: true };
   return request({ url: `/comments/${encodeURIComponent(commentId)}/like`, method: "DELETE" });
+}
+
+export async function deleteComment(commentId: string): Promise<{ ok: boolean; deleted: number }> {
+  if (MOCK()) return { ok: true, deleted: 1 };
+  return request({ url: `/comments/${encodeURIComponent(commentId)}`, method: "DELETE" });
+}
+
+export async function pinComment(commentId: string, isPinned: boolean): Promise<{ ok: boolean; isPinned: boolean }> {
+  if (MOCK()) return { ok: true, isPinned };
+  return request({
+    url: `/comments/${encodeURIComponent(commentId)}/pin`,
+    method: "PUT",
+    data: { isPinned }
+  });
 }

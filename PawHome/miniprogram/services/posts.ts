@@ -270,3 +270,24 @@ export async function createPost(data: {
   }
   return request({ url: "/posts", method: "POST", data })
 }
+
+export async function updatePost(id: string, data: { content: string }): Promise<Post> {
+  if (MOCK()) {
+    const post = cachedPosts.find((x) => x.id === String(id))
+    if (post) {
+      post.content = data.content
+      post.updatedAt = new Date().toISOString()
+      return { ...post }
+    }
+    return getPost(id)
+  }
+  return request({ url: `/posts/${encodeURIComponent(id)}`, method: "PUT", data })
+}
+
+export async function deletePost(id: string): Promise<{ ok: boolean }> {
+  if (MOCK()) {
+    cachedPosts = cachedPosts.filter((x) => x.id !== String(id))
+    return { ok: true }
+  }
+  return request({ url: `/posts/${encodeURIComponent(id)}`, method: "DELETE" })
+}

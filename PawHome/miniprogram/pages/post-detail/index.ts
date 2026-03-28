@@ -1,5 +1,22 @@
-import { getPost, likePost, unlikePost, favoritePost, unfavoritePost, Post } from "../../services/posts";
-import { getComments, addComment, likeComment, unlikeComment, Comment } from "../../services/comments";
+import {
+  getPost,
+  likePost,
+  unlikePost,
+  favoritePost,
+  unfavoritePost,
+  updatePost,
+  deletePost,
+  Post
+} from "../../services/posts";
+import {
+  getComments,
+  addComment,
+  likeComment,
+  unlikeComment,
+  deleteComment,
+  pinComment,
+  Comment
+} from "../../services/comments";
 import { followUser, unfollowUser } from "../../services/user";
 import { formatTimeAgo } from "../../utils/date";
 
@@ -15,6 +32,7 @@ Page({
     comments: [] as (Comment & { timeAgo: string })[],
     totalComments: 0,
     loadingComments: false,
+    currentUserId: "",
     
     // UI state
     currentTab: 'content', // 'content' | 'comments'
@@ -31,6 +49,7 @@ Page({
   },
 
   onLoad(options: { id: string }) {
+    const currentUserId = wx.getStorageSync("userId") || ""
     if (options.id) {
       this.loadPost(options.id);
       this.loadComments(options.id);
@@ -40,6 +59,7 @@ Page({
     const sysInfo = wx.getSystemInfoSync();
     const windowWidth = sysInfo.windowWidth || 375
     this.setData({
+      currentUserId,
       safeAreaTop: sysInfo.statusBarHeight,
       safeAreaBottom: sysInfo.screenHeight - sysInfo.safeArea.bottom,
       mediaHeight: Math.round(windowWidth * 0.72)
@@ -133,6 +153,7 @@ Page({
       const res = await getComments(postId);
       const comments = res.list.map(c => ({
         ...c,
+        canDelete: c.userId === this.data.currentUserId || this.data.isSelfPost,
         timeAgo: formatTimeAgo(c.createdAt)
       }));
       this.setData({
@@ -220,6 +241,93 @@ Page({
     }
   },
 
+  async onPostActionTap() {
+    if (!this.data.post || !this.data.isSelfPost) return
+    try {
+      const action = await new Promise<number>((resolve, reject) => {
+        wx.showActionSheet({
+          itemList: ["编辑帖子", "删除帖子"],
+          success: (res) => resolve(res.tapIndex),
+          fail: reject
+        })
+      })
+      if (action === 0) {
+        await this.onEditPostTap()
+        return
+      }
+      await this.onDeletePostTap()
+    } catch {
+    }
+  },
+
+  async onEditPostTap() {
+    if (!this.data.post || !this.data.isSelfPost) return
+    const post = this.data.post
+    try {
+      const modalRes = await new Promise<WechatMiniprogram.ShowModalSuccessCallbackResult>(
+        (resolve, reject) => {
+          wx.showModal({
+            title: "编辑帖子",
+            editable: true,
+            content: post.content,
+            placeholderText: "请输入帖子内容",
+            success: resolve,
+            fail: reject
+          })
+        }
+      )
+      if (!modalRes.confirm) return
+      const nextContent = (modalRes.content || "").trim()
+      if (!nextContent) {
+        wx.showToast({ title: "内容不能为空", icon: "none" })
+        return
+      }
+      wx.showLoading({ title: "保存中" })
+      const nextPost = await updatePost(post.id, { content: nextContent })
+      this.setData({
+        post: {
+          ...nextPost,
+          timeAgo: formatTimeAgo(nextPost.createdAt)
+        }
+      })
+      wx.setStorageSync("community_need_refresh", true)
+      wx.setStorageSync("user_profile_need_refresh", true)
+      wx.hideLoading()
+      wx.showToast({ title: "已保存", icon: "success" })
+    } catch {
+      wx.hideLoading()
+      wx.showToast({ title: "保存失败", icon: "none" })
+    }
+  },
+
+  async onDeletePostTap() {
+    if (!this.data.post || !this.data.isSelfPost) return
+    try {
+      const modalRes = await new Promise<WechatMiniprogram.ShowModalSuccessCallbackResult>(
+        (resolve, reject) => {
+          wx.showModal({
+            title: "删除帖子",
+            content: "删除后不可恢复，是否继续？",
+            confirmColor: "#ff4d4f",
+            success: resolve,
+            fail: reject
+          })
+        }
+      )
+      if (!modalRes.confirm) return
+      wx.showLoading({ title: "删除中" })
+      await deletePost(this.data.post.id)
+      wx.setStorageSync("community_need_refresh", true)
+      wx.setStorageSync("user_profile_need_refresh", true)
+      wx.hideLoading()
+      wx.showToast({ title: "已删除", icon: "success" })
+      setTimeout(() => this.goBack(), 200)
+    } catch {
+      wx.hideLoading()
+      wx.showToast({ title: "删除失败", icon: "none" })
+    }
+  },
+
   async onLikeCommentTap(e: WechatMiniprogram.TouchEvent) {
     const { index, id } = e.currentTarget.dataset;
     const comment = this.data.comments[index];
@@ -242,6 +350,53 @@ Page({
         [`${key}.isLiked`]: isLiked,
         [`${key}.likeCount`]: likeCount
       });
+    }
+  },
+
+  async onDeleteCommentTap(e: WechatMiniprogram.TouchEvent) {
+    if (!this.data.post) return
+    const id = e.currentTarget.dataset.id as string
+    const item = e.currentTarget.dataset.item as (Comment & { canDelete?: boolean })
+    if (!item?.canDelete) return
+    try {
+      const modalRes = await new Promise<WechatMiniprogram.ShowModalSuccessCallbackResult>(
+        (resolve, reject) => {
+          wx.showModal({
+            title: "删除评论",
+            content: "确定删除这条评论吗？",
+            confirmColor: "#ff4d4f",
+            success: resolve,
+            fail: reject
+          })
+        }
+      )
+      if (!modalRes.confirm) return
+      await deleteComment(id)
+      await this.loadComments(this.data.post.id)
+      const post = await getPost(this.data.post.id)
+      this.setData({
+        post: {
+          ...post,
+          timeAgo: formatTimeAgo(post.createdAt)
+        }
+      })
+      wx.setStorageSync("community_need_refresh", true)
+      wx.showToast({ title: "已删除", icon: "success" })
+    } catch {
+      wx.showToast({ title: "删除失败", icon: "none" })
+    }
+  },
+
+  async onPinCommentTap(e: WechatMiniprogram.TouchEvent) {
+    if (!this.data.post || !this.data.isSelfPost) return
+    const id = e.currentTarget.dataset.id as string
+    const isPinned = Boolean(e.currentTarget.dataset.ispinned)
+    try {
+      await pinComment(id, !isPinned)
+      await this.loadComments(this.data.post.id)
+      wx.showToast({ title: !isPinned ? "已置顶" : "已取消置顶", icon: "success" })
+    } catch {
+      wx.showToast({ title: "操作失败", icon: "none" })
     }
   },
 
@@ -276,24 +431,16 @@ Page({
     
     try {
       const parentId = this.data.replyTo ? this.data.replyTo.id : undefined;
-      const newComment = await addComment(this.data.post.id, content, parentId);
-      
-      // Add to list locally
-      const commentWithTime = {
-        ...newComment,
-        timeAgo: '刚刚',
-        replyTo: this.data.replyTo ? { 
-          userId: this.data.replyTo.userId, 
-          nickname: this.data.replyTo.user.nickname 
-        } : undefined
-      };
-
+      await addComment(this.data.post.id, content, parentId);
+      await this.loadComments(this.data.post.id)
+      const post = await getPost(this.data.post.id)
       this.setData({
-        comments: [commentWithTime, ...this.data.comments],
-        totalComments: this.data.totalComments + 1,
         inputValue: "",
         replyTo: null,
-        'post.commentCount': (this.data.post.commentCount || 0) + 1
+        post: {
+          ...post,
+          timeAgo: formatTimeAgo(post.createdAt)
+        }
       });
       wx.setStorageSync("community_need_refresh", true)
       

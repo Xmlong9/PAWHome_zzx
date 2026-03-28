@@ -171,6 +171,13 @@ class CommentLike(db.Model, TimestampMixin):
     comment_id = db.Column(db.String(36), db.ForeignKey("comments.id"), primary_key=True)
 
 
+class CommentPin(db.Model, TimestampMixin):
+    __tablename__ = "comment_pins"
+
+    post_id = db.Column(db.String(36), db.ForeignKey("posts.id"), primary_key=True)
+    comment_id = db.Column(db.String(36), db.ForeignKey("comments.id"), nullable=False, unique=True)
+
+
 class Notification(db.Model, TimestampMixin):
     __tablename__ = "notifications"
 

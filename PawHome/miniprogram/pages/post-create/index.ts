@@ -11,6 +11,9 @@ Page({
     topic: '',
     location: null as { name: string; address: string } | null,
     pet: '',
+    petType: "all" as "all" | "cat" | "dog",
+    petTypeText: "不分类",
+    taggedPetType: "" as "" | "cat" | "dog",
     visibility: 'public', // 'public' | 'followers' | 'private'
     visibilityText: '所有人可见'
   },
@@ -110,6 +113,28 @@ Page({
     });
   },
 
+  choosePetType() {
+    const options = ["不分类", "猫咪", "狗狗"]
+    const values: Array<"all" | "cat" | "dog"> = ["all", "cat", "dog"]
+    wx.showActionSheet({
+      itemList: options,
+      success: (res) => {
+        this.setData({
+          petType: values[res.tapIndex],
+          petTypeText: options[res.tapIndex]
+        })
+      }
+    })
+  },
+
+  inferPetType(rawType?: string) {
+    if (!rawType) return ""
+    const normalized = String(rawType).toLowerCase()
+    if (normalized.includes("cat") || normalized.includes("猫")) return "cat"
+    if (normalized.includes("dog") || normalized.includes("狗")) return "dog"
+    return ""
+  },
+
   tagPet() {
     getPetList()
       .then((pets) => {
@@ -131,7 +156,10 @@ Page({
           itemList: names,
           success: (res) => {
             const selected = pets[res.tapIndex]
-            this.setData({ pet: selected.name })
+            this.setData({
+              pet: selected.name,
+              taggedPetType: this.inferPetType(selected.type)
+            })
           }
         })
       })
@@ -162,6 +190,7 @@ Page({
       this.data.pet ? `#${this.data.pet}` : ""
     ].filter(Boolean)
     const finalContent = contentParts.join(" ").trim()
+    const finalType = this.data.taggedPetType || this.data.petType || "all"
 
     if (!finalContent && this.data.mediaList.length === 0) {
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' });
@@ -188,7 +217,7 @@ Page({
             coverUrl,
             location: this.data.location?.name,
             visibility: this.data.visibility,
-            type: "all"
+            type: finalType
           })
           return
         }
@@ -205,7 +234,7 @@ Page({
           images: imageUrls,
           location: this.data.location?.name,
           visibility: this.data.visibility,
-          type: "all"
+          type: finalType
         })
       })
       .then(() => {

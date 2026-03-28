@@ -151,5 +151,13 @@ Page({
   goPostDetail(e: any) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/post-detail/index?id=${id}` });
+  },
+
+  openRelations(e: any) {
+    const type = e.currentTarget.dataset.type
+    if (type !== "following" && type !== "followers") return
+    const userId = this.data.userId || this.data.userInfo?.id
+    if (!userId) return
+    wx.navigateTo({ url: `/pages/user-relations/index?userId=${encodeURIComponent(userId)}&type=${type}` })
   }
 });

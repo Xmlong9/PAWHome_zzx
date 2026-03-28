@@ -55,6 +55,7 @@
             <text class="text" user-select>{{post.content}}</text>
             <view class="post-time" wx:if="{{post.location}}">📍 {{post.location}}</view>
             <view class="post-time">{{post.timeAgo}}</view>
+            <view class="post-time" wx:if="{{post.viewCount !== undefined}}">👁 {{post.viewCount}}</view>
           </view>
         </view>
         

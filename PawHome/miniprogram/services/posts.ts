@@ -17,6 +17,7 @@ export type Post = {
   likeCount: number
   commentCount: number
   favoriteCount: number
+  viewCount?: number
   isFavorited?: boolean // Current user has favorited
   isLiked?: boolean // Current user has liked
   isFollowed?: boolean // Current user has followed the author
@@ -100,18 +101,21 @@ const generateMockPosts = (page: number, pageSize: number, type?: string): Post[
   return list;
 };
 
-export async function getPosts(page = 1, pageSize = 10, type = '推荐'): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
+export async function getPosts(page = 1, pageSize = 10, tag = '推荐'): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
   if (MOCK()) {
-    const list = generateMockPosts(page, pageSize, type);
+    const list = generateMockPosts(page, pageSize, tag);
     return { list, page, pageSize, total: 100 }
   }
   let serverType = "all"
-  if (type === "猫咪") serverType = "cat"
-  if (type === "狗狗") serverType = "dog"
+  if (tag === "猫咪") serverType = "cat"
+  if (tag === "狗狗") serverType = "dog"
+  let tab = "recommend"
+  if (tag === "关注") tab = "following"
+  if (tag === "最新") tab = "latest"
   const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ 
     url: "/posts", 
     method: "GET", 
-    data: { page, pageSize, type: serverType } 
+    data: { page, pageSize, type: serverType, tab } 
   })
   return res
 }

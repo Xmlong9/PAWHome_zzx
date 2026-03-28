@@ -32,11 +32,11 @@
 
     <!-- 第二行：数据统计与签名 -->
     <view class="stats-section">
-      <view class="stat-item">
+      <view class="stat-item" data-type="following" bindtap="openRelations">
         <text class="stat-num">{{userInfo.followingCount || 0}}</text>
         <text class="stat-label">关注</text>
       </view>
-      <view class="stat-item">
+      <view class="stat-item" data-type="followers" bindtap="openRelations">
         <text class="stat-num">{{userInfo.followerCount || 0}}</text>
         <text class="stat-label">粉丝</text>
       </view>
@@ -74,6 +74,9 @@
             <view class="post-like">
               <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
+            </view>
+            <view class="post-views" wx:if="{{item.viewCount !== undefined}}">
+              <text>👁 {{item.viewCount}}</text>
             </view>
           </view>
         </view>

@@ -151,6 +151,29 @@ export const listConversations = async (): Promise<IMConversation[]> => {
   return list.sort((a, b) => b.lastMessageAt - a.lastMessageAt)
 }
 
+export const createConversation = async (peerId: string): Promise<{ id: string }> => {
+  if (!MOCK()) {
+    return request<{ id: string }>({ url: "/im/conversations", method: "POST", data: { peerId } })
+  }
+  ensureSeed()
+  const convs = readConversations()
+  const existed = convs.find((c) => c.peerId === peerId)
+  if (existed) return { id: existed.id }
+  const id = `conv_mock_${peerId}`
+  const user = MOCK_USERS[peerId]
+  convs.push({
+    id,
+    peerId,
+    peerNickname: user?.nickname || "未知用户",
+    peerAvatarUrl: user?.avatarUrl || "https://picsum.photos/seed/peer/100",
+    lastMessage: "",
+    lastMessageAt: now(),
+    unreadCount: 0
+  })
+  writeConversations(convs)
+  return { id }
+}
+
 export const listMessages = async (conversationId: string): Promise<IMMessage[]> => {
   if (!MOCK()) {
     const res = await request<{ list: IMMessage[] }>({ url: "/im/messages", method: "GET", data: { conversationId } })

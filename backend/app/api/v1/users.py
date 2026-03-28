@@ -83,6 +83,19 @@ def _user_profile_dict(u: User) -> dict:
     }
 
 
+def _user_brief_dict(u: User, me_id: str) -> dict:
+    is_following = Follow.query.filter_by(follower_id=me_id, followee_id=u.id).first() is not None
+    return {
+        "id": u.id,
+        "publicId": u.public_id,
+        "nickname": u.nickname or "",
+        "avatarUrl": u.avatar_url or "",
+        "location": u.location or "",
+        "signature": u.bio or "",
+        "isFollowing": is_following,
+    }
+
+
 def register_routes(bp) -> None:
     @bp.get("/users/me")
     @require_auth
@@ -353,6 +366,46 @@ def register_routes(bp) -> None:
             db.session.add(Follow(follower_id=me.id, followee_id=user_id))
             db.session.commit()
         return ok({"ok": True})
+
+    @bp.get("/users/<user_id>/following")
+    @require_auth
+    def list_following(user_id: str):
+        me: User = g.current_user
+        page = int(request.args.get("page", "1") or 1)
+        page_size = int(request.args.get("pageSize", "20") or 20)
+        page = max(1, page)
+        page_size = max(1, min(50, page_size))
+
+        rows = (
+            Follow.query.filter_by(follower_id=user_id)
+            .order_by(Follow.created_at.desc())
+            .all()
+        )
+        total = len(rows)
+        sliced = rows[(page - 1) * page_size : (page - 1) * page_size + page_size]
+        users = [User.query.get(x.followee_id) for x in sliced]
+        users = [u for u in users if u is not None]
+        return ok({"list": [_user_brief_dict(u, me.id) for u in users], "total": total})
+
+    @bp.get("/users/<user_id>/followers")
+    @require_auth
+    def list_followers(user_id: str):
+        me: User = g.current_user
+        page = int(request.args.get("page", "1") or 1)
+        page_size = int(request.args.get("pageSize", "20") or 20)
+        page = max(1, page)
+        page_size = max(1, min(50, page_size))
+
+        rows = (
+            Follow.query.filter_by(followee_id=user_id)
+            .order_by(Follow.created_at.desc())
+            .all()
+        )
+        total = len(rows)
+        sliced = rows[(page - 1) * page_size : (page - 1) * page_size + page_size]
+        users = [User.query.get(x.follower_id) for x in sliced]
+        users = [u for u in users if u is not None]
+        return ok({"list": [_user_brief_dict(u, me.id) for u in users], "total": total})
 
     @bp.delete("/users/<user_id>/follow")
     @require_auth

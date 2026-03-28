@@ -30,6 +30,16 @@ export type PetProfile = {
   birthday: string;
 }
 
+export type UserRelation = {
+  id: string;
+  publicId?: string;
+  nickname: string;
+  avatarUrl: string;
+  location?: string;
+  signature?: string;
+  isFollowing?: boolean;
+}
+
 export const MOCK_USERS: Record<string, UserProfile> = {
   "324666": {
     id: "324666",
@@ -224,6 +234,38 @@ export async function followUser(userId: string): Promise<{ ok: boolean }> {
 export async function unfollowUser(userId: string): Promise<{ ok: boolean }> {
   if (MOCK()) return { ok: true };
   return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "DELETE" });
+}
+
+export async function getUserFollowing(userId: string, page = 1, pageSize = 20): Promise<{ list: UserRelation[]; total: number }> {
+  if (MOCK()) {
+    const list = Object.values(MOCK_USERS).filter((u) => u.id !== userId).slice(0, 5).map((u, i) => ({
+      id: u.id,
+      publicId: u.publicId,
+      nickname: u.nickname,
+      avatarUrl: u.avatarUrl,
+      location: u.location,
+      signature: u.signature,
+      isFollowing: i % 2 === 0
+    }))
+    return { list, total: list.length }
+  }
+  return request({ url: `/users/${encodeURIComponent(userId)}/following`, method: "GET", data: { page, pageSize } })
+}
+
+export async function getUserFollowers(userId: string, page = 1, pageSize = 20): Promise<{ list: UserRelation[]; total: number }> {
+  if (MOCK()) {
+    const list = Object.values(MOCK_USERS).filter((u) => u.id !== userId).slice(0, 5).map((u, i) => ({
+      id: u.id,
+      publicId: u.publicId,
+      nickname: u.nickname,
+      avatarUrl: u.avatarUrl,
+      location: u.location,
+      signature: u.signature,
+      isFollowing: i % 3 === 0
+    }))
+    return { list, total: list.length }
+  }
+  return request({ url: `/users/${encodeURIComponent(userId)}/followers`, method: "GET", data: { page, pageSize } })
 }
 
 export async function changePassword(oldPassword: string, newPassword: string): Promise<{ ok: boolean }> {

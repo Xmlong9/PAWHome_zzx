@@ -56,6 +56,17 @@
           </view>
         </view>
 
+        <view class="option-item" bindtap="choosePetType">
+          <view class="option-left">
+            <view class="option-icon">🏷</view>
+            <text>宠物标签</text>
+          </view>
+          <view class="option-right">
+            <text class="option-value">{{petTypeText}}</text>
+            <view class="arrow-icon">></view>
+          </view>
+        </view>
+
         <view class="option-item" bindtap="tagPet">
           <view class="option-left">
             <view class="option-icon pet">🐾</view>

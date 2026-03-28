@@ -32,6 +32,7 @@
     "pages/my/favorites/index",
     "pages/my/history/index",
     "pages/user-profile/index",
+    "pages/user-relations/index",
     "pages/search/index",
     "pages/logs/logs"
   ],

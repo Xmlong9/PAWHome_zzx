@@ -19,7 +19,11 @@ def _int_arg(name: str, default: int) -> int:
         return default
 
 
-def _post_to_dict(p: Post, me_id: str | None) -> dict:
+def _view_count(post_id: str) -> int:
+    return PostHistory.query.filter_by(post_id=post_id).count()
+
+
+def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) -> dict:
     images: list[str] = []
     video_url: str | None = None
     if p.media_json:
@@ -58,7 +62,7 @@ def _post_to_dict(p: Post, me_id: str | None) -> dict:
         )
         is_followed = Follow.query.filter_by(follower_id=me_id, followee_id=p.author_id).first() is not None
 
-    return {
+    data = {
         "id": p.id,
         "userId": p.author_id,
         "user": {
@@ -85,6 +89,9 @@ def _post_to_dict(p: Post, me_id: str | None) -> dict:
         "createdAt": p.created_at.isoformat() if p.created_at else None,
         "updatedAt": p.updated_at.isoformat() if p.updated_at else None,
     }
+    if include_view_count:
+        data["viewCount"] = _view_count(p.id)
+    return data
 
 
 def register_routes(bp) -> None:
@@ -95,15 +102,31 @@ def register_routes(bp) -> None:
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
         post_type = request.args.get("type")
+        tab = request.args.get("tab")
 
         q = Post.query
+        if tab == "following":
+            followee_rows = Follow.query.filter_by(follower_id=me.id).all()
+            followee_ids = [x.followee_id for x in followee_rows]
+            if followee_ids:
+                q = q.filter(Post.author_id.in_(followee_ids))
+            else:
+                q = q.filter(Post.author_id == "__none__")
         if isinstance(post_type, str) and post_type and post_type != "all":
             q = q.filter_by(post_type=post_type)
-        q = q.order_by(Post.created_at.desc())
+        if tab == "recommend" or tab is None or tab == "":
+            q = q.order_by(
+                Post.like_count.desc(),
+                Post.favorite_count.desc(),
+                Post.comment_count.desc(),
+                Post.created_at.desc(),
+            )
+        else:
+            q = q.order_by(Post.created_at.desc())
 
         total = q.count()
         items = q.offset((page - 1) * page_size).limit(page_size).all()
-        return ok({"list": [_post_to_dict(p, me.id) for p in items], "total": total})
+        return ok({"list": [_post_to_dict(p, me.id, include_view_count=False) for p in items], "total": total})
 
     @bp.get("/users/me/posts")
     @require_auth
@@ -114,7 +137,7 @@ def register_routes(bp) -> None:
         q = Post.query.filter_by(author_id=me.id).order_by(Post.created_at.desc())
         total = q.count()
         items = q.offset((page - 1) * page_size).limit(page_size).all()
-        return ok({"list": [_post_to_dict(p, me.id) for p in items], "page": page, "pageSize": page_size, "total": total})
+        return ok({"list": [_post_to_dict(p, me.id, include_view_count=True) for p in items], "page": page, "pageSize": page_size, "total": total})
 
     @bp.get("/users/<user_id>/posts")
     @require_auth
@@ -125,7 +148,8 @@ def register_routes(bp) -> None:
         q = Post.query.filter_by(author_id=user_id).order_by(Post.created_at.desc())
         total = q.count()
         items = q.offset((page - 1) * page_size).limit(page_size).all()
-        return ok({"list": [_post_to_dict(p, me.id) for p in items], "page": page, "pageSize": page_size, "total": total})
+        include_view_count = me.id == user_id
+        return ok({"list": [_post_to_dict(p, me.id, include_view_count=include_view_count) for p in items], "page": page, "pageSize": page_size, "total": total})
 
     @bp.get("/posts/<post_id>")
     @require_auth
@@ -142,7 +166,7 @@ def register_routes(bp) -> None:
             h.last_viewed_at = datetime.utcnow()
         db.session.commit()
 
-        return ok(_post_to_dict(p, me.id))
+        return ok(_post_to_dict(p, me.id, include_view_count=(me.id == p.author_id)))
 
     @bp.post("/posts")
     @require_auth
@@ -177,7 +201,7 @@ def register_routes(bp) -> None:
         )
         db.session.add(p)
         db.session.commit()
-        return ok(_post_to_dict(p, me.id), status_code=201)
+        return ok(_post_to_dict(p, me.id, include_view_count=True), status_code=201)
 
     @bp.post("/posts/<post_id>/like")
     @require_auth

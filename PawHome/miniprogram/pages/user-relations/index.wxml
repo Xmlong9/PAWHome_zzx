@@ -1,0 +1,25 @@
+<view class="relations-page">
+  <view class="tabs">
+    <view class="tab {{currentType === 'following' ? 'active' : ''}}" data-type="following" bindtap="switchType">关注</view>
+    <view class="tab {{currentType === 'followers' ? 'active' : ''}}" data-type="followers" bindtap="switchType">粉丝</view>
+  </view>
+
+  <scroll-view class="list" scroll-y>
+    <view class="item" wx:for="{{list}}" wx:key="id">
+      <view class="left" data-item="{{item}}" bindtap="openProfile">
+        <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+        <view class="meta">
+          <view class="name">{{item.nickname}}</view>
+          <view class="sub" wx:if="{{item.location}}">{{item.location}}</view>
+        </view>
+      </view>
+      <view class="right">
+        <view class="btn chat" data-item="{{item}}" bindtap="openChat">私聊</view>
+        <view class="btn follow {{item.isFollowing ? 'following' : ''}}" data-item="{{item}}" bindtap="onToggleFollow">
+          {{item.isFollowing ? '已关注' : '关注'}}
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!loading && list.length === 0}}">暂无数据</view>
+  </scroll-view>
+</view>

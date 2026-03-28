@@ -76,7 +76,8 @@
               <text class="like-count">{{item.likeCount}}</text>
             </view>
             <view class="post-views" wx:if="{{item.viewCount !== undefined}}">
-              <text>👁 {{item.viewCount}}</text>
+              <image class="views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+              <text class="views-text">{{item.viewCount}}</text>
             </view>
           </view>
         </view>

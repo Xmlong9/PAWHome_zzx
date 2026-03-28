@@ -251,6 +251,19 @@
 .post-views {
   font-size: 22rpx;
   color: #999;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.views-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.views-text {
+  font-size: 22rpx;
+  color: #999;
 }
 
 .empty-state {

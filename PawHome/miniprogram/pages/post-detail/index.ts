@@ -40,6 +40,7 @@ Page({
     loadingComments: false,
     currentUserId: "",
     showActionPanel: false,
+    actionPanelVisible: false,
     shareTargets: [] as (ShareTarget & { selected?: boolean })[],
     shareGroup: "all" as "all" | "mutual" | "following" | "follower",
     selectedShareIds: [] as string[],
@@ -256,12 +257,22 @@ Page({
   async onPostActionTap() {
     if (!this.data.post) return
     trackEvent("post_action_open", { isSelf: this.data.isSelfPost })
-    this.setData({ showActionPanel: true })
-    await this.prepareShareData()
+    const self = this as any
+    if (self._actionPanelTimer) clearTimeout(self._actionPanelTimer)
+    this.setData({ showActionPanel: true, actionPanelVisible: false })
+    self._actionPanelTimer = setTimeout(() => {
+      this.setData({ actionPanelVisible: true })
+    }, 20)
+    this.prepareShareData()
   },
 
   closeActionPanel() {
-    this.setData({ showActionPanel: false })
+    const self = this as any
+    if (self._actionPanelTimer) clearTimeout(self._actionPanelTimer)
+    this.setData({ actionPanelVisible: false })
+    self._actionPanelTimer = setTimeout(() => {
+      this.setData({ showActionPanel: false })
+    }, 340)
   },
 
   stopPanelTap() {},

@@ -160,6 +160,7 @@
 .user-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .nickname {
@@ -170,6 +171,32 @@
 }
 
 .time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.meta-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.views {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.views-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.views-text {
   font-size: 24rpx;
   color: #999;
 }

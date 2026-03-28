@@ -57,8 +57,13 @@
             <view class="post-title" wx:if="{{post.title}}">{{post.title}}</view>
             <text class="text" user-select>{{post.content}}</text>
             <view class="post-time" wx:if="{{post.location}}">📍 {{post.location}}</view>
-            <view class="post-time">{{post.timeAgo}}</view>
-            <view class="post-time" wx:if="{{post.viewCount !== undefined}}">👁 {{post.viewCount}}</view>
+            <view class="post-meta-row">
+              <view class="post-time">{{post.timeAgo}}</view>
+              <view class="post-views" wx:if="{{post.viewCount !== undefined}}">
+                <image class="post-views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+                <text class="post-views-text">{{post.viewCount}}</text>
+              </view>
+            </view>
           </view>
         </view>
         
@@ -109,7 +114,7 @@
   </view>
 
   <view class="sheet-mask" wx:if="{{showActionPanel}}" bindtap="closeActionPanel"></view>
-  <view class="sheet-panel {{showActionPanel ? 'show' : ''}}" wx:if="{{showActionPanel}}" catchtap="stopPanelTap">
+  <view class="sheet-panel {{actionPanelVisible ? 'show' : ''}}" wx:if="{{showActionPanel}}" catchtap="stopPanelTap">
     <view class="sheet-head">
       <text class="sheet-title">分享至</text>
       <text class="sheet-close" bindtap="closeActionPanel">✕</text>
@@ -124,15 +129,15 @@
               bindtap="onToggleShareTarget"
               data-id="{{item.id}}"
             >
-              <view class="avatar-wrap">
+              <view class="avatar-wrap" style="position: relative;">
                 <image class="share-user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
-                <view class="check-icon" wx:if="{{item.selected}}">
-                  <view class="check-icon-inner">
-                    <text class="check-icon-mark">✓</text>
+                <view class="check-icon" wx:if="{{item.selected}}" style="position: absolute; right: -4rpx; bottom: -4rpx; width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                  <view class="check-icon-inner" style="width: 32rpx; height: 32rpx; border-radius: 50%; background: #FF9E59; display: flex; align-items: center; justify-content: center;">
+                    <text class="check-icon-mark" style="color: #fff; font-size: 22rpx; line-height: 1; font-weight: 700;">✓</text>
                   </view>
                 </view>
-                <view class="uncheck-icon" wx:else>
-                  <view class="uncheck-circle"></view>
+                <view class="uncheck-icon" wx:else style="position: absolute; right: -4rpx; bottom: -4rpx; width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff;">
+                  <view class="uncheck-circle" style="width: 32rpx; height: 32rpx; border-radius: 50%; border: 2rpx solid #e0e0e0; box-sizing: border-box;"></view>
                 </view>
               </view>
               <text class="share-user-name">{{item.nickname}}</text>

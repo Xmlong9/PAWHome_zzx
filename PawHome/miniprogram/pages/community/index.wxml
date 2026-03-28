@@ -34,7 +34,13 @@
           <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
           <view class="user-info">
             <view class="nickname" catchtap="goUserProfile" data-userid="{{item.userId}}">{{item.user.nickname}}</view>
-            <view class="time">{{item.timeAgo}}</view>
+            <view class="meta-row">
+              <view class="time">{{item.timeAgo}}</view>
+              <view class="views" wx:if="{{item.viewCount !== undefined}}">
+                <image class="views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+                <text class="views-text">{{item.viewCount}}</text>
+              </view>
+            </view>
             <view class="time" wx:if="{{item.location}}">📍 {{item.location}}</view>
           </view>
         </view>

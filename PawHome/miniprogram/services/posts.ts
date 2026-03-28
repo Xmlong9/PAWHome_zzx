@@ -21,6 +21,7 @@ export type Post = {
   isFavorited?: boolean // Current user has favorited
   isLiked?: boolean // Current user has liked
   isFollowed?: boolean // Current user has followed the author
+  isPinned?: boolean
   createdAt: string
   updatedAt?: string
 }
@@ -271,7 +272,10 @@ export async function createPost(data: {
   return request({ url: "/posts", method: "POST", data })
 }
 
-export async function updatePost(id: string, data: { content: string }): Promise<Post> {
+export async function updatePost(
+  id: string,
+  data: { content: string; visibility?: "public" | "followers" | "private" }
+): Promise<Post> {
   if (MOCK()) {
     const post = cachedPosts.find((x) => x.id === String(id))
     if (post) {
@@ -290,4 +294,48 @@ export async function deletePost(id: string): Promise<{ ok: boolean }> {
     return { ok: true }
   }
   return request({ url: `/posts/${encodeURIComponent(id)}`, method: "DELETE" })
+}
+
+export type ShareTarget = {
+  id: string
+  nickname: string
+  avatarUrl: string
+  group: "mutual" | "following" | "follower"
+}
+
+export async function getPostShareTargets(postId: string): Promise<{ list: ShareTarget[] }> {
+  if (MOCK()) {
+    const ids = Object.keys(MOCK_USERS).slice(0, 8)
+    return {
+      list: ids.map((id, index) => ({
+        id,
+        nickname: MOCK_USERS[id].nickname,
+        avatarUrl: MOCK_USERS[id].avatarUrl,
+        group: index % 3 === 0 ? "mutual" : index % 3 === 1 ? "following" : "follower"
+      }))
+    }
+  }
+  return request({ url: `/posts/${encodeURIComponent(postId)}/share-targets`, method: "GET" })
+}
+
+export async function getPostShareLink(postId: string): Promise<{ path: string; shortUrl: string; trace: string }> {
+  if (MOCK()) {
+    const userId = wx.getStorageSync("userId") || "mock-user"
+    const trace = String(Date.now()).slice(-8)
+    return {
+      path: `/pages/post-detail/index?id=${postId}&from=${userId}&trace=${trace}`,
+      shortUrl: `https://pawhome.app/p/${String(postId).slice(0, 8)}?u=${String(userId).slice(0, 8)}&t=${trace}`,
+      trace
+    }
+  }
+  return request({ url: `/posts/${encodeURIComponent(postId)}/share-link`, method: "GET" })
+}
+
+export async function pinPost(postId: string, isPinned: boolean): Promise<{ ok: boolean; isPinned: boolean }> {
+  if (MOCK()) return { ok: true, isPinned }
+  return request({
+    url: `/posts/${encodeURIComponent(postId)}/pin`,
+    method: "PUT",
+    data: { isPinned }
+  })
 }

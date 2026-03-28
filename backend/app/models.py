@@ -152,6 +152,13 @@ class PostHistory(db.Model, TimestampMixin):
     last_viewed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
+class PostPin(db.Model, TimestampMixin):
+    __tablename__ = "post_pins"
+
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), primary_key=True)
+    post_id = db.Column(db.String(36), db.ForeignKey("posts.id"), primary_key=True)
+
+
 class Comment(db.Model, TimestampMixin):
     __tablename__ = "comments"
 

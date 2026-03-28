@@ -75,5 +75,10 @@
         "selectedIconPath": "assets/icons/tab/pets@1x.png"
       }
     ]
+  },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "用于将帖子图片保存到你的相册"
+    }
   }
 }

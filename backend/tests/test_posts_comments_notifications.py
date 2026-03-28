@@ -414,3 +414,75 @@ def test_pin_comment_by_post_author(client, user1_token, user2_token):
     assert items[0]["id"] == second_id
     assert items[0]["isPinned"] is True
     assert any(x["id"] == first_id and x["isPinned"] is False for x in items)
+
+
+def test_update_post_visibility_and_pin_limit(client, user1_token):
+    post_ids: list[str] = []
+    for i in range(4):
+        r = client.post(
+            "/api/v1/posts",
+            headers=_auth(user1_token),
+            json={"content": f"pin-{i}"},
+        )
+        assert r.status_code == 201
+        post_ids.append(r.get_json()["data"]["id"])
+
+    r = client.put(
+        f"/api/v1/posts/{post_ids[0]}",
+        headers=_auth(user1_token),
+        json={"content": "edited", "visibility": "private"},
+    )
+    assert r.status_code == 200
+    data = r.get_json()["data"]
+    assert data["content"] == "edited"
+    assert data["visibility"] == "private"
+
+    assert client.put(
+        f"/api/v1/posts/{post_ids[0]}/pin",
+        headers=_auth(user1_token),
+        json={"isPinned": True},
+    ).status_code == 200
+    assert client.put(
+        f"/api/v1/posts/{post_ids[1]}/pin",
+        headers=_auth(user1_token),
+        json={"isPinned": True},
+    ).status_code == 200
+    assert client.put(
+        f"/api/v1/posts/{post_ids[2]}/pin",
+        headers=_auth(user1_token),
+        json={"isPinned": True},
+    ).status_code == 200
+    r = client.put(
+        f"/api/v1/posts/{post_ids[3]}/pin",
+        headers=_auth(user1_token),
+        json={"isPinned": True},
+    )
+    assert r.status_code == 400
+
+
+def test_share_targets_and_short_link(client, user1_token, user2_token):
+    me1 = client.get("/api/v1/users/me", headers=_auth(user1_token)).get_json()["data"]
+    me2 = client.get("/api/v1/users/me", headers=_auth(user2_token)).get_json()["data"]
+    r = client.post(f"/api/v1/users/{me2['id']}/follow", headers=_auth(user1_token))
+    assert r.status_code == 200
+    r = client.post(f"/api/v1/users/{me1['id']}/follow", headers=_auth(user2_token))
+    assert r.status_code == 200
+
+    r = client.post(
+        "/api/v1/posts",
+        headers=_auth(user1_token),
+        json={"content": "share target post"},
+    )
+    assert r.status_code == 201
+    post_id = r.get_json()["data"]["id"]
+
+    r = client.get(f"/api/v1/posts/{post_id}/share-targets", headers=_auth(user1_token))
+    assert r.status_code == 200
+    targets = r.get_json()["data"]["list"]
+    assert any(x["id"] == me2["id"] and x["group"] == "mutual" for x in targets)
+
+    r = client.get(f"/api/v1/posts/{post_id}/share-link", headers=_auth(user1_token))
+    assert r.status_code == 200
+    link_data = r.get_json()["data"]
+    assert isinstance(link_data["shortUrl"], str) and link_data["shortUrl"]
+    assert "trace=" in link_data["path"]

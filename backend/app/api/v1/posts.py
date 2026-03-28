@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import random
+import string
 from datetime import datetime
 
 from flask import g, request
@@ -16,6 +18,7 @@ from ...models import (
     Post,
     PostFavorite,
     PostHistory,
+    PostPin,
     PostLike,
     User,
 )
@@ -36,6 +39,10 @@ def _view_count(post_id: str) -> int:
 
 def _ensure_comment_pin_table() -> None:
     CommentPin.__table__.create(bind=db.engine, checkfirst=True)
+
+
+def _ensure_post_pin_table() -> None:
+    PostPin.__table__.create(bind=db.engine, checkfirst=True)
 
 
 def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) -> dict:
@@ -77,6 +84,9 @@ def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) 
         )
         is_followed = Follow.query.filter_by(follower_id=me_id, followee_id=p.author_id).first() is not None
 
+    _ensure_post_pin_table()
+    is_pinned = PostPin.query.filter_by(post_id=p.id).first() is not None
+
     data = {
         "id": p.id,
         "userId": p.author_id,
@@ -101,6 +111,7 @@ def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) 
         "isLiked": is_liked,
         "isFavorited": is_favorited,
         "isFollowed": is_followed,
+        "isPinned": is_pinned,
         "createdAt": p.created_at.isoformat() if p.created_at else None,
         "updatedAt": p.updated_at.isoformat() if p.updated_at else None,
     }
@@ -233,6 +244,9 @@ def register_routes(bp) -> None:
         if not isinstance(content, str) or not content.strip():
             return fail(code="BAD_REQUEST", message="content required", status_code=400)
         p.content = content.strip()
+        visibility = data.get("visibility")
+        if isinstance(visibility, str) and visibility in {"public", "followers", "private"}:
+            p.visibility = visibility
         db.session.commit()
         return ok(_post_to_dict(p, me.id, include_view_count=True))
 
@@ -262,10 +276,83 @@ def register_routes(bp) -> None:
         PostLike.query.filter_by(post_id=post_id).delete(synchronize_session=False)
         PostFavorite.query.filter_by(post_id=post_id).delete(synchronize_session=False)
         PostHistory.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        PostPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
         CommentPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
         db.session.delete(p)
         db.session.commit()
         return ok({"ok": True})
+
+    @bp.put("/posts/<post_id>/pin")
+    @require_auth
+    def pin_post(post_id: str):
+        me: User = g.current_user
+        _ensure_post_pin_table()
+        p = Post.query.get(post_id)
+        if p is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if p.author_id != me.id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
+
+        data = request.get_json(silent=True) or {}
+        is_pinned = bool(data.get("isPinned", True))
+        row = PostPin.query.filter_by(post_id=post_id).first()
+        if is_pinned:
+            if row is None:
+                cnt = PostPin.query.filter_by(user_id=me.id).count()
+                if cnt >= 3:
+                    return fail(code="PIN_LIMIT_REACHED", message="pin limit reached", status_code=400)
+                db.session.add(PostPin(user_id=me.id, post_id=post_id))
+        else:
+            PostPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+        db.session.commit()
+        return ok({"ok": True, "isPinned": is_pinned})
+
+    @bp.get("/posts/<post_id>/share-targets")
+    @require_auth
+    def share_targets(post_id: str):
+        me: User = g.current_user
+        if Post.query.get(post_id) is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+
+        following_rows = Follow.query.filter_by(follower_id=me.id).all()
+        follower_rows = Follow.query.filter_by(followee_id=me.id).all()
+        following_ids = {x.followee_id for x in following_rows}
+        follower_ids = {x.follower_id for x in follower_rows}
+
+        all_ids = sorted(list(following_ids | follower_ids))
+        users = User.query.filter(User.id.in_(all_ids)).all() if all_ids else []
+        user_map = {x.id: x for x in users}
+        result: list[dict] = []
+        for uid in all_ids:
+            u = user_map.get(uid)
+            if u is None:
+                continue
+            if uid in following_ids and uid in follower_ids:
+                group = "mutual"
+            elif uid in following_ids:
+                group = "following"
+            else:
+                group = "follower"
+            result.append(
+                {
+                    "id": uid,
+                    "nickname": u.nickname or "",
+                    "avatarUrl": u.avatar_url or "",
+                    "group": group,
+                }
+            )
+        return ok({"list": result})
+
+    @bp.get("/posts/<post_id>/share-link")
+    @require_auth
+    def share_link(post_id: str):
+        me: User = g.current_user
+        if Post.query.get(post_id) is None:
+            return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        trace = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        path = f"/pages/post-detail/index?id={post_id}&from={me.id}&trace={trace}"
+        short_url = f"https://pawhome.app/p/{post_id[:8]}?u={me.id[:8]}&t={trace}"
+        return ok({"path": path, "shortUrl": short_url, "trace": trace})
 
     @bp.post("/posts/<post_id>/like")
     @require_auth

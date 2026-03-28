@@ -171,6 +171,283 @@
   border: 1rpx solid #ddd;
 }
 
+.manage-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #333;
+  font-size: 38rpx;
+  line-height: 1;
+  border-radius: 999rpx;
+}
+
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.sheet-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 101;
+  background: #f7f7f7;
+  border-radius: 32rpx 32rpx 0 0;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 20rpx);
+  box-sizing: border-box;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sheet-panel.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 0;
+  position: relative;
+}
+
+.sheet-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.sheet-close {
+  position: absolute;
+  right: 32rpx;
+  font-size: 40rpx;
+  color: #999;
+  padding: 10rpx;
+}
+
+.sheet-block {
+  padding: 0 0 32rpx;
+}
+
+.action-block {
+  border-bottom: 1rpx solid #ebebeb;
+}
+
+.share-user-scroll {
+  width: 100%;
+  white-space: nowrap;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+}
+
+.share-users {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 32rpx;
+  padding-right: 64rpx;
+}
+
+.share-user {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100rpx;
+  flex-shrink: 0;
+}
+
+.avatar-wrap {
+  position: relative;
+  width: 100rpx;
+  height: 100rpx;
+  margin-bottom: 12rpx;
+}
+
+.share-user-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #eee;
+  border: 4rpx solid transparent;
+  transition: all 0.2s;
+}
+
+.share-user.selected .share-user-avatar {
+  border-color: #ff2442;
+  transform: scale(0.95);
+}
+
+.check-icon {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 32rpx;
+  height: 32rpx;
+  background: #ff2442;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid #fff;
+}
+
+.share-user-name {
+  font-size: 24rpx;
+  color: #333;
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-user-status {
+  font-size: 20rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.action-scroll {
+  width: 100%;
+  white-space: nowrap;
+  padding: 0 32rpx;
+  box-sizing: border-box;
+}
+
+.action-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 48rpx;
+  padding-right: 64rpx;
+  padding-bottom: 12rpx;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+  width: 110rpx;
+  flex-shrink: 0;
+}
+
+.action-btn::after {
+  display: none;
+}
+
+.action-btn:active {
+  opacity: 0.7;
+}
+
+.action-icon-wrap {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  background: #fff;
+}
+
+.action-icon-wrap.wechat {
+  background: #07c160;
+}
+
+.action-icon-wrap.timeline {
+  background: #07c160;
+}
+
+.a-icon {
+  width: 50rpx;
+  height: 50rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #666;
+  white-space: nowrap;
+}
+
+.bottom-actions {
+  background: #fff;
+  padding: 32rpx;
+  margin-top: 20rpx;
+}
+
+.input-fake {
+  background: #f5f5f5;
+  padding: 24rpx 32rpx;
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.placeholder {
+  color: #999;
+  font-size: 28rpx;
+}
+
+.send-btns {
+  display: flex;
+  gap: 24rpx;
+}
+
+.btn-group {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid #ff2442;
+  color: #ff2442;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.btn-single {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  background: #ff2442;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.cancel-action {
+  margin-top: 16rpx;
+  background: #fff;
+}
+
+.cancel-btn {
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.cancel-btn:active {
+  background: #f9f9f9;
+}
+
 /* Content Text */
 .post-title {
   font-size: 36rpx;

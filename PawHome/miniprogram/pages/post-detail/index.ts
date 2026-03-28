@@ -6,6 +6,10 @@ import {
   unfavoritePost,
   updatePost,
   deletePost,
+  getPostShareTargets,
+  getPostShareLink,
+  pinPost,
+  ShareTarget,
   Post
 } from "../../services/posts";
 import {
@@ -18,6 +22,8 @@ import {
   Comment
 } from "../../services/comments";
 import { followUser, unfollowUser } from "../../services/user";
+import { createConversation, sendMessage } from "../../services/im";
+import { trackEvent } from "../../services/analytics";
 import { formatTimeAgo } from "../../utils/date";
 
 const app = getApp<IAppOption>();
@@ -33,6 +39,12 @@ Page({
     totalComments: 0,
     loadingComments: false,
     currentUserId: "",
+    showActionPanel: false,
+    shareTargets: [] as ShareTarget[],
+    shareGroup: "all" as "all" | "mutual" | "following" | "follower",
+    selectedShareIds: [] as string[],
+    sharePath: "",
+    shareShortUrl: "",
     
     // UI state
     currentTab: 'content', // 'content' | 'comments'
@@ -242,21 +254,196 @@ Page({
   },
 
   async onPostActionTap() {
-    if (!this.data.post || !this.data.isSelfPost) return
+    if (!this.data.post) return
+    trackEvent("post_action_open", { isSelf: this.data.isSelfPost })
+    this.setData({ showActionPanel: true })
+    await this.prepareShareData()
+  },
+
+  closeActionPanel() {
+    this.setData({ showActionPanel: false })
+  },
+
+  stopPanelTap() {},
+
+  async prepareShareData() {
+    if (!this.data.post) return
     try {
-      const action = await new Promise<number>((resolve, reject) => {
-        wx.showActionSheet({
-          itemList: ["编辑帖子", "删除帖子"],
-          success: (res) => resolve(res.tapIndex),
-          fail: reject
-        })
+      const [targets, link] = await Promise.all([
+        getPostShareTargets(this.data.post.id),
+        getPostShareLink(this.data.post.id)
+      ])
+      this.setData({
+        shareTargets: targets.list,
+        sharePath: link.path,
+        shareShortUrl: link.shortUrl
       })
-      if (action === 0) {
-        await this.onEditPostTap()
-        return
-      }
-      await this.onDeletePostTap()
     } catch {
+      wx.showToast({ title: "分享数据加载失败", icon: "none" })
+    }
+  },
+
+  onShareGroupTap(e: WechatMiniprogram.TouchEvent) {
+    const group = e.currentTarget.dataset.group as "all" | "mutual" | "following" | "follower"
+    this.setData({ shareGroup: group })
+  },
+
+  onToggleShareTarget(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.id as string
+    const selected = new Set(this.data.selectedShareIds)
+    if (selected.has(id)) {
+      selected.delete(id)
+    } else {
+      selected.add(id)
+    }
+    this.setData({ selectedShareIds: Array.from(selected) })
+  },
+
+  async onSendInternalShare() {
+    if (!this.data.post) return
+    if (this.data.selectedShareIds.length === 0) {
+      wx.showToast({ title: "请先选择分享对象", icon: "none" })
+      return
+    }
+    try {
+      const post = this.data.post
+      const content = `【分享帖子】${(post.content || "").slice(0, 80)} ${this.data.shareShortUrl || ""}`
+      await Promise.all(
+        this.data.selectedShareIds.map(async (peerId) => {
+          const conv = await createConversation(peerId)
+          await sendMessage(conv.id, "text", content)
+        })
+      )
+      trackEvent("post_share_internal", { count: this.data.selectedShareIds.length })
+      wx.showToast({ title: "已分享", icon: "success" })
+      this.setData({ selectedShareIds: [] })
+    } catch {
+      wx.showToast({ title: "分享失败，请检查网络", icon: "none" })
+    }
+  },
+
+  async onCopyShareLink() {
+    if (!this.data.shareShortUrl && this.data.post) {
+      await this.prepareShareData()
+    }
+    if (!this.data.shareShortUrl) {
+      wx.showToast({ title: "链接生成失败", icon: "none" })
+      return
+    }
+    wx.setClipboardData({
+      data: this.data.shareShortUrl,
+      success: () => {
+        trackEvent("post_copy_link")
+        wx.showToast({ title: "链接已复制", icon: "success" })
+      },
+      fail: () => wx.showToast({ title: "复制失败", icon: "none" })
+    })
+  },
+
+  onShareToWxFriend() {
+    trackEvent("post_share_wx_friend")
+  },
+
+  onShareToTimeline() {
+    try {
+      wx.showShareMenu({ menus: ["shareAppMessage", "shareTimeline"] as any })
+      trackEvent("post_share_timeline")
+      wx.showToast({ title: "请点击右上角分享到朋友圈", icon: "none" })
+    } catch {
+      wx.showToast({ title: "当前微信版本不支持", icon: "none" })
+    }
+  },
+
+  async onSaveImagesTap() {
+    const imgs = this.data.post?.images || []
+    if (imgs.length === 0) {
+      wx.showToast({ title: "该帖子没有图片", icon: "none" })
+      return
+    }
+    try {
+      const setting = await new Promise<WechatMiniprogram.GetSettingSuccessCallbackResult>((resolve, reject) =>
+        wx.getSetting({ success: resolve, fail: reject })
+      )
+      if (!setting.authSetting["scope.writePhotosAlbum"]) {
+        await new Promise<void>((resolve, reject) =>
+          wx.authorize({
+            scope: "scope.writePhotosAlbum",
+            success: () => resolve(),
+            fail: reject
+          })
+        )
+      }
+    } catch {
+      wx.showToast({ title: "请先开启相册权限", icon: "none" })
+      return
+    }
+
+    let success = 0
+    for (const img of imgs) {
+      try {
+        const tmp = await new Promise<string>((resolve, reject) =>
+          wx.downloadFile({
+            url: img,
+            success: (res) => (res.statusCode === 200 ? resolve(res.tempFilePath) : reject(new Error("download"))),
+            fail: reject
+          })
+        )
+        await new Promise<void>((resolve, reject) =>
+          wx.saveImageToPhotosAlbum({
+            filePath: tmp,
+            success: () => resolve(),
+            fail: reject
+          })
+        )
+        success += 1
+      } catch {
+      }
+    }
+    trackEvent("post_save_images", { total: imgs.length, success })
+    if (success > 0) {
+      wx.showToast({ title: `已保存${success}张`, icon: "success" })
+    } else {
+      wx.showToast({ title: "保存失败", icon: "none" })
+    }
+  },
+
+  async onPinPostTap() {
+    if (!this.data.post || !this.data.isSelfPost) return
+    const post = this.data.post
+    try {
+      const next = !Boolean(post.isPinned)
+      await pinPost(post.id, next)
+      const latest = await getPost(post.id)
+      this.setData({
+        post: {
+          ...latest,
+          timeAgo: formatTimeAgo(latest.createdAt)
+        }
+      })
+      wx.setStorageSync("community_need_refresh", true)
+      trackEvent("post_pin_toggle", { isPinned: next })
+      wx.showToast({ title: next ? "已置顶" : "已取消置顶", icon: "success" })
+    } catch (e: any) {
+      const msg = String(e?.message || "")
+      wx.showToast({ title: msg.includes("limit") ? "置顶数量已达上限" : "置顶失败", icon: "none" })
+    }
+  },
+
+  onShareAppMessage() {
+    const post = this.data.post
+    const title = post?.content?.slice(0, 24) || "分享一条帖子"
+    return {
+      title,
+      path: this.data.sharePath || `/pages/post-detail/index?id=${post?.id || ""}`,
+      imageUrl: post?.images?.[0] || ""
+    }
+  },
+
+  onShareTimeline() {
+    const post = this.data.post
+    return {
+      title: post?.content?.slice(0, 24) || "分享一条帖子",
+      query: `id=${post?.id || ""}`
     }
   },
 
@@ -283,7 +470,20 @@ Page({
         return
       }
       wx.showLoading({ title: "保存中" })
-      const nextPost = await updatePost(post.id, { content: nextContent })
+      const visibilityMap: Record<string, "public" | "followers" | "private"> = {
+        所有人可见: "public",
+        仅粉丝可见: "followers",
+        仅自己可见: "private"
+      }
+      const idx = await new Promise<number>((resolve, reject) =>
+        wx.showActionSheet({
+          itemList: ["所有人可见", "仅粉丝可见", "仅自己可见"],
+          success: (res) => resolve(res.tapIndex),
+          fail: reject
+        })
+      )
+      const visibility = [visibilityMap["所有人可见"], visibilityMap["仅粉丝可见"], visibilityMap["仅自己可见"]][idx]
+      const nextPost = await updatePost(post.id, { content: nextContent, visibility })
       this.setData({
         post: {
           ...nextPost,
@@ -294,6 +494,7 @@ Page({
       wx.setStorageSync("user_profile_need_refresh", true)
       wx.hideLoading()
       wx.showToast({ title: "已保存", icon: "success" })
+      this.closeActionPanel()
     } catch {
       wx.hideLoading()
       wx.showToast({ title: "保存失败", icon: "none" })
@@ -321,6 +522,7 @@ Page({
       wx.setStorageSync("user_profile_need_refresh", true)
       wx.hideLoading()
       wx.showToast({ title: "已删除", icon: "success" })
+      this.closeActionPanel()
       setTimeout(() => this.goBack(), 200)
     } catch {
       wx.hideLoading()

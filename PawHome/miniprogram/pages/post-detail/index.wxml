@@ -14,8 +14,7 @@
           <view class="tab-line" wx:if="{{currentTab === 'comments'}}"></view>
         </view>
       </view>
-      <view class="nav-right" bindtap="onPostActionTap" wx:if="{{isSelfPost}}">•••</view>
-      <view class="nav-right" wx:else></view>
+      <view class="nav-right"></view>
     </view>
   </view>
 
@@ -49,6 +48,7 @@
             <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap" wx:if="{{!isSelfPost}}">
               {{post.isFollowed ? '已关注' : '+ 关注'}}
             </view>
+            <view class="manage-btn" bindtap="onPostActionTap">…</view>
           </view>
 
           <view class="content-text">
@@ -103,6 +103,95 @@
         <image class="icon-img" src="/assets/icons/community/comment.svg" mode="aspectFit"></image>
         <text class="icon-text">{{post.commentCount || 0}}</text>
       </view>
+    </view>
+  </view>
+
+  <view class="sheet-mask" wx:if="{{showActionPanel}}" bindtap="closeActionPanel"></view>
+  <view class="sheet-panel {{showActionPanel ? 'show' : ''}}" wx:if="{{showActionPanel}}" catchtap="stopPanelTap">
+    <view class="sheet-head">
+      <text class="sheet-title">分享至</text>
+      <text class="sheet-close" bindtap="closeActionPanel">✕</text>
+    </view>
+
+    <view class="sheet-block">
+      <scroll-view class="share-user-scroll" scroll-x enable-flex>
+        <view class="share-users">
+          <block wx:for="{{shareTargets}}" wx:key="id">
+            <view
+              class="share-user {{selectedShareIds.includes(item.id)?'selected':''}}"
+              bindtap="onToggleShareTarget"
+              data-id="{{item.id}}"
+            >
+              <view class="avatar-wrap">
+                <image class="share-user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+                <view class="check-icon" wx:if="{{selectedShareIds.includes(item.id)}}">✓</view>
+              </view>
+              <text class="share-user-name">{{item.nickname}}</text>
+              <text class="share-user-status" wx:if="{{item.group==='mutual'}}">互关好友</text>
+              <text class="share-user-status" wx:elif="{{item.group==='following'}}">关注</text>
+              <text class="share-user-status" wx:else>粉丝</text>
+            </view>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="sheet-block action-block">
+      <scroll-view class="action-scroll" scroll-x enable-flex>
+        <view class="action-list">
+          <button class="action-btn" open-type="share" bindtap="onShareToWxFriend">
+            <view class="action-icon-wrap wechat">
+              <image class="a-icon" src="/assets/icons/community/wechat.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">微信好友</text>
+          </button>
+          <view class="action-btn" bindtap="onShareToTimeline">
+            <view class="action-icon-wrap timeline">
+              <image class="a-icon" src="/assets/icons/community/timeline.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">朋友圈</text>
+          </view>
+          <view class="action-btn" bindtap="onCopyShareLink">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/link.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">复制链接</text>
+          </view>
+          <view class="action-btn" bindtap="onSaveImagesTap">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/download.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">保存图片</text>
+          </view>
+          <view class="action-btn" bindtap="onEditPostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/edit.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">编辑帖子</text>
+          </view>
+          <view class="action-btn" bindtap="onPinPostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/pin.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">{{post.isPinned ? '取消置顶' : '置顶帖子'}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Bottom Actions -->
+    <view class="bottom-actions" wx:if="{{selectedShareIds.length > 0}}">
+      <view class="input-fake">
+        <text class="placeholder">跟朋友说点什么吧.....</text>
+      </view>
+      <view class="send-btns">
+        <view class="btn-group" bindtap="onSendInternalShare">建群并发送</view>
+        <view class="btn-single" bindtap="onSendInternalShare">分别发送</view>
+      </view>
+    </view>
+    
+    <view class="cancel-action" wx:if="{{selectedShareIds.length === 0}}">
+      <view class="cancel-btn" bindtap="closeActionPanel">取消</view>
     </view>
   </view>
 </view>

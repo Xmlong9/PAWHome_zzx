@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+import random
 from datetime import datetime
 
 from sqlalchemy import Index, UniqueConstraint
@@ -10,6 +11,10 @@ from .extensions import db
 
 def _uuid() -> str:
     return str(uuid.uuid4())
+
+
+def _public_id() -> str:
+    return "".join(str(random.randint(0, 9)) for _ in range(8))
 
 
 class TimestampMixin:
@@ -26,6 +31,7 @@ class User(db.Model, TimestampMixin):
     __tablename__ = "users"
 
     id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    public_id = db.Column(db.String(8), unique=True, index=True, nullable=False, default=_public_id)
     phone = db.Column(db.String(32), unique=True, index=True, nullable=True)
     password_hash = db.Column(db.String(255), nullable=True)
     wechat_openid = db.Column(db.String(64), unique=True, index=True, nullable=True)
@@ -302,6 +308,20 @@ class ShopOrderItem(db.Model, TimestampMixin):
     price_cents = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, default=1, nullable=False)
     variant_json = db.Column(db.Text, nullable=True)
+
+
+class ShopOrderEvent(db.Model, TimestampMixin):
+    __tablename__ = "shop_order_events"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    order_id = db.Column(db.String(36), db.ForeignKey("shop_orders.id"), index=True, nullable=False)
+    event_type = db.Column(db.String(32), index=True, nullable=False)
+    at = db.Column(db.DateTime, nullable=False)
+    message = db.Column(db.String(256), nullable=True)
+
+    __table_args__ = (
+        Index("ix_shop_order_events_order_at", "order_id", "at"),
+    )
 
 
 class IMConversation(db.Model, TimestampMixin):

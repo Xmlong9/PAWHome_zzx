@@ -9,7 +9,7 @@
     <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
     <view class="user-info">
       <view class="nickname">{{userInfo.nickname}}</view>
-      <view class="uid">ID: {{userInfo.id}}</view>
+      <view class="uid">ID: {{userInfo.publicId || userInfo.id}}</view>
       <view class="location">📍 {{userInfo.location}}</view>
     </view>
     <view class="edit-btn" catchtap="goEditProfile">编辑资料</view>

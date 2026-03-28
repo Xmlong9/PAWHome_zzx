@@ -69,6 +69,7 @@ def _user_profile_dict(u: User) -> dict:
     )
     return {
         "id": u.id,
+        "publicId": u.public_id,
         "nickname": u.nickname or "",
         "avatarUrl": u.avatar_url or "",
         "location": u.location or "",

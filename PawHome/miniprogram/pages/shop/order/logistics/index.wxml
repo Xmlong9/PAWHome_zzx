@@ -17,12 +17,12 @@
       
       <view class="status-summary">
         <view class="status-icon done"></view>
-        <view class="status-text">已签收</view>
-        <view class="status-time">03-19 18:53</view>
+        <view class="status-text">{{summaryText}}</view>
+        <view class="status-time">{{summaryTime}}</view>
       </view>
       
       <view class="status-desc">
-        您已在杭师A区博文苑10号楼菜鸟驿站完成取件，感谢使用菜鸟驿站，期待再次为您服务。
+        {{summaryDesc}}
       </view>
       
       <view class="feedback-box">
@@ -35,18 +35,12 @@
 
       <view class="logistics-detail" wx:if="{{showMoreLogistics}}">
         <view class="timeline">
-          <view class="timeline-item">
-            <view class="time">03-19 18:53</view>
-            <view class="desc">您已在杭师A区博文苑10号楼菜鸟驿站完成取件，感谢使用菜鸟驿站，期待再次为您服务。</view>
-          </view>
-          <view class="timeline-item">
-            <view class="time">03-19 10:20</view>
-            <view class="desc">您的快件已由菜鸟驿站代收，请及时取件。</view>
-          </view>
-          <view class="timeline-item">
-            <view class="time">03-18 20:58</view>
-            <view class="desc">商家已发货，等待快递揽收。</view>
-          </view>
+          <block wx:for="{{events}}" wx:key="at">
+            <view class="timeline-item">
+              <view class="time">{{item.displayTime}}</view>
+              <view class="desc">{{item.text}}</view>
+            </view>
+          </block>
         </view>
       </view>
       
@@ -60,7 +54,7 @@
     <view class="card address-card" wx:if="{{address}}">
       <view class="address-icon">📍</view>
       <view class="address-info">
-        <view class="address-detail">送至 {{address.province}}{{address.city}}{{address.district}}{{address.detail}}</view>
+        <view class="address-detail">送至 {{address.detail}}</view>
         <view class="user-info">{{address.name}} {{address.phone}} <text class="tag">号码保护中</text></view>
       </view>
     </view>

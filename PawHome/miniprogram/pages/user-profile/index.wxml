@@ -16,7 +16,7 @@
         <view class="name-row">
           <text class="nickname">{{userInfo.nickname}}</text>
         </view>
-        <view class="id-row">ID: {{userInfo.id || '未知'}}</view>
+        <view class="id-row">ID: {{userInfo.publicId || userInfo.id || '未知'}}</view>
         <view class="location-row">
           <text class="location-icon">📍</text>
           <text class="location-text">{{userInfo.location || '未知'}}</text>

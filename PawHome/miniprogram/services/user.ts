@@ -5,6 +5,7 @@ const MOCK = () => isMockEnabled();
 
 export type UserProfile = {
   id: string;
+  publicId: string;
   nickname: string;
   avatarUrl: string;
   location: string;
@@ -32,6 +33,7 @@ export type PetProfile = {
 export const MOCK_USERS: Record<string, UserProfile> = {
   "324666": {
     id: "324666",
+    publicId: "32466600",
     nickname: "淡水鱼",
     avatarUrl: "/assets/images/mine/头像.jpg",
     location: "浙江杭州",
@@ -45,6 +47,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "101": {
     id: "101",
+    publicId: "00000101",
     nickname: "赵嘉航",
     avatarUrl: "https://picsum.photos/seed/user2/100",
     location: "北京",
@@ -58,6 +61,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "102": {
     id: "102",
+    publicId: "00000102",
     nickname: "李华",
     avatarUrl: "https://picsum.photos/seed/user3/100",
     location: "上海",
@@ -71,6 +75,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "103": {
     id: "103",
+    publicId: "00000103",
     nickname: "王小明",
     avatarUrl: "https://picsum.photos/seed/user4/100",
     location: "广州",
@@ -84,6 +89,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "104": {
     id: "104",
+    publicId: "00000104",
     nickname: "张伟",
     avatarUrl: "https://picsum.photos/seed/user5/100",
     location: "深圳",

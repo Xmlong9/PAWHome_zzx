@@ -7,6 +7,17 @@
     </block>
   </scroll-view>
 
+  <view class="paid-banner" wx:if="{{showPaidBanner}}">
+    <view class="paid-banner-left">
+      <view class="paid-title">支付成功</view>
+      <view class="paid-desc">订单已更新，去逛逛更多好物</view>
+    </view>
+    <view class="paid-actions">
+      <view class="paid-btn ghost" bindtap="dismissPaidBanner">知道了</view>
+      <view class="paid-btn primary" bindtap="goShopHome">返回商店</view>
+    </view>
+  </view>
+
   <view class="order-list">
     <block wx:for="{{list}}" wx:key="id">
       <view class="order-card-shell {{item.status==='pending_pay' ? 'pending' : ''}}">

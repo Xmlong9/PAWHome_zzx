@@ -1,3 +1,6 @@
+from app.models import User
+
+
 def test_register_conflict(client, user1_token):
     r = client.post(
         "/api/v1/auth/register",
@@ -50,3 +53,40 @@ def test_login_password_when_password_not_set(client):
     assert r.status_code == 400
     body = r.get_json()
     assert body["error"]["code"] == "PASSWORD_NOT_SET"
+
+
+def test_register_generates_public_id(client):
+    r = client.post(
+        "/api/v1/auth/register",
+        json={"phone": "13800000021", "password": "pass-21", "nickname": "用户21"},
+    )
+    assert r.status_code == 200
+    token = r.get_json()["data"]["token"]
+
+    me = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert me.status_code == 200
+    data = me.get_json()["data"]
+    assert isinstance(data["publicId"], str)
+    assert data["publicId"].isdigit()
+    assert len(data["publicId"]) == 8
+
+
+def test_sms_first_login_generates_public_id(client):
+    r = client.post("/api/v1/auth/sms/send", json={"phone": "13800000022"})
+    assert r.status_code == 200
+    r = client.post("/api/v1/auth/login/sms", json={"phone": "13800000022", "code": "123456"})
+    assert r.status_code == 200
+    token = r.get_json()["data"]["token"]
+
+    me = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert me.status_code == 200
+    data = me.get_json()["data"]
+    assert isinstance(data["publicId"], str)
+    assert data["publicId"].isdigit()
+    assert len(data["publicId"]) == 8
+
+
+def test_public_id_column_has_unique_index():
+    public_id_column = User.__table__.columns["public_id"]
+    assert public_id_column.unique is True
+    assert public_id_column.index is True

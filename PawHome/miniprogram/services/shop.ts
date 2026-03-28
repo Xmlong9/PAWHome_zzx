@@ -40,6 +40,14 @@ export type ShopOrder = {
   }>
 }
 
+export type OrderLogistics = {
+  orderId: string
+  status: string
+  createdAt: number
+  address: { name: string; phone: string; detail: string }
+  events: Array<{ type: string; at: number; text: string }>
+}
+
 export type UserAddress = {
   id: string
   name: string
@@ -521,6 +529,30 @@ export const payOrderMock = async (id: string): Promise<void> => {
       return o
     })
   )
+}
+
+export const getOrderLogistics = async (orderId: string): Promise<OrderLogistics> => {
+  if (!MOCK()) {
+    return await request<OrderLogistics>({ url: `/shop/orders/${encodeURIComponent(orderId)}/logistics`, method: "GET" })
+  }
+  ensureSeed()
+  const o = getOrdersSync().find((x) => x.id === orderId) || getOrdersSync()[0]
+  const createdAt = o?.createdAt || now()
+  const events: Array<{ type: string; at: number; text: string }> = [{ type: "created", at: createdAt, text: "订单已创建" }]
+  if (o?.status === "shipping" || o?.status === "done") {
+    events.unshift({ type: "shipped", at: createdAt + 2 * 60 * 1000, text: "商家已发货" })
+    events.unshift({ type: "out_for_delivery", at: createdAt + 40 * 60 * 1000, text: "快件派送中" })
+  }
+  if (o?.status === "done") {
+    events.unshift({ type: "signed", at: createdAt + 2 * 60 * 60 * 1000, text: "已签收" })
+  }
+  return {
+    orderId: o?.id || orderId,
+    status: o?.status || "pending_pay",
+    createdAt,
+    address: { name: "收货人", phone: "******", detail: "请在非 Mock 环境查看真实地址" },
+    events: events.sort((a, b) => b.at - a.at)
+  }
 }
 
 export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> => {

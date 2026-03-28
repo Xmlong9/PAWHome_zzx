@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import g, request
 
@@ -14,6 +14,7 @@ from ...models import (
     RechargeOption,
     ShopFavorite,
     ShopOrder,
+    ShopOrderEvent,
     ShopOrderItem,
     ShopProduct,
     User,
@@ -24,6 +25,24 @@ from ...responses import fail, ok
 
 def _money(cents: int) -> float:
     return round(cents / 100, 2)
+
+
+def _ms(dt: datetime | None) -> int:
+    if dt is None:
+        return 0
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return int(dt.timestamp() * 1000)
+
+
+def _s(dt: datetime) -> float:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _cents(amount) -> int:
@@ -69,6 +88,28 @@ def _address_to_dict(a: Address) -> dict:
         "detail": a.address_line,
         "isDefault": bool(a.is_default),
     }
+
+
+def _ensure_order_event_table():
+    ShopOrderEvent.__table__.create(db.engine, checkfirst=True)
+
+
+def _add_order_event(order_id: str, event_type: str, at: datetime, message: str | None = None):
+    _ensure_order_event_table()
+    exists = ShopOrderEvent.query.filter_by(order_id=order_id, event_type=event_type).first()
+    if exists is not None:
+        return
+    db.session.add(ShopOrderEvent(order_id=order_id, event_type=event_type, at=at, message=message))
+
+
+def _parse_receiver_address(address_text: str) -> dict:
+    raw = (address_text or "").strip()
+    if not raw:
+        return {"name": "", "phone": "", "detail": ""}
+    parts = raw.split()
+    if len(parts) >= 3 and parts[1].isdigit() and 7 <= len(parts[1]) <= 18:
+        return {"name": parts[0], "phone": parts[1], "detail": " ".join(parts[2:])}
+    return {"name": "", "phone": "", "detail": raw}
 
 
 def register_routes(bp) -> None:
@@ -277,7 +318,7 @@ def register_routes(bp) -> None:
             wallet.balance_cents -= required
 
         order = ShopOrder(
-            id=f"SO{int(datetime.utcnow().timestamp())}",
+            id=f"SO{int(_utcnow().timestamp())}",
             user_id=me.id,
             status="pending_pay",
             pay_method=pay_type,
@@ -289,6 +330,7 @@ def register_routes(bp) -> None:
         )
         db.session.add(order)
         db.session.flush()
+        _add_order_event(order.id, "created", datetime.utcnow(), "订单已创建")
 
         for it in items:
             p = it.get("product")
@@ -318,7 +360,7 @@ def register_routes(bp) -> None:
                 "id": order.id,
                 "status": order.status,
                 "amount": amount,
-                "createdAt": int(datetime.utcnow().timestamp() * 1000),
+                "createdAt": _ms(datetime.utcnow()),
                 "productNames": [i.get("product", {}).get("name", "") for i in items],
                 "items": [
                     {
@@ -354,7 +396,7 @@ def register_routes(bp) -> None:
                     "id": o.id,
                     "status": o.status,
                     "amount": _money(o.total_cents),
-                    "createdAt": int((o.created_at or datetime.utcnow()).timestamp() * 1000),
+                    "createdAt": _ms(o.created_at or datetime.utcnow()),
                     "productNames": [it.title_snapshot for it in items],
                     "items": [
                         {
@@ -392,6 +434,9 @@ def register_routes(bp) -> None:
             return fail(code="NOT_FOUND", message="order not found", status_code=404)
         if o.status == "pending_pay":
             o.status = "shipping"
+            now = datetime.utcnow()
+            _add_order_event(o.id, "paid", now, "支付成功")
+            _add_order_event(o.id, "shipped", now, "商家已发货")
             db.session.commit()
         return ok({"ok": True})
 
@@ -403,8 +448,58 @@ def register_routes(bp) -> None:
         if o is None:
             return fail(code="NOT_FOUND", message="order not found", status_code=404)
         o.status = "done"
+        _add_order_event(o.id, "signed", datetime.utcnow(), "已签收")
         db.session.commit()
         return ok({"ok": True})
+
+    @bp.get("/shop/orders/<order_id>/logistics")
+    @require_auth
+    def get_order_logistics(order_id: str):
+        me: User = g.current_user
+        o = ShopOrder.query.filter_by(user_id=me.id, id=order_id).first()
+        if o is None:
+            return fail(code="NOT_FOUND", message="order not found", status_code=404)
+        _ensure_order_event_table()
+        events = ShopOrderEvent.query.filter_by(order_id=o.id).order_by(ShopOrderEvent.at.desc()).all()
+        if not events:
+            created_at = o.created_at or datetime.utcnow()
+            _add_order_event(o.id, "created", created_at, "订单已创建")
+            db.session.commit()
+            events = ShopOrderEvent.query.filter_by(order_id=o.id).order_by(ShopOrderEvent.at.desc()).all()
+
+        by_type = {e.event_type: e for e in events}
+        created_at = by_type.get("created").at if by_type.get("created") else (o.created_at or datetime.utcnow())
+        shipped_at = (by_type.get("shipped") or by_type.get("paid") or by_type.get("created")).at if by_type.get("created") else created_at
+        end_at = by_type.get("signed").at if by_type.get("signed") else datetime.utcnow()
+        window_seconds = max(0, int((end_at - shipped_at).total_seconds()))
+        seed = sum(ord(c) for c in str(o.id))
+        steps = []
+        if window_seconds > 30 * 60:
+            t1 = _s(shipped_at) + min(window_seconds - 10 * 60, 10 * 60 + (seed % (40 * 60)))
+            t2 = _s(shipped_at) + min(window_seconds - 5 * 60, 30 * 60 + (seed % (60 * 60)))
+            steps = [
+                ("transit", datetime.utcfromtimestamp(t1), "快件已到达分拨中心"),
+                ("out_for_delivery", datetime.utcfromtimestamp(t2), "快件派送中"),
+            ]
+            steps = [s for s in steps if s[1] <= end_at]
+
+        out_events = [
+            {"type": e.event_type, "at": _ms(e.at), "text": e.message or ""}
+            for e in events
+        ]
+        out_events.extend([{"type": t, "at": _ms(dt), "text": text} for (t, dt, text) in steps])
+        out_events.sort(key=lambda x: x["at"], reverse=True)
+
+        addr = _parse_receiver_address(o.receiver_address or "")
+        return ok(
+            {
+                "orderId": o.id,
+                "status": o.status,
+                "address": addr,
+                "createdAt": _ms(created_at),
+                "events": out_events,
+            }
+        )
 
     @bp.get("/shop/recharge/options")
     @require_auth

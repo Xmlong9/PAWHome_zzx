@@ -72,9 +72,9 @@
   </view>
 
   <view class="bottom-bar">
-    <view class="btn outline">联系客服</view>
-    <view class="btn primary" wx:if="{{order.status === 'shipping'}}">确认收货</view>
-    <view class="btn primary" wx:elif="{{order.status === 'pending_pay'}}">去支付</view>
+    <view class="btn outline" bindtap="goCustomerService">联系客服</view>
+    <view class="btn primary" wx:if="{{order.status === 'shipping'}}" data-id="{{order.id}}" bindtap="onConfirmReceipt">确认收货</view>
+    <view class="btn primary" wx:elif="{{order.status === 'pending_pay'}}" data-id="{{order.id}}" bindtap="onPayOrder">去支付</view>
     <view class="btn outline" wx:else>评价</view>
   </view>
 </view>

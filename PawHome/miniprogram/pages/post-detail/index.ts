@@ -40,7 +40,7 @@ Page({
     loadingComments: false,
     currentUserId: "",
     showActionPanel: false,
-    shareTargets: [] as ShareTarget[],
+    shareTargets: [] as (ShareTarget & { selected?: boolean })[],
     shareGroup: "all" as "all" | "mutual" | "following" | "follower",
     selectedShareIds: [] as string[],
     sharePath: "",
@@ -273,8 +273,26 @@ Page({
         getPostShareTargets(this.data.post.id),
         getPostShareLink(this.data.post.id)
       ])
+      const list = Array.isArray((targets as any)?.list) ? (targets as any).list : []
+      const normalizedTargets: ShareTarget[] = list
+        .map((t: any) => {
+          const id = t?.id ?? t?.userId ?? t?._id ?? t?.uid
+          const nickname = t?.nickname ?? t?.name ?? t?.username ?? ""
+          const avatarUrl = t?.avatarUrl ?? t?.avatar ?? t?.avatar_url ?? ""
+          const group = (t?.group === "mutual" || t?.group === "following" || t?.group === "follower")
+            ? t.group
+            : "follower"
+          return {
+            id: id == null ? "" : String(id),
+            nickname: String(nickname),
+            avatarUrl: String(avatarUrl),
+            group
+          }
+        })
+        .filter((t: ShareTarget) => Boolean(t.id))
+      const selected = new Set((this.data.selectedShareIds || []).map((v) => String(v)))
       this.setData({
-        shareTargets: targets.list,
+        shareTargets: normalizedTargets.map((t) => ({ ...t, selected: selected.has(t.id) })),
         sharePath: link.path,
         shareShortUrl: link.shortUrl
       })
@@ -289,14 +307,23 @@ Page({
   },
 
   onToggleShareTarget(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id as string
-    const selected = new Set(this.data.selectedShareIds)
+    const rawId = (e.currentTarget.dataset as any)?.id
+    const id = rawId == null ? "" : String(rawId)
+    if (!id) return
+    const selected = new Set((this.data.selectedShareIds || []).map((v) => String(v)))
     if (selected.has(id)) {
       selected.delete(id)
     } else {
       selected.add(id)
     }
-    this.setData({ selectedShareIds: Array.from(selected) })
+    this.setData({
+      selectedShareIds: Array.from(selected),
+      shareTargets: (this.data.shareTargets || []).map((t) => ({
+        ...(t as any),
+        id: t?.id == null ? "" : String(t.id),
+        selected: selected.has(String(t?.id))
+      }))
+    })
   },
 
   async onSendInternalShare() {

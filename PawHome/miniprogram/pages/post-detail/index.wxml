@@ -120,13 +120,13 @@
         <view class="share-users">
           <block wx:for="{{shareTargets}}" wx:key="id">
             <view
-              class="share-user {{selectedShareIds.includes(item.id + '')?'selected':''}}"
+              class="share-user {{item.selected?'selected':''}}"
               bindtap="onToggleShareTarget"
               data-id="{{item.id}}"
             >
               <view class="avatar-wrap">
                 <image class="share-user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
-                <view class="check-icon" wx:if="{{selectedShareIds.includes(item.id + '')}}">
+                <view class="check-icon" wx:if="{{item.selected}}">
                   <view class="check-icon-inner">
                     <text class="check-icon-mark">✓</text>
                   </view>

@@ -3,12 +3,15 @@ import { request } from "./request"
 export type NotificationMsg = {
   id: string
   type: string
+  actorId?: string | null
   avatarUrl: string
   nickname: string
   createdAt: number
   text: string
   content?: string | null
+  commentText?: string | null
   postId?: string | null
+  commentId?: string | null
   thumbUrl?: string | null
   isRead?: boolean
 }

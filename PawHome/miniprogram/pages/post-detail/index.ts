@@ -67,17 +67,18 @@ Page({
     inputFocus: false,
     replyTo: null as Comment | null, // The comment being replied to
 
+    focusCommentId: "",
+    scrollIntoView: "",
+
     pageMounted: false,
     pageVisible: false,
     pageLeaving: false
   },
 
-  onLoad(options: { id: string }) {
+  onLoad(options: { id?: string; commentId?: string }) {
     const currentUserId = wx.getStorageSync("userId") || ""
-    if (options.id) {
-      this.loadPost(options.id);
-      this.loadComments(options.id);
-    }
+    const postId = options.id || ""
+    const focusCommentId = options.commentId ? String(options.commentId) : ""
     
     // Get safe area
     const sysInfo = wx.getSystemInfoSync();
@@ -86,10 +87,17 @@ Page({
       currentUserId,
       safeAreaTop: sysInfo.statusBarHeight,
       safeAreaBottom: sysInfo.screenHeight - sysInfo.safeArea.bottom,
-      mediaHeight: Math.round(windowWidth * 0.72)
+      mediaHeight: Math.round(windowWidth * 0.72),
+      focusCommentId,
+      currentTab: focusCommentId ? "comments" : this.data.currentTab
     });
 
     initPageTransition(this)
+
+    if (postId) {
+      this.loadPost(postId);
+      this.loadComments(postId);
+    }
   },
 
   onReady() {
@@ -192,6 +200,11 @@ Page({
         comments,
         totalComments: res.total,
         loadingComments: false
+      }, () => {
+        const focus = this.data.focusCommentId
+        if (!focus) return
+        const target = `c_${focus}`
+        this.setData({ scrollIntoView: target, focusCommentId: "" })
       });
     } catch (err) {
       console.error(err);

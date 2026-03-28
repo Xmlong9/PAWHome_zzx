@@ -1,5 +1,6 @@
 import { loginSms, sendSms, setToken, code2Session, loginPassword, registerUser } from "../../services/auth";
-import { getUserProfile } from "../../services/user";
+import { getUserProfile, updateUserProfile } from "../../services/user";
+import { uploadFile } from "../../services/upload";
 import { isPhone } from "../../utils/validators";
 
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
@@ -231,17 +232,34 @@ Page({
   },
 
   // User Info methods (from original index.ts)
-  onChooseAvatar(e: any) {
-    const { avatarUrl } = e.detail;
-    const { nickName } = this.data.userInfo;
+  async onChooseAvatar(e: any) {
+    const localPath = e?.detail?.avatarUrl || ""
+    if (typeof localPath !== "string" || !localPath) return
+
+    const nickName = (this.data.userInfo?.nickName || "").trim()
     this.setData({
-      "userInfo.avatarUrl": avatarUrl,
-      hasUserInfo: !!(nickName && avatarUrl && avatarUrl !== defaultAvatarUrl),   
-    });
+      "userInfo.avatarUrl": localPath,
+      hasUserInfo: !!(nickName && localPath && localPath !== defaultAvatarUrl)
+    })
+
+    if (!/^wxfile:\/\//i.test(localPath)) return
+    wx.showLoading({ title: "上传中..." })
+    try {
+      const url = await uploadFile(localPath)
+      const nextNick = (this.data.userInfo?.nickName || "").trim()
+      this.setData({
+        "userInfo.avatarUrl": url,
+        hasUserInfo: !!(nextNick && url && url !== defaultAvatarUrl)
+      })
+    } catch (err) {
+      wx.showToast({ title: "头像上传失败", icon: "none" })
+    } finally {
+      wx.hideLoading()
+    }
   },
   
   onInputChange(e: any) {
-    const nickName = e.detail.value;
+    const nickName = (e.detail.value || "").trim();
     const { avatarUrl } = this.data.userInfo;
     this.setData({
       "userInfo.nickName": nickName,
@@ -252,16 +270,39 @@ Page({
   getUserProfile() {
     wx.getUserProfile({
       desc: '展示用户信息', 
-      success: (res) => {
+      success: async (res) => {
         this.setData({
           userInfo: res.userInfo,
           hasUserInfo: true
         });
+        try {
+          const nickname = (res.userInfo?.nickName || "").trim()
+          const avatarUrl = res.userInfo?.avatarUrl || ""
+          if (nickname && avatarUrl) {
+            await updateUserProfile({ nickname, avatarUrl })
+          }
+        } catch {
+        }
       }
     });
   },
 
-  goMain() {
+  async goMain() {
+    if (this.data.showUserInfo) {
+      if (!this.data.hasUserInfo) {
+        wx.showToast({ title: "请先设置头像昵称", icon: "none" })
+        return
+      }
+      try {
+        const nickname = (this.data.userInfo?.nickName || "").trim()
+        const avatarUrl = this.data.userInfo?.avatarUrl || ""
+        await updateUserProfile({ nickname, avatarUrl })
+        this.setData({ showUserInfo: false })
+      } catch (e: any) {
+        wx.showToast({ title: e?.message || "保存失败", icon: "none" })
+        return
+      }
+    }
     wx.reLaunch({ url: '/pages/home/index' });
   }
 });

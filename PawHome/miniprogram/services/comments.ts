@@ -120,3 +120,23 @@ export async function pinComment(commentId: string, isPinned: boolean): Promise<
     data: { isPinned }
   });
 }
+
+export type MyCommentMsg = {
+  id: string
+  type: string
+  actorId?: string | null
+  userId?: string | null
+  avatarUrl: string
+  nickname: string
+  createdAt: number
+  text: string
+  commentText?: string | null
+  content?: string | null
+  postId?: string | null
+  commentId?: string | null
+  thumbUrl?: string | null
+}
+
+export async function listMyComments(page = 1, pageSize = 20): Promise<{ list: MyCommentMsg[]; total: number }> {
+  return request({ url: "/users/me/comments", method: "GET", data: { page, pageSize } })
+}

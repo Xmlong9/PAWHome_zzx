@@ -20,7 +20,7 @@
 
   <!-- Scroll Area -->
   <!-- 使用绝对定位和 padding-top 来避免 margin 塌陷或计算误差 -->
-  <scroll-view scroll-y class="scroll-area" enable-flex style="padding-top: {{safeAreaTop + 44}}px;">
+  <scroll-view scroll-y class="scroll-area" enable-flex scroll-into-view="{{scrollIntoView}}" style="padding-top: {{safeAreaTop + 44}}px;">
     
     <view class="tab-content" hidden="{{currentTab !== 'content'}}">
       <view class="post-detail" wx:if="{{post}}">
@@ -212,7 +212,7 @@
 <template name="commentList">
   <view class="comment-list">
     <block wx:for="{{comments}}" wx:key="id">
-      <view class="comment-item">
+      <view class="comment-item" id="c_{{item.id}}">
         <image class="c-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
         <view class="c-right">
           <view class="c-header" catchtap="goUserProfile" data-userid="{{item.userId}}">

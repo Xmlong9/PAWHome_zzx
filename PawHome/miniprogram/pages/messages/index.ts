@@ -4,6 +4,7 @@ import {
   listNotifications,
   markNotificationsRead
 } from "../../services/notifications"
+import { listMyComments } from "../../services/comments"
 import {
   enterPageTransition,
   initPageTransition,
@@ -14,22 +15,27 @@ import {
 
 type LikeMsg = {
   id: string
+  userId?: string
   avatarUrl: string
   nickname: string
   time: string
   text: string
   postId?: string
+  content?: string
   thumbUrl?: string
 }
 
 type CommentMsg = {
   id: string
+  userId?: string
   avatarUrl: string
   nickname: string
   time: string
   text: string
+  commentText?: string
   content?: string
   postId?: string
+  commentId?: string
   thumbUrl?: string
 }
 
@@ -50,6 +56,9 @@ Page({
     currentTab: 'like' as 'like' | 'comment' | 'dm',
     likeList: [] as LikeMsg[],
     commentList: [] as CommentMsg[],
+    myCommentList: [] as CommentMsg[],
+    commentSubTab: "toMe" as "toMe" | "byMe",
+    loadingMyComments: false,
     dmList: [] as DMMsg[],
     hasUnreadLike: false,
     hasUnreadComment: false,
@@ -108,22 +117,27 @@ Page({
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .map((n) => ({
           id: n.id,
+          userId: n.actorId || undefined,
           avatarUrl: n.avatarUrl,
           nickname: n.nickname,
           time: formatTime(n.createdAt),
-          text: n.text,
+          text: n.text || (n.type === "like" ? "赞了你" : n.type === "favorite" ? "收藏了你" : "关注了你"),
           postId: n.postId || undefined,
+          content: (n as any).content || undefined,
           thumbUrl: n.thumbUrl || undefined
         }))
 
       const commentList: CommentMsg[] = commentRes.list.map((n) => ({
         id: n.id,
+        userId: n.actorId || undefined,
         avatarUrl: n.avatarUrl,
         nickname: n.nickname,
         time: formatTime(n.createdAt),
         text: n.text,
+        commentText: n.commentText || "",
         content: n.content || "",
         postId: n.postId || undefined,
+        commentId: n.commentId || undefined,
         thumbUrl: n.thumbUrl || undefined
       }))
 
@@ -136,6 +150,33 @@ Page({
     } catch (e) {
       console.error(e)
       this.setData({ likeList: [], commentList: [], hasUnreadLike: false, hasUnreadComment: false })
+    }
+  },
+
+  async loadMyComments() {
+    if (this.data.loadingMyComments) return
+    this.setData({ loadingMyComments: true })
+    try {
+      const res = await listMyComments(1, 20)
+      const list: CommentMsg[] = (res.list || []).map((x) => ({
+        id: x.id,
+        userId: (x as any).userId || undefined,
+        avatarUrl: x.avatarUrl,
+        nickname: x.nickname,
+        time: formatTime(x.createdAt),
+        text: x.text,
+        commentText: (x as any).commentText || "",
+        content: (x as any).content || "",
+        postId: (x as any).postId || undefined,
+        commentId: (x as any).commentId || undefined,
+        thumbUrl: (x as any).thumbUrl || undefined
+      }))
+      this.setData({ myCommentList: list })
+    } catch (e) {
+      console.error(e)
+      this.setData({ myCommentList: [] })
+    } finally {
+      this.setData({ loadingMyComments: false })
     }
   },
 
@@ -199,6 +240,22 @@ Page({
     this.syncIconBadge()
   },
 
+  switchCommentSubTab(e: WechatMiniprogram.TouchEvent) {
+    const sub = e.currentTarget.dataset.sub as "toMe" | "byMe"
+    if (sub !== "toMe" && sub !== "byMe") return
+    if (sub === this.data.commentSubTab) return
+    this.setData({ commentSubTab: sub })
+    if (sub === "byMe" && this.data.myCommentList.length === 0) {
+      this.loadMyComments()
+    }
+  },
+
+  goUserProfile(e: WechatMiniprogram.TouchEvent) {
+    const userId = (e.currentTarget as any)?.dataset?.userid
+    if (!userId) return
+    navigateToWithTransition(`/pages/user-profile/index?id=${encodeURIComponent(String(userId))}`)
+  },
+
   openItem(e: WechatMiniprogram.TouchEvent) {
     const type = e.currentTarget.dataset.type
     const item = e.currentTarget.dataset.item
@@ -207,9 +264,16 @@ Page({
       // 跳转时一定要带上 id (conversationId)，peerId，nickname 和 avatarUrl，保证两边一致
       navigateToWithTransition(`/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`)
     } else {
-      if (item.postId) {
-        navigateToWithTransition(`/pages/post-detail/index?id=${item.postId}`)
+      if (!item.postId) return
+      if (type === "comment") {
+        const commentId = item.commentId || item.id
+        const url = commentId
+          ? `/pages/post-detail/index?id=${item.postId}&commentId=${encodeURIComponent(String(commentId))}`
+          : `/pages/post-detail/index?id=${item.postId}`
+        navigateToWithTransition(url)
+        return
       }
+      navigateToWithTransition(`/pages/post-detail/index?id=${item.postId}`)
     }
   },
 

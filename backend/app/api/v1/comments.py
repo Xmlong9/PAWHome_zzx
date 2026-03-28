@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+
 from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
 from ...models import Comment, CommentLike, CommentPin, Notification, Post, User
 from ...responses import fail, ok
+from ...timeutil import dt_to_bj_iso, dt_to_bj_ms
 
 
 def _int_arg(name: str, default: int) -> int:
@@ -43,7 +46,7 @@ def _comment_to_dict(c: Comment, me_id: str | None, pinned_comment_id: str | Non
         "likeCount": c.like_count,
         "isLiked": is_liked,
         "isPinned": bool(pinned_comment_id and c.id == pinned_comment_id),
-        "createdAt": c.created_at.isoformat() if c.created_at else None,
+        "createdAt": dt_to_bj_iso(c.created_at),
     }
 
 
@@ -73,6 +76,77 @@ def register_routes(bp) -> None:
             }
         )
 
+    @bp.get("/users/me/comments")
+    @require_auth
+    def my_comments():
+        me: User = g.current_user
+        page = max(1, _int_arg("page", 1))
+        page_size = max(1, min(50, _int_arg("pageSize", 20)))
+
+        q = Comment.query.filter_by(author_id=me.id).order_by(Comment.created_at.desc())
+        total = q.count()
+        items = q.offset((page - 1) * page_size).limit(page_size).all()
+
+        def post_thumb(post: Post | None) -> str:
+            if post is None or not post.media_json:
+                return ""
+            try:
+                val = json.loads(post.media_json)
+                if isinstance(val, list) and val:
+                    first = val[0]
+                    if isinstance(first, str) and first:
+                        return first
+                if isinstance(val, dict):
+                    cover = val.get("coverUrl")
+                    if isinstance(cover, str) and cover:
+                        return cover
+                    images = val.get("images")
+                    if isinstance(images, list) and images:
+                        first = images[0]
+                        if isinstance(first, str) and first:
+                            return first
+            except json.JSONDecodeError:
+                return ""
+            return ""
+
+        def to_msg(c: Comment) -> dict:
+            post = Post.query.get(c.post_id) if c.post_id else None
+            post_author = User.query.get(post.author_id) if post else None
+            parent = Comment.query.get(c.parent_id) if c.parent_id else None
+            parent_author = User.query.get(parent.author_id) if parent else None
+
+            if parent and parent_author:
+                avatar_url = parent_author.avatar_url or ""
+                nickname = parent_author.nickname or ""
+                user_id = parent_author.id
+                text = "你回复了对方的评论"
+                content = parent.content if parent and parent.content else ""
+            else:
+                avatar_url = post_author.avatar_url if post_author else ""
+                nickname = post_author.nickname if post_author else ""
+                user_id = post_author.id if post_author else ""
+                text = "你评论了对方的帖子"
+                content = post.content if post and post.content else ""
+
+            return {
+                "id": c.id,
+                "type": "comment",
+                "actorId": me.id,
+                "userId": user_id,
+                "avatarUrl": avatar_url,
+                "nickname": nickname,
+                "createdAt": dt_to_bj_ms(c.created_at),
+                "text": text,
+                "commentText": c.content,
+                "content": content,
+                "postId": c.post_id,
+                "commentId": c.id,
+                "thumbUrl": post_thumb(post),
+                "isRead": True,
+            }
+
+        return ok({"list": [to_msg(c) for c in items], "total": total})
+
     @bp.post("/comments")
     @require_auth
     def add_comment():
@@ -100,17 +174,31 @@ def register_routes(bp) -> None:
         db.session.add(c)
         post.comment_count += 1
 
-        if post.author_id != me.id:
-            db.session.add(
-                Notification(
-                    user_id=post.author_id,
-                    actor_id=me.id,
-                    notif_type="comment",
-                    post_id=post.id,
-                    comment_id=c.id,
-                    text="评论了你的帖子",
+        if parent_id:
+            parent_comment = Comment.query.get(parent_id)
+            if parent_comment and parent_comment.author_id != me.id:
+                db.session.add(
+                    Notification(
+                        user_id=parent_comment.author_id,
+                        actor_id=me.id,
+                        notif_type="comment",
+                        post_id=post.id,
+                        comment_id=c.id,
+                        text="回复了你的评论",
+                    )
                 )
-            )
+        else:
+            if post.author_id != me.id:
+                db.session.add(
+                    Notification(
+                        user_id=post.author_id,
+                        actor_id=me.id,
+                        notif_type="comment",
+                        post_id=post.id,
+                        comment_id=c.id,
+                        text="评论了你的帖子",
+                    )
+                )
 
         db.session.commit()
         return ok(_comment_to_dict(c, me.id), status_code=201)

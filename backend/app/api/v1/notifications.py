@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+
 from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Notification, Post, User
+from ...models import Comment, Notification, Post, User
 from ...responses import fail, ok
+from ...timeutil import dt_to_bj_ms
 
 
 def _int_arg(name: str, default: int) -> int:
@@ -38,19 +41,61 @@ def register_routes(bp) -> None:
             post = Post.query.get(n.post_id) if n.post_id else None
             thumb_url = ""
             if post and post.media_json:
-                thumb_url = ""
+                try:
+                    val = json.loads(post.media_json)
+                    if isinstance(val, list) and val:
+                        first = val[0]
+                        if isinstance(first, str) and first:
+                            thumb_url = first
+                    elif isinstance(val, dict):
+                        cover = val.get("coverUrl")
+                        if isinstance(cover, str) and cover:
+                            thumb_url = cover
+                        else:
+                            images = val.get("images")
+                            if isinstance(images, list) and images:
+                                first = images[0]
+                                if isinstance(first, str) and first:
+                                    thumb_url = first
+                except json.JSONDecodeError:
+                    thumb_url = ""
+
+            content = None
+            comment_text = None
+            if n.notif_type == "comment":
+                c = Comment.query.get(n.comment_id) if n.comment_id else None
+                if c is None and n.post_id and n.actor_id:
+                    c = (
+                        Comment.query.filter_by(post_id=n.post_id, author_id=n.actor_id)
+                        .order_by(Comment.created_at.desc())
+                        .first()
+                    )
+                if c:
+                    val = (c.content or "").strip()
+                    comment_text = val if val else "（评论内容为空）"
+                    if c.parent_id:
+                        parent_comment = Comment.query.get(c.parent_id)
+                        if parent_comment and parent_comment.content:
+                            content = parent_comment.content
+                    else:
+                        if post and post.content:
+                            content = post.content
             return {
                 "id": n.id,
                 "type": n.notif_type,
+                "actorId": n.actor_id,
                 "avatarUrl": actor.avatar_url if actor else "",
                 "nickname": actor.nickname if actor else "",
-                "createdAt": int((n.created_at).timestamp() * 1000) if n.created_at else 0,
+                "createdAt": dt_to_bj_ms(n.created_at),
                 "text": n.text or "",
-                "content": None,
+                "content": content,
+                "commentText": comment_text,
                 "postId": n.post_id,
+                "commentId": n.comment_id,
                 "thumbUrl": thumb_url,
                 "isRead": bool(n.is_read),
             }
+
 
         return ok({"list": [to_msg(n) for n in items], "total": total})
 

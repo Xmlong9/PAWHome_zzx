@@ -23,6 +23,7 @@ from ...models import (
     User,
 )
 from ...responses import fail, ok
+from ...timeutil import dt_to_bj_iso
 
 
 def _int_arg(name: str, default: int) -> int:
@@ -112,8 +113,8 @@ def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) 
         "isFavorited": is_favorited,
         "isFollowed": is_followed,
         "isPinned": is_pinned,
-        "createdAt": p.created_at.isoformat() if p.created_at else None,
-        "updatedAt": p.updated_at.isoformat() if p.updated_at else None,
+        "createdAt": dt_to_bj_iso(p.created_at),
+        "updatedAt": dt_to_bj_iso(p.updated_at),
     }
     if include_view_count:
         data["viewCount"] = _view_count(p.id)

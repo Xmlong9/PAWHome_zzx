@@ -52,8 +52,9 @@
             {{item.content}}
           </view>
           
-          <view class="media-content" wx:if="{{item.images.length > 0}}">
-            <image class="post-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+          <view class="media-content" wx:if="{{(item.images && item.images.length > 0) || item.videoUrl}}">
+            <image class="post-image" src="{{(item.images && item.images.length > 0 && item.images[0]) ? item.images[0] : '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
+            <view class="video-badge" wx:if="{{item.videoUrl}}">▶</view>
           </view>
         </view>
 

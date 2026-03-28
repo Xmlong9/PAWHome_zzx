@@ -7,6 +7,6 @@ export async function getBanners(slot: string): Promise<BannerItem[]> {
 }
 
 export async function getCommunityCards(page = 1, pageSize = 5): Promise<CommunityCard[]> {
-  const res = await request<{ list: CommunityCard[] }>({ url: "/feeds/community", method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: CommunityCard[] }>({ url: "/feeds/community", method: "GET", data: { page, pageSize, mode: "hot" } })
   return res.list || []
 }

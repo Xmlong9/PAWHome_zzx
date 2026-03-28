@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import g, request
 
@@ -131,28 +131,52 @@ def register_routes(bp) -> None:
         post_type = request.args.get("type")
         tab = request.args.get("tab")
 
-        q = Post.query
+        base_q = Post.query
         if tab == "following":
             followee_rows = Follow.query.filter_by(follower_id=me.id).all()
             followee_ids = [x.followee_id for x in followee_rows]
             if followee_ids:
-                q = q.filter(Post.author_id.in_(followee_ids))
+                base_q = base_q.filter(Post.author_id.in_(followee_ids))
             else:
-                q = q.filter(Post.author_id == "__none__")
+                base_q = base_q.filter(Post.author_id == "__none__")
         if isinstance(post_type, str) and post_type and post_type != "all":
-            q = q.filter_by(post_type=post_type)
+            base_q = base_q.filter_by(post_type=post_type)
+
+        total = base_q.count()
+
         if tab == "recommend" or tab is None or tab == "":
-            q = q.order_by(
+            cutoff = datetime.utcnow() - timedelta(hours=1)
+            pinned_q = (
+                base_q.filter(Post.author_id == me.id, Post.created_at >= cutoff)
+                .order_by(Post.created_at.desc())
+            )
+            pinned_ids = [x.id for x in pinned_q.all()]
+            pinned_count = len(pinned_ids)
+
+            rest_q = base_q
+            if pinned_ids:
+                rest_q = rest_q.filter(~Post.id.in_(pinned_ids))
+            rest_q = rest_q.order_by(
                 Post.like_count.desc(),
                 Post.favorite_count.desc(),
                 Post.comment_count.desc(),
                 Post.created_at.desc(),
             )
-        else:
-            q = q.order_by(Post.created_at.desc())
 
-        total = q.count()
-        items = q.offset((page - 1) * page_size).limit(page_size).all()
+            start = (page - 1) * page_size
+            items: list[Post] = []
+            if start < pinned_count:
+                items.extend(pinned_q.offset(start).limit(page_size).all())
+                remain = page_size - len(items)
+                if remain > 0:
+                    items.extend(rest_q.offset(0).limit(remain).all())
+            else:
+                rest_offset = start - pinned_count
+                items = rest_q.offset(rest_offset).limit(page_size).all()
+        else:
+            q = base_q.order_by(Post.created_at.desc())
+            items = q.offset((page - 1) * page_size).limit(page_size).all()
+
         return ok({"list": [_post_to_dict(p, me.id, include_view_count=False) for p in items], "total": total})
 
     @bp.get("/users/me/posts")

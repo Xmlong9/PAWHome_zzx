@@ -151,7 +151,7 @@ Page({
       this.setData({
         isSelfPost: !!myUserId && post.userId === myUserId,
         imageHeights: [],
-        mediaBgColor: this.getImageBgColor(firstImage),
+        mediaBgColor: post.videoUrl ? "#ffffff" : this.getImageBgColor(firstImage),
         post: {
           ...post,
           timeAgo: formatTimeAgo(post.createdAt)
@@ -161,6 +161,24 @@ Page({
       console.error(err);
       wx.showToast({ title: '帖子加载失败', icon: 'none' });
     }
+  },
+
+  onVideoMeta(e: any) {
+    const w = Number(e?.detail?.width || 0)
+    const h = Number(e?.detail?.height || 0)
+    if (!w || !h) return
+    const sysInfo = wx.getSystemInfoSync()
+    const windowWidth = sysInfo.windowWidth || 375
+    const next = Math.round((h / w) * windowWidth)
+    const minH = 220
+    const maxH = 520
+    const clamped = Math.max(minH, Math.min(maxH, next))
+    if (Math.abs(clamped - (this.data.mediaHeight || 0)) < 2) return
+    this.setData({ mediaHeight: clamped, mediaBgColor: "#ffffff" })
+  },
+
+  onVideoError() {
+    wx.showToast({ title: "视频播放失败", icon: "none" })
   },
 
   getImageBgColor(url: string) {
@@ -226,6 +244,7 @@ Page({
       } else {
         await followUser(userId);
       }
+      wx.setStorageSync("user_profile_need_refresh", true)
     } catch (err) {
       // Revert
       this.setData({ 'post.isFollowed': isFollowed });
@@ -670,6 +689,28 @@ Page({
     } catch {
       wx.showToast({ title: "操作失败", icon: "none" })
     }
+  },
+
+  onCommentMoreTap(e: WechatMiniprogram.TouchEvent) {
+    const item = e.currentTarget.dataset.item as (Comment & { canDelete?: boolean })
+    const actions: { key: "delete" | "pin"; label: string }[] = []
+    if (this.data.isSelfPost) actions.push({ key: "pin", label: item?.isPinned ? "取消置顶" : "置顶" })
+    if (item?.canDelete) actions.push({ key: "delete", label: "删除评论" })
+    if (!actions.length) return
+    wx.showActionSheet({
+      itemList: actions.map(a => a.label),
+      success: (res) => {
+        const action = actions[res.tapIndex]
+        if (!action || !item) return
+        if (action.key === "delete") {
+          this.onDeleteCommentTap({ currentTarget: { dataset: { id: item.id, item } } } as any)
+          return
+        }
+        if (action.key === "pin") {
+          this.onPinCommentTap({ currentTarget: { dataset: { id: item.id, ispinned: item.isPinned } } } as any)
+        }
+      }
+    })
   },
 
   // Comment Input

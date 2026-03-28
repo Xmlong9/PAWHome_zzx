@@ -1,4 +1,25 @@
 import { getBanners, getCommunityCards } from "../../services/banners";
+import { getBaseUrl } from "../../config/env";
+
+const HOME_PUSH_FALLBACK_MEDIA = ["推送1.jpg", "推送2.jpg", "推送3.jpg", "推送4.jpg", "推送5.jpg"]
+
+function getApiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
+function hashString(s: string): number {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  return h >>> 0
+}
+
+function pickHomePushFallbackImageUrl(id: string): string {
+  const origin = getApiOrigin()
+  const idx = HOME_PUSH_FALLBACK_MEDIA.length ? hashString(id) % HOME_PUSH_FALLBACK_MEDIA.length : 0
+  const name = HOME_PUSH_FALLBACK_MEDIA[idx] || ""
+  return `${origin}/media/${encodeURIComponent(name)}`
+}
 
 Page({
   data: {
@@ -11,7 +32,7 @@ Page({
     indicatorBars: [],
     safeTop: 0,
     promo: null as any,
-    communityCard: null as any,
+    hotPosts: [] as any[],
     showBlob: false
   },
   onShow() {
@@ -51,6 +72,11 @@ Page({
   goServiceMedical(){ wx.navigateTo({ url: '/pages/service/index?type=medical' }); },
   goServiceFoster(){ wx.navigateTo({ url: '/pages/service/index?type=foster' }); }
   ,
+  openHotPost(e: any) {
+    const url = e.currentTarget?.dataset?.url
+    if (!url) return
+    wx.navigateTo({ url })
+  },
   onSwiperChange(e: any){
     this.setData({ current: e.detail.current })
   },
@@ -62,11 +88,12 @@ Page({
     getBanners("home_promo").then(list => {
       if (list && list.length) this.setData({ promo: list[0] })
     }).catch(() => {})
-    getBanners("home_community").then(list => {
-      if (list && list.length) this.setData({ communityCard: list[0] })
-    }).catch(() => {})
-    getCommunityCards(1,1).then(list => {
-      if (list && list.length && !this.data.communityCard) this.setData({ communityCard: { imageUrl: list[0].imageUrl, title: list[0].title, badge: list[0].badge } })
+    getCommunityCards(1, 4).then(list => {
+      const items = (list || []).map(item => ({
+        ...item,
+        coverUrl: item.imageUrl ? item.imageUrl : pickHomePushFallbackImageUrl(String(item.id || ""))
+      }))
+      if (items.length) this.setData({ hotPosts: items })
     }).catch(() => {})
   }
 });

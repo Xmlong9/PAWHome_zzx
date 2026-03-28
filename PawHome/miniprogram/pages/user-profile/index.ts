@@ -57,6 +57,11 @@ Page({
     if (fallbackUserId !== this.data.userId) {
       this.setData({ userId: fallbackUserId })
     }
+    getUserProfile(fallbackUserId)
+      .then((userInfo) => {
+        this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) })
+      })
+      .catch(() => {})
     Promise.all([
       this.loadTabData("帖子"),
       this.loadTabData("点赞"),
@@ -90,7 +95,7 @@ Page({
       // 2. 加载当前 tab 数据
       await this.loadTabData(this.data.currentTab);
       
-      this.setData({ userInfo });
+      this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) });
     } catch (error) {
       console.error("Load user profile failed", error);
     } finally {

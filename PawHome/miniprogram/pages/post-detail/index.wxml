@@ -24,8 +24,8 @@
     
     <view class="tab-content" hidden="{{currentTab !== 'content'}}">
       <view class="post-detail" wx:if="{{post}}">
-        <view class="media-carousel" wx:if="{{post.videoUrl}}" style="margin-top: 0;">
-          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls objectFit="contain"></video>
+        <view class="media-carousel" wx:if="{{post.videoUrl}}" style="margin-top: 0; height: {{mediaHeight}}px; background-color: {{mediaBgColor}};">
+          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls show-mute-btn objectFit="contain" style="height: {{mediaHeight}}px; background: {{mediaBgColor}};" bindloadedmetadata="onVideoMeta" binderror="onVideoError"></video>
         </view>
 
         <view class="media-carousel" wx:if="{{!post.videoUrl && post.images && post.images.length > 0}}" style="margin-top: 0;background-color: {{mediaBgColor}};">
@@ -189,6 +189,12 @@
             </view>
             <text class="action-text">{{post.isPinned ? '取消置顶' : '置顶帖子'}}</text>
           </view>
+          <view class="action-btn" bindtap="onDeletePostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap danger">
+              <image class="a-icon" src="/assets/icons/community/trash.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text danger">删除帖子</text>
+          </view>
         </view>
       </scroll-view>
     </view>
@@ -229,8 +235,9 @@
                 <image class="icon-img-sm" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
                 <text wx:if="{{item.likeCount > 0}}">{{item.likeCount}}</text>
               </view>
-              <text class="c-op" bindtap="onDeleteCommentTap" data-id="{{item.id}}" data-item="{{item}}" wx:if="{{item.canDelete}}">删除</text>
-              <text class="c-op" bindtap="onPinCommentTap" data-id="{{item.id}}" data-ispinned="{{item.isPinned}}" wx:if="{{isSelfPost}}">{{item.isPinned ? '取消置顶' : '置顶'}}</text>
+              <view class="c-more" bindtap="onCommentMoreTap" data-item="{{item}}" wx:if="{{item.canDelete || isSelfPost}}">
+                <image class="icon-img-sm" src="/assets/icons/community/ellipsis.svg" mode="aspectFit"></image>
+              </view>
             </view>
           </view>
         </view>

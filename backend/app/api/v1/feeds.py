@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 
 from flask import request
+from sqlalchemy import func
 
-from ...models import Banner, Post
+from ...extensions import db
+from ...models import Banner, Post, PostHistory
 from ...responses import ok
 
 
@@ -41,10 +43,27 @@ def register_routes(bp) -> None:
 
     @bp.get("/feeds/community")
     def community_feed():
+        mode = request.args.get("mode")
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 5)))
-        q = Post.query.order_by(Post.created_at.desc())
-        items = q.offset((page - 1) * page_size).limit(page_size).all()
+        if mode == "hot":
+            view_count = func.count(PostHistory.post_id)
+            q = (
+                db.session.query(Post, view_count.label("viewCount"))
+                .outerjoin(PostHistory, PostHistory.post_id == Post.id)
+                .group_by(Post.id)
+                .order_by(
+                    view_count.desc(),
+                    Post.like_count.desc(),
+                    Post.comment_count.desc(),
+                    Post.created_at.desc(),
+                )
+            )
+            rows = q.offset((page - 1) * page_size).limit(page_size).all()
+            items = [r[0] for r in rows]
+        else:
+            q = Post.query.order_by(Post.created_at.desc())
+            items = q.offset((page - 1) * page_size).limit(page_size).all()
         cards = []
         for p in items:
             image_url = ""
@@ -61,7 +80,7 @@ def register_routes(bp) -> None:
                     "imageUrl": image_url,
                     "title": (p.content[:20] + "…") if len(p.content) > 20 else p.content,
                     "linkUrl": f"/pages/post-detail/index?id={p.id}",
+                    "badge": "热门" if mode == "hot" else "社区",
                 }
             )
         return ok({"list": cards})
-

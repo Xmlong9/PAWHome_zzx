@@ -224,3 +224,279 @@
 
 **影响面**
 - 评论我的列表将稳定展示“对方评论内容”（commentText），以及引用块展示“我的原帖/原评论内容”（content）。
+
+---
+
+## 发帖宠物标签生成（去掉宠物名字标签）
+
+**目的**
+- 发帖时选择宠物，不再自动添加“自己宠物名字”的标签；仅保留“宠物类型”和“品种”的标签。
+
+**入口**
+- 小程序发帖页：`PawHome/miniprogram/pages/post-create/index`
+  - 标记宠物：`tagPet()`
+  - 发布：`publish()`
+
+**数据流/状态**
+- 选择宠物后在页面状态里记录：
+  - `pet`：仅用于页面显示（不再用于拼接标签）
+  - `petBreed`：用于生成 `#品种` 标签
+  - `petRawType`：作为类型兜底（当无法映射为猫/狗时使用）
+  - `taggedPetType/petType`：用于后端 `type` 字段（帖子类型分类）
+- 发布时对正文内容的拼接规则：
+  - 保留原 `content` 与 `topic`
+  - 追加类型标签：`#猫咪` / `#狗狗`；若无法识别则追加 `#<petRawType>`
+  - 追加品种标签：`#<petBreed>`
+  - 不再追加 `#<petName>`
+
+**关键分支**
+- 若用户正文/话题里已包含相同标签，则发布时不重复追加。
+- 若既无猫/狗类型标签也无 `petRawType`，则不追加类型标签。
+
+**边界条件**
+- `petBreed` 为空：不生成品种标签。
+- `petRawType` 为空：无法识别类型时不生成兜底类型标签。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/post-create/index.ts`
+
+---
+
+## 主页热门帖子投送（Top4）与推荐流新帖置顶
+
+**目的**
+- 主页广告投送下方展示 4 条热度最高的帖子，提升内容推荐效率。
+- 社区“推荐”标签下，自己 1 小时内新发帖子优先置顶，避免被旧帖淹没。
+
+**入口**
+- 后端：
+  - `GET /feeds/community?mode=hot&page=1&pageSize=4`：主页热门帖子卡片数据源
+  - `GET /posts?tab=recommend&type=...`：社区推荐列表（第一页包含置顶新帖）
+- 小程序：
+  - 主页：`PawHome/miniprogram/pages/home/index`
+  - 社区：`PawHome/miniprogram/pages/community/index`
+
+**数据流/状态**
+- 主页热门帖子：
+  - 后端聚合 `PostHistory` 得出浏览数（viewCount），结合 `Post.like_count/comment_count` 排序取前 4 条
+  - 前端请求后渲染为 2x2 网格卡片，点击进入帖子详情
+- 社区推荐置顶：
+  - 后端在 `tab=recommend` 时，计算“我 1 小时内新发帖子”作为 pinned 列表
+  - 返回列表顺序为：`pinned + rest`，并按该组合序列做分页，避免翻页重复
+
+**关键分支**
+- `mode=hot`：按浏览数 → 点赞数 → 评论数 → 发布时间排序
+- `tab=recommend`：仅对“推荐”流启用置顶逻辑；其它 tab 仍按原规则排序
+
+**边界条件**
+- pinned 数量可能超过 pageSize：按组合序列分页，第一页只返回前 pageSize 条 pinned
+- pinned 数量为 0：退化为原推荐排序
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/home/index.ts`
+  - `PawHome/miniprogram/pages/home/index.wxml`
+  - `PawHome/miniprogram/pages/home/index.wxss`
+  - `PawHome/miniprogram/services/banners.ts`
+- 后端：
+  - `backend/app/api/v1/feeds.py`
+  - `backend/app/api/v1/posts.py`
+
+### 变更 2026-03-29：主页热门推送缺图随机补齐封面
+
+**问题现象**
+- 主页热门帖子（Top4）中存在 `imageUrl` 为空的帖子，导致卡片封面显示为统一的默认图，影响内容感知。
+
+**修复方案**
+- 仅在主页推送展示层做封面兜底：当 `imageUrl` 为空时，从后端静态资源 `/media/推送1.jpg~推送5.jpg` 中按 `post.id` 计算一个稳定的“随机”索引，生成 `coverUrl` 用于渲染。
+- 不写回后端，不修改原帖 `media_json` 与帖子内容。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.ts`
+- `PawHome/miniprogram/pages/home/index.wxml`
+
+---
+
+## 主页广告卡片与社区入口卡片防重叠布局
+
+**目的**
+- 修复首页“广告”卡片与“社区”入口卡片在视觉上贴得过近、阴影/徽标区域看起来“撞一起”的问题。
+
+**入口**
+- 小程序首页：`PawHome/miniprogram/pages/home/index`
+
+**实现要点**
+- 调整广告卡片容器 `.group1` 的底部外边距，保证阴影位移（translate）与黑色边框下方留有足够间距。
+- 将社区入口卡片容器 `.group` 的顶部外边距归零，把垂直间距统一交由上一块的 `margin-bottom` 控制，避免相邻块外边距折叠带来的间距不稳定。
+
+**边界条件**
+- 兼容不同屏幕高度与字体渲染差异：通过“固定间距 + 阴影位移预留”避免视觉重叠。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.wxss`
+
+### 变更 2026-03-29：首页商城广告与商城页广告统一
+
+**目的**
+- 让首页引流到商城的广告视觉与商城页顶部广告一致，避免出现两套素材。
+
+**实现要点**
+- 首页两个“去商城”的广告位（右侧竖卡 + 粉色广告卡片的无配置兜底图）统一改为使用商城页同款本地素材 `/assets/images/shop/广告.png`。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.wxml`
+- `PawHome/miniprogram/pages/shop/index.ts`
+
+### 变更 2026-03-29：首页商城广告改为“纯图片”展示
+
+**目的**
+- 首页商城广告位效果对齐商城页：直接渲染图片 banner，不再包裹卡片容器、阴影与边框结构。
+
+**实现要点**
+- 轮播右侧商城广告位改为单个 `<image>`（`mode="widthFix"`），用于跳转商城。
+- 原首页粉色广告卡片改为单个 `<image>` banner（优先使用 `promo.imageUrl`，无配置则使用商城同款本地素材）。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.wxml`
+- `PawHome/miniprogram/pages/home/index.wxss`
+
+#### 回退 2026-03-29：仅保留主广告为纯图片
+
+**说明**
+- 轮播右侧“去商城”广告恢复为原卡片容器样式；仅保留主页主广告推送为纯图片 banner 展示。
+
+### 变更 2026-03-29：首页金刚区与推送模块间距调整
+
+**目的**
+- 缩小首页金刚区（服务入口）与商城广告推送、社区推送之间的垂直留白，让内容更紧凑。
+
+**实现要点**
+- 调整 `.home-shop-hero-banner` 的上下外边距，降低金刚区到广告推送、以及广告推送到社区入口的间距。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.wxss`
+
+#### 微调 2026-03-29：进一步收紧留白
+
+**实现要点**
+- 同时下调 `.services` 的 `margin-bottom` 与 `.home-shop-hero-banner` 的上下外边距，使金刚区到广告推送、广告推送到社区入口更紧凑。
+
+---
+
+## 评论删除按钮样式优化
+
+**目的**
+- 优化帖子详情页评论区“删除”按钮观感，避免纯文本操作项不够像可点击控件、且与其它操作不一致。
+
+**入口**
+- 帖子详情页：评论列表项右下角操作区（删除/置顶）。
+
+**实现要点**
+- 将删除操作从纯文本样式调整为胶囊按钮：增加边框、底色、圆角与可点击区域。
+- 删除按钮使用危险态配色（浅红底 + 红字），并增加按下反馈（透明度变化）。
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-detail/index.wxml`
+- `PawHome/miniprogram/pages/post-detail/index.wxss`
+
+### 变更 2026-03-29：删除/置顶收纳到“更多”菜单
+
+**问题现象**
+- 评论列表里直接展示“删除/置顶”文字会显得信息噪声很大，观感不够干净。
+
+**修复方案**
+- 评论操作区改为仅保留点赞与“…”更多按钮；点击“…”弹出 ActionSheet 展示可用操作：
+  - 作者在自己帖子下可看到“置顶/取消置顶”
+  - 可删除评论的用户看到“删除评论”
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-detail/index.ts`
+- `PawHome/miniprogram/pages/post-detail/index.wxml`
+
+---
+
+## 删除帖子（帖子弹窗入口）
+
+**目的**
+- 支持作者在帖子详情页快速删除自己发布的帖子，并自动刷新社区/个人主页相关列表。
+
+**入口**
+- 帖子详情页 → 右上角“…”打开帖子弹窗（分享弹窗）→ 操作区“删除帖子”（仅作者可见）。
+
+**数据流/状态**
+- 前端调用 `DELETE /posts/<post_id>` 删除帖子；删除成功后写入 `community_need_refresh` 与 `user_profile_need_refresh`，并返回上一页触发列表刷新。
+
+**关键分支**
+- 非作者不展示入口；后端仍会做二次校验并返回 403。
+- 删除前弹出二次确认弹窗，避免误删。
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-detail/index.ts`
+- `PawHome/miniprogram/pages/post-detail/index.wxml`
+- `PawHome/miniprogram/pages/post-detail/index.wxss`
+- `PawHome/miniprogram/services/posts.ts`
+- `backend/app/api/v1/posts.py`
+
+---
+
+## 关注状态同步（从帖子页进入个人主页）
+
+**目的**
+- 修复“在帖子里关注用户后，进入其个人主页仍显示未关注”的状态不同步问题。
+
+**根因**
+- 个人主页页内 `isFollowing` 未从接口返回结果初始化，默认值始终为 `false`。
+- 后端 `GET /users/<id>` profile 未返回“我是否关注 TA”的关系字段，前端无法正确赋值。
+
+**修复方案**
+- 后端用户资料返回补充 `isFollowing/isFollowed`（基于 `follows` 表判断）。
+- 小程序个人主页在 `initPage/onShow` 刷新时从 `userInfo.isFollowing` 初始化/更新 `isFollowing`。
+- 帖子详情页关注/取关成功后写入 `user_profile_need_refresh`，保证返回后页面可刷新。
+
+**相关文件**
+- 后端：`backend/app/api/v1/users.py`
+- 小程序：`PawHome/miniprogram/pages/user-profile/index.ts`
+- 小程序：`PawHome/miniprogram/services/user.ts`
+- 小程序：`PawHome/miniprogram/pages/post-detail/index.ts`
+
+---
+
+## 视频帖详情页空白显示修复
+
+**问题现象**
+- 视频帖子进入帖子详情页后，媒体区域显示空白（无视频画面/控件）。
+
+**根因**
+- 视频节点复用 `.swiper-img { height: 100% }` 样式，但视频容器未设置明确高度，导致高度计算为 0。
+
+**修复方案**
+- 视频容器与 `<video>` 节点按 `mediaHeight` 设置固定高度（与图片轮播一致的高度策略），保证可见并可播放。
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-detail/index.wxml`
+- `PawHome/miniprogram/pages/post-detail/index.ts`
+
+### 变更 2026-03-29：视频按比例自适应与白底
+
+**目的**
+- 视频帖子展示尽量贴合视频本身比例，避免黑边；同时让留白背景统一为白色，观感更干净。
+
+**实现要点**
+- 监听 `<video>` 的 `loadedmetadata`，根据 `width/height` 计算建议高度并更新 `mediaHeight`（做最小/最大高度限制）。
+- 视频容器与视频节点背景统一为白色（`mediaBgColor = #ffffff`）。
+- 打开 `show-mute-btn` 方便用户快速确认/切换静音状态；播放失败时提示 toast。
+
+### 变更 2026-03-29：视频封面缩略图兜底（发帖页/社区列表）
+
+**问题现象**
+- 发帖页选择视频后缩略图区域空白；社区列表中视频帖无封面时卡片不展示媒体区，观感不完整。
+
+**修复方案**
+- 发帖页视频缩略图优先展示 `thumbTempFilePath`，拿不到则显示占位图。
+- 社区列表媒体区判断增加 `videoUrl`，当视频帖无 `images[0]` 时使用占位图并叠加播放角标。
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-create/index.wxml`
+- `PawHome/miniprogram/pages/community/index.wxml`
+- `PawHome/miniprogram/pages/community/index.wxss`

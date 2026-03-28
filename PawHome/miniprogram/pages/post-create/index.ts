@@ -11,6 +11,8 @@ Page({
     topic: '',
     location: null as { name: string; address: string } | null,
     pet: '',
+    petBreed: '',
+    petRawType: '',
     petType: "all" as "all" | "cat" | "dog",
     petTypeText: "不分类",
     taggedPetType: "" as "" | "cat" | "dog",
@@ -158,7 +160,9 @@ Page({
             const selected = pets[res.tapIndex]
             this.setData({
               pet: selected.name,
-              taggedPetType: this.inferPetType(selected.type)
+              petBreed: (selected as any)?.breed ? String((selected as any).breed) : "",
+              petRawType: (selected as any)?.type ? String((selected as any).type) : "",
+              taggedPetType: this.inferPetType((selected as any).type)
             })
           }
         })
@@ -184,13 +188,25 @@ Page({
   },
 
   publish() {
+    const baseContent = (this.data.content || "").trim()
+    const baseTopic = (this.data.topic || "").trim()
+    const finalType = this.data.taggedPetType || this.data.petType || "all"
+    const typeTag = finalType === "cat" ? "#猫咪" : finalType === "dog" ? "#狗狗" : ""
+    const breedTagRaw = (this.data.petBreed || "").trim()
+    const breedTag = breedTagRaw ? `#${breedTagRaw}` : ""
+    const rawTypeTag = !typeTag && (this.data.petRawType || "").trim() ? `#${String(this.data.petRawType).trim()}` : ""
+
+    const combined = `${baseContent} ${baseTopic}`.trim()
+    const hasTag = (tag: string) => (tag ? combined.includes(tag) : false)
+
     const contentParts = [
-      (this.data.content || "").trim(),
-      this.data.topic || "",
-      this.data.pet ? `#${this.data.pet}` : ""
+      baseContent,
+      baseTopic,
+      !hasTag(typeTag) ? typeTag : "",
+      !hasTag(rawTypeTag) ? rawTypeTag : "",
+      !hasTag(breedTag) ? breedTag : ""
     ].filter(Boolean)
     const finalContent = contentParts.join(" ").trim()
-    const finalType = this.data.taggedPetType || this.data.petType || "all"
 
     if (!finalContent && this.data.mediaList.length === 0) {
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' });

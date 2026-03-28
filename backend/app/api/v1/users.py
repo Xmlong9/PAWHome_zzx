@@ -69,7 +69,7 @@ def _pet_to_dict(p: Pet) -> dict:
     }
 
 
-def _user_profile_dict(u: User) -> dict:
+def _user_profile_dict(u: User, me_id: str | None = None) -> dict:
     post_count = Post.query.filter_by(author_id=u.id).count()
     following_count = Follow.query.filter_by(follower_id=u.id).count()
     follower_count = Follow.query.filter_by(followee_id=u.id).count()
@@ -78,6 +78,15 @@ def _user_profile_dict(u: User) -> dict:
         .filter(Post.author_id == u.id)
         .count()
     )
+    is_following = False
+    is_followed = False
+    if isinstance(me_id, str) and me_id and me_id != u.id:
+        is_following = (
+            Follow.query.filter_by(follower_id=me_id, followee_id=u.id).first() is not None
+        )
+        is_followed = (
+            Follow.query.filter_by(follower_id=u.id, followee_id=me_id).first() is not None
+        )
     return {
         "id": u.id,
         "publicId": u.public_id,
@@ -91,6 +100,8 @@ def _user_profile_dict(u: User) -> dict:
         "followingCount": following_count,
         "followerCount": follower_count,
         "likeCount": like_count,
+        "isFollowing": is_following,
+        "isFollowed": is_followed,
     }
 
 
@@ -112,15 +123,16 @@ def register_routes(bp) -> None:
     @require_auth
     def me():
         user: User = g.current_user
-        return ok(_user_profile_dict(user))
+        return ok(_user_profile_dict(user, user.id))
 
     @bp.get("/users/<user_id>")
     @require_auth
     def get_user(user_id: str):
+        me: User = g.current_user
         u = User.query.get(user_id)
         if u is None:
             return fail(code="NOT_FOUND", message="user not found", status_code=404)
-        return ok(_user_profile_dict(u))
+        return ok(_user_profile_dict(u, me.id))
 
     @bp.get("/users/me/favorites/posts")
     @require_auth

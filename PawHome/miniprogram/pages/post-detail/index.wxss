@@ -391,6 +391,8 @@
   background: #fff;
 }
 
+.action-icon-wrap.danger { background: #fff1f0 }
+
 .action-icon-wrap.wechat .a-icon,
 .action-icon-wrap.timeline .a-icon {
   width: 100rpx;
@@ -407,6 +409,8 @@
   color: #666;
   white-space: nowrap;
 }
+
+.action-text.danger { color: #ff4d4f }
 
 .bottom-actions {
   background: #fff;
@@ -598,9 +602,39 @@
   color: #999;
 }
 
+.c-more {
+  width: 52rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999rpx;
+  border: 2rpx solid #e9eaee;
+  background: #f6f7f9;
+}
+
+.c-more:active { opacity: 0.72 }
+
 .c-op {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #e9eaee;
+  background: #f6f7f9;
   font-size: 24rpx;
   color: #576b95;
+  line-height: 1;
+}
+
+.c-op:active { opacity: 0.72 }
+
+.c-op-danger {
+  background: #fff1f0;
+  border-color: #ffccc7;
+  color: #ff4d4f;
 }
 
 /* Icons */

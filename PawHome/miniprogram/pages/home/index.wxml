@@ -58,52 +58,31 @@
     </view>
   </view>
 
-  <view class="group1" bindtap="goShop">
-    <view class="group1-shadow"></view>
-    <view class="group1-card">
-      <block wx:if="{{promo}}">
-        <image class="group1-left" src="{{promo.imageUrl}}" mode="aspectFit"></image>
-      </block>
-      <block wx:else>
-        <image class="group1-left" src="/assets/images/home/advertise@1x.png" mode="aspectFit"></image>
-      </block>
-      <view class="group1-desc">
-        <block wx:if="{{promo}}">
-          <view class="group1-line1">{{promo.title}}<text wx:if="{{promo.ctaText}}" class="accent"></text></view>
-          <view class="group1-btn">{{promo.ctaText}}</view>
-        </block>
-        <block wx:else>
-          <view class="group1-line1">星星猫粮全场7折优惠</view>
-          <view class="group1-btn">点击迅速抢购 →</view>
-        </block>
-      </view>
-      <block wx:if="{{promo}}">
-        <view class="group1-badge">{{promo.badge}}</view>
-      </block>
-      <block wx:else>
-        <view class="group1-badge">广告</view>
-      </block>
-    </view>
-  </view>
+  <block wx:if="{{promo && promo.imageUrl}}">
+    <image class="home-shop-hero-banner" src="{{promo.imageUrl}}" mode="widthFix" bindtap="goShop"></image>
+  </block>
+  <block wx:else>
+    <image class="home-shop-hero-banner" src="/assets/images/shop/广告.png" mode="widthFix" bindtap="goShop"></image>
+  </block>
 
   <view class="group" bindtap="goCommunity">
     <view class="group-shadow"></view>
     <view class="group-card">
-      <block wx:if="{{communityCard}}">
-        <image class="group-left" src="{{communityCard.imageUrl}}" mode="aspectFit"></image>
-      </block>
-      <block wx:else>
-        <image class="group-left" src="/assets/images/home/slideshow1@1x.png" mode="aspectFit"></image>
-      </block>
-      <block wx:if="{{communityCard}}">
-        <view class="group-title">{{communityCard.title}}</view>
-        <view class="group-badge">{{communityCard.badge}}</view>
-      </block>
-      <block wx:else>
-        <view class="group-title">那些火遍全网的猫meme</view>
-        <view class="group-badge">社区</view>
-      </block>
+      <view class="group-title">热门帖子</view>
+      <view class="group-badge">社区</view>
     </view>
+  </view>
+
+  <view class="hot-posts">
+    <block wx:for="{{hotPosts}}" wx:key="id">
+      <view class="hot-item" bindtap="openHotPost" data-url="{{item.linkUrl}}">
+        <image class="hot-img" src="{{item.coverUrl || '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
+        <view class="hot-meta">
+          <view class="hot-title">{{item.title}}</view>
+          <view class="hot-badge">{{item.badge || '热门'}}</view>
+        </view>
+      </view>
+    </block>
   </view>
 
   

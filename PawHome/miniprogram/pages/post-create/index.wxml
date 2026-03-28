@@ -22,7 +22,7 @@
       <view class="media-section">
         <block wx:for="{{mediaList}}" wx:key="tempFilePath">
           <view class="media-item">
-            <image class="media-preview" src="{{item.tempFilePath}}" mode="aspectFill" bindtap="previewMedia" data-index="{{index}}"></image>
+            <image class="media-preview" src="{{item.fileType === 'video' ? (item.thumbTempFilePath || '/assets/images/home/slideshow1@1x.png') : item.tempFilePath}}" mode="aspectFill" bindtap="previewMedia" data-index="{{index}}"></image>
             <view class="delete-btn" catchtap="deleteMedia" data-index="{{index}}">×</view>
             <view class="video-badge" wx:if="{{item.fileType === 'video'}}">▶</view>
           </view>

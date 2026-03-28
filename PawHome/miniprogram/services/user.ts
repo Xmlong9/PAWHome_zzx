@@ -16,6 +16,8 @@ export type UserProfile = {
   followingCount: number;
   followerCount: number;
   likeCount: number;
+  isFollowing?: boolean;
+  isFollowed?: boolean;
 }
 
 export type PetProfile = {

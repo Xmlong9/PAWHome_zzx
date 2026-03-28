@@ -91,7 +91,7 @@
 .hero-action{margin-top:24rpx;background:#98c06d;color:#fff;border-radius:999rpx;padding:14rpx 20rpx;width:220rpx;text-align:center}
 .highlight{color:#ff7ab6;margin-left:8rpx}
 
-.services{display:flex;justify-content:space-around;align-items:center;padding:24rpx;border-top:2rpx solid #333;border-bottom:2rpx solid #333;margin:24rpx}
+.services{display:flex;justify-content:space-around;align-items:center;padding:24rpx;border-top:2rpx solid #333;border-bottom:2rpx solid #333;margin:24rpx 24rpx 12rpx}
 .service-item{display:flex;flex-direction:column;align-items:center;gap:12rpx}
 .service-icon{width:96rpx;height:96rpx;border-radius:999rpx}
 .service-icon-img{width:96rpx;height:96rpx;border-radius:999rpx}
@@ -101,7 +101,9 @@
 .service-icon.medical{background:linear-gradient(180deg,#cfe9ff,#6ab0ff)}
 .service-icon.foster{background:linear-gradient(180deg,#dff5ff,#6bd3ff)}
 
-.group1{margin:40rpx 32rpx;position:relative;height:180rpx}
+.home-shop-hero-banner{display:block;width:calc(100% - 64rpx);margin:12rpx 32rpx 20rpx}
+
+.group1{margin:40rpx 32rpx 72rpx;position:relative;height:180rpx}
 .group1-shadow{position:absolute;inset:0;border-radius:40rpx;background:#849C4E;transform:translate(12rpx,12rpx);z-index:0}
 .group1-card{position:relative;background:#ff9ecf;border-radius:40rpx;height:180rpx;display:flex;align-items:center;padding:24rpx 28rpx;gap:24rpx;z-index:1;border:6rpx solid #000}
 .group1-left{width:160rpx;height:135rpx}
@@ -111,11 +113,18 @@
 .group1-btn{margin-top:12rpx;font-size:28rpx}
 .group1-badge{position:absolute;right:16rpx;top:10rpx;background:#fff;color:#666;border-radius:999rpx;padding:4rpx 12rpx;font-size:20rpx}
 
-.group{margin:80rpx 32rpx;position:relative;height:180rpx}
-.group-shadow{position:absolute;inset:0;border-radius:32rpx;background:#849C4E;transform:translate(10rpx,10rpx);z-index:0}
-.group-card{position:relative;background:#fff;border-radius:32rpx;border:6rpx solid #000;height:180rpx;display:flex;align-items:center;gap:24rpx;padding:24rpx 28rpx;z-index:1}
+.group{margin:0 32rpx 32rpx;position:relative;height:120rpx}
+.group-shadow{position:absolute;inset:0;border-radius:32rpx;background:#849C4E;transform:translate(8rpx,8rpx);z-index:0}
+.group-card{position:relative;background:#fff;border-radius:32rpx;border:6rpx solid #000;height:120rpx;display:flex;align-items:center;gap:24rpx;padding:0 28rpx;z-index:1}
 .group-left{width:160rpx;height:120rpx}
-.group-title{flex:1;font-size:30rpx;color:#333}
+.group-title{flex:1;font-size:30rpx;color:#333;font-weight:bold}
 .group-badge{position:absolute;right:16rpx;top:10rpx;background:#fff;color:#666;border-radius:999rpx;padding:4rpx 12rpx;font-size:20rpx}
+
+.hot-posts{margin:32rpx 32rpx 80rpx;display:grid;grid-template-columns:1fr 1fr;gap:24rpx}
+.hot-item{background:#fff;border-radius:28rpx;border:4rpx solid #000;overflow:hidden;box-shadow:8rpx 8rpx 0 #849C4E;position:relative;display:flex;flex-direction:column}
+.hot-img{width:100%;height:200rpx;background:#f3f4f6}
+.hot-meta{padding:16rpx 16rpx 20rpx;flex:1;display:flex;align-items:flex-start}
+.hot-title{font-size:26rpx;color:#333;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hot-badge{position:absolute;right:12rpx;top:12rpx;background:rgba(0,0,0,0.75);color:#fff;border-radius:999rpx;padding:4rpx 10rpx;font-size:20rpx}
 
 .nav-icon-img{width:48rpx;height:48rpx}

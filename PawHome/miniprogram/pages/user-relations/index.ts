@@ -1,5 +1,11 @@
 import { createConversation } from "../../services/im"
 import { followUser, getUserFollowers, getUserFollowing, unfollowUser, UserRelation } from "../../services/user"
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition"
 
 Page({
   data: {
@@ -7,7 +13,11 @@ Page({
     currentType: "following" as "following" | "followers",
     titleText: "关注",
     list: [] as UserRelation[],
-    loading: false
+    loading: false,
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   onLoad(options: { userId?: string; type?: string }) {
@@ -19,6 +29,15 @@ Page({
       titleText: currentType === "followers" ? "粉丝" : "关注"
     })
     this.loadList()
+    initPageTransition(this)
+  },
+
+  onReady() {
+    enterPageTransition(this)
+  },
+
+  onShow() {
+    reenterPageIfNeeded(this)
   },
 
   switchType(e: any) {
@@ -51,7 +70,7 @@ Page({
   openProfile(e: any) {
     const item = e.currentTarget.dataset.item as UserRelation
     if (!item?.id) return
-    wx.navigateTo({ url: `/pages/user-profile/index?id=${item.id}` })
+    navigateToWithTransition(`/pages/user-profile/index?id=${item.id}`)
   },
 
   async onToggleFollow(e: any) {
@@ -84,16 +103,12 @@ Page({
       const res = await createConversation(item.id)
       const nickname = encodeURIComponent(item.nickname || "")
       const avatarUrl = encodeURIComponent(item.avatarUrl || "")
-      wx.navigateTo({
-        url: `/pages/chat/index?id=${encodeURIComponent(res.id)}&peerId=${encodeURIComponent(item.id)}&nickname=${nickname}&avatarUrl=${avatarUrl}`
-      })
+      navigateToWithTransition(`/pages/chat/index?id=${encodeURIComponent(res.id)}&peerId=${encodeURIComponent(item.id)}&nickname=${nickname}&avatarUrl=${avatarUrl}`)
     } catch (err) {
       console.error(err)
       const nickname = encodeURIComponent(item.nickname || "")
       const avatarUrl = encodeURIComponent(item.avatarUrl || "")
-      wx.navigateTo({
-        url: `/pages/chat/index?peerId=${encodeURIComponent(item.id)}&nickname=${nickname}&avatarUrl=${avatarUrl}`
-      })
+      navigateToWithTransition(`/pages/chat/index?peerId=${encodeURIComponent(item.id)}&nickname=${nickname}&avatarUrl=${avatarUrl}`)
     }
   }
 })

@@ -326,6 +326,30 @@
   opacity: 0 !important;
 }
 
+.paw-route {
+  opacity: 0;
+  transform: translate3d(24rpx, 0, 0);
+  transition-property: transform, opacity;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.paw-route.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
+}
+
+.paw-route.is-leaving {
+  transition-duration: 240ms;
+  transition-timing-function: ease;
+  opacity: 0;
+  transform: translate3d(24rpx, 0, 0);
+  pointer-events: none;
+}
+
 /* 页面顶部圆弧背景进场动画：从右边滚到左边（首页、社区） */
 @keyframes rollFromRightToLeft {
   0% {

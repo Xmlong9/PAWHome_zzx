@@ -3,6 +3,7 @@ import { getPosts, favoritePost, unfavoritePost, Post } from "../../services/pos
 import { listConversations } from "../../services/im";
 import { getNotificationUnreadSummary } from "../../services/notifications";
 import { formatTimeAgo } from "../../utils/date";
+import { navigateToWithTransition } from "../../utils/transition";
 
 const app = getApp<IAppOption>();
 
@@ -132,30 +133,22 @@ Page({
 
   goPostDetail(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: `/pages/post-detail/index?id=${id}`
-    });
+    navigateToWithTransition(`/pages/post-detail/index?id=${id}`);
   },
 
   goUserProfile(e: WechatMiniprogram.TouchEvent) {
     const userId = e.currentTarget.dataset.userid;
     if (userId) {
-      wx.navigateTo({
-        url: `/pages/user-profile/index?id=${userId}`
-      });
+      navigateToWithTransition(`/pages/user-profile/index?id=${userId}`);
     }
   },
 
   goCreatePost() {
-    wx.navigateTo({
-      url: '/pages/post-create/index'
-    });
+    navigateToWithTransition('/pages/post-create/index');
   },
 
   onMailTap() {
-    wx.navigateTo({
-      url: '/pages/messages/index'
-    });
+    navigateToWithTransition('/pages/messages/index');
   },
 
   async refreshMessageBadge() {
@@ -175,6 +168,6 @@ Page({
   },
 
   goSearch() {
-    wx.navigateTo({ url: "/pages/search/index?type=community" });
+    navigateToWithTransition("/pages/search/index?type=community");
   }
 });

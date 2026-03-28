@@ -1,4 +1,5 @@
 import { getUserProfile, getPetProfile, getPetList, UserProfile, PetProfile } from "../../services/user"
+import { navigateToWithTransition } from "../../utils/transition"
 
 Page({
   data: {
@@ -52,7 +53,7 @@ Page({
     wx.navigateTo({ url: "/pages/my/edit-profile/index" })
   },
   goMyProfile() {
-    wx.navigateTo({ url: "/pages/user-profile/index" })
+    navigateToWithTransition("/pages/user-profile/index")
   },
   goFavorites() {
     wx.navigateTo({ url: "/pages/my/favorites/index" })

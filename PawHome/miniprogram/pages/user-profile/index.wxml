@@ -1,4 +1,4 @@
-<view class="user-profile-page">
+<view class="user-profile-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <!-- 自定义导航栏 -->
   <view class="nav-bar" style="padding-top: {{safeTop}}px;">
     <view class="nav-back" bindtap="goBack">

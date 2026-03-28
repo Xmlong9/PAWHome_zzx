@@ -1,4 +1,10 @@
 import { IMMessage, listMessages, markConversationRead, sendTextMessage } from "../../services/im"
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition"
 
 type ChatMessage = IMMessage & { from: "me" | "them" }
 
@@ -18,7 +24,11 @@ Page({
     canSend: false,
     keyboardHeight: 0,
     inputBarHeight: 0,
-    scrollIntoView: 'bottom-anchor'
+    scrollIntoView: 'bottom-anchor',
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   async onLoad(options: { id?: string; peerId?: string; nickname?: string; avatarUrl?: string }) {
@@ -44,11 +54,20 @@ Page({
       inputBarHeight: this.rpxToPx(104, sys)
     })
 
+    initPageTransition(this)
     await this.loadMessages()
     if (conversationId) {
       await markConversationRead(conversationId)
     }
     this.scrollToBottom()
+  },
+
+  onReady() {
+    enterPageTransition(this)
+  },
+
+  onShow() {
+    reenterPageIfNeeded(this)
   },
 
   rpxToPx(rpx: number, sys: WechatMiniprogram.SystemInfo) {
@@ -70,7 +89,7 @@ Page({
   goBack() {
     const pages = getCurrentPages()
     if (pages.length > 1) {
-      wx.navigateBack()
+      navigateBackWithTransition()
       return
     }
     wx.switchTab({ url: '/pages/community/index' })

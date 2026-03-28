@@ -4,6 +4,13 @@ import {
   listNotifications,
   markNotificationsRead
 } from "../../services/notifications"
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition"
 
 type LikeMsg = {
   id: string
@@ -46,7 +53,11 @@ Page({
     dmList: [] as DMMsg[],
     hasUnreadLike: false,
     hasUnreadComment: false,
-    hasUnreadDm: false
+    hasUnreadDm: false,
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   async onLoad() {
@@ -63,10 +74,16 @@ Page({
       commentList: []
     })
 
+    initPageTransition(this)
     await this.refreshAll()
   },
 
+  onReady() {
+    enterPageTransition(this)
+  },
+
   async onShow() {
+    reenterPageIfNeeded(this)
     await this.refreshAll()
   },
 
@@ -169,7 +186,7 @@ Page({
   goBack() {
     const pages = getCurrentPages()
     if (pages.length > 1) {
-      wx.navigateBack()
+      navigateBackWithTransition()
       return
     }
     wx.switchTab({ url: '/pages/community/index' })
@@ -188,14 +205,10 @@ Page({
     if (type === 'dm') {
       const dm = item as DMMsg
       // 跳转时一定要带上 id (conversationId)，peerId，nickname 和 avatarUrl，保证两边一致
-      wx.navigateTo({
-        url: `/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`
-      })
+      navigateToWithTransition(`/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`)
     } else {
       if (item.postId) {
-        wx.navigateTo({
-          url: `/pages/post-detail/index?id=${item.postId}`
-        })
+        navigateToWithTransition(`/pages/post-detail/index?id=${item.postId}`)
       }
     }
   },

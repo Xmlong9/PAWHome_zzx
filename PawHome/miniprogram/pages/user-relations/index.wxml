@@ -1,4 +1,4 @@
-<view class="relations-page">
+<view class="relations-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="tabs">
     <view class="tab {{currentType === 'following' ? 'active' : ''}}" data-type="following" bindtap="switchType">关注</view>
     <view class="tab {{currentType === 'followers' ? 'active' : ''}}" data-type="followers" bindtap="switchType">粉丝</view>

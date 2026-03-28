@@ -1,5 +1,12 @@
 import { followUser, getUserProfile, unfollowUser, UserProfile } from "../../services/user";
 import { Post, getUserFavoritePosts, getUserLikedPosts, getUserPosts } from "../../services/posts";
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition";
 
 Page({
   data: {
@@ -18,7 +25,11 @@ Page({
     likes: [] as Post[], // 假设复用 Post 类型
     favorites: [] as Post[],
     
-    loading: false
+    loading: false,
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   onLoad(options: any) {
@@ -29,9 +40,15 @@ Page({
     });
     
     this.initPage();
+    initPageTransition(this)
+  },
+
+  onReady() {
+    enterPageTransition(this)
   },
 
   onShow() {
+    reenterPageIfNeeded(this)
     const needRefresh = wx.getStorageSync("user_profile_need_refresh")
     if (!needRefresh) return
     wx.setStorageSync("user_profile_need_refresh", false)
@@ -101,7 +118,7 @@ Page({
   goBack() {
     const pages = getCurrentPages();
     if (pages.length > 1) {
-      wx.navigateBack();
+      navigateBackWithTransition();
     } else {
       wx.switchTab({ url: '/pages/home/index' });
     }
@@ -131,9 +148,7 @@ Page({
     const avatarUrl = encodeURIComponent(this.data.userInfo.avatarUrl);
     
     // 跳转到聊天页面，带上对方的关键信息以便正确展示
-    wx.navigateTo({
-      url: `/pages/chat/index?peerId=${peerId}&nickname=${nickname}&avatarUrl=${avatarUrl}`
-    });
+    navigateToWithTransition(`/pages/chat/index?peerId=${peerId}&nickname=${nickname}&avatarUrl=${avatarUrl}`);
   },
 
   switchTab(e: any) {
@@ -150,7 +165,7 @@ Page({
 
   goPostDetail(e: any) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/post-detail/index?id=${id}` });
+    navigateToWithTransition(`/pages/post-detail/index?id=${id}`);
   },
 
   openRelations(e: any) {
@@ -158,6 +173,6 @@ Page({
     if (type !== "following" && type !== "followers") return
     const userId = this.data.userId || this.data.userInfo?.id
     if (!userId) return
-    wx.navigateTo({ url: `/pages/user-relations/index?userId=${encodeURIComponent(userId)}&type=${type}` })
+    navigateToWithTransition(`/pages/user-relations/index?userId=${encodeURIComponent(userId)}&type=${type}`)
   }
 });

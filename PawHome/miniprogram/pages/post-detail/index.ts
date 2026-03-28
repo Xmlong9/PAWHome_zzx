@@ -25,6 +25,13 @@ import { followUser, unfollowUser } from "../../services/user";
 import { createConversation, sendMessage } from "../../services/im";
 import { trackEvent } from "../../services/analytics";
 import { formatTimeAgo } from "../../utils/date";
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition";
 
 const app = getApp<IAppOption>();
 
@@ -59,6 +66,10 @@ Page({
     inputValue: "",
     inputFocus: false,
     replyTo: null as Comment | null, // The comment being replied to
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   onLoad(options: { id: string }) {
@@ -77,6 +88,16 @@ Page({
       safeAreaBottom: sysInfo.screenHeight - sysInfo.safeArea.bottom,
       mediaHeight: Math.round(windowWidth * 0.72)
     });
+
+    initPageTransition(this)
+  },
+
+  onReady() {
+    enterPageTransition(this)
+  },
+
+  onShow() {
+    reenterPageIfNeeded(this)
   },
 
   onTabChange(e: WechatMiniprogram.TouchEvent) {
@@ -99,7 +120,7 @@ Page({
   goBack() {
     const pages = getCurrentPages();
     if (pages.length > 1) {
-      wx.navigateBack();
+      navigateBackWithTransition();
     } else {
       wx.switchTab({
         url: '/pages/home/index'
@@ -110,9 +131,7 @@ Page({
   goUserProfile(e: WechatMiniprogram.TouchEvent) {
     const userId = e.currentTarget.dataset.userid;
     if (userId) {
-      wx.navigateTo({
-        url: `/pages/user-profile/index?id=${userId}`
-      });
+      navigateToWithTransition(`/pages/user-profile/index?id=${userId}`);
     }
   },
 

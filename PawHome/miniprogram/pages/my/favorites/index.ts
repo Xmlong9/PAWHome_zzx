@@ -1,10 +1,27 @@
 import { getUserFavoritePosts, Post } from "../../../services/posts"
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../../utils/transition"
 
 Page({
   data: {
-    list: [] as any[]
+    list: [] as any[],
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
+  },
+  onLoad() {
+    initPageTransition(this)
+  },
+  onReady() {
+    enterPageTransition(this)
   },
   async onShow() {
+    reenterPageIfNeeded(this)
     try {
       const userId = wx.getStorageSync("userId") as string
       const res = await getUserFavoritePosts(userId, 1, 20)
@@ -15,6 +32,6 @@ Page({
   },
   goDetail(e: any) {
     const { id } = e.currentTarget.dataset
-    wx.navigateTo({ url: `/pages/post-detail/index?id=${id}` })
+    navigateToWithTransition(`/pages/post-detail/index?id=${id}`)
   }
 })

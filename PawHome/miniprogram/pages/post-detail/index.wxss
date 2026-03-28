@@ -280,24 +280,51 @@
 }
 
 .share-user.selected .share-user-avatar {
-  border-color: #ff2442;
+  border-color: #FF9E59;
   transform: scale(0.95);
+  opacity: 0.72;
 }
 
-.check-icon {
+.check-icon, .uncheck-icon {
   position: absolute;
   right: -4rpx;
   bottom: -4rpx;
-  width: 32rpx;
-  height: 32rpx;
-  background: #ff2442;
-  color: #fff;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
-  font-size: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2rpx solid #fff;
+  background: transparent;
+}
+
+.uncheck-icon {
+  background: #fff;
+}
+
+.check-icon-inner {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: #FF9E59;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-icon-mark {
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.uncheck-circle {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  border: 2rpx solid #e0e0e0;
+  box-sizing: border-box;
 }
 
 .share-user-name {
@@ -335,12 +362,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: transparent;
-  padding: 0;
-  margin: 0;
-  line-height: normal;
-  width: 110rpx;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: normal !important;
+  width: 110rpx !important;
   flex-shrink: 0;
+  font-weight: normal !important;
 }
 
 .action-btn::after {
@@ -362,12 +390,10 @@
   background: #fff;
 }
 
-.action-icon-wrap.wechat {
-  background: #07c160;
-}
-
-.action-icon-wrap.timeline {
-  background: #07c160;
+.action-icon-wrap.wechat .a-icon,
+.action-icon-wrap.timeline .a-icon {
+  width: 100rpx;
+  height: 100rpx;
 }
 
 .a-icon {
@@ -404,24 +430,11 @@
   gap: 24rpx;
 }
 
-.btn-group {
-  flex: 1;
-  height: 88rpx;
-  border-radius: 44rpx;
-  border: 2rpx solid #ff2442;
-  color: #ff2442;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  font-weight: 500;
-}
-
 .btn-single {
   flex: 1;
   height: 88rpx;
   border-radius: 44rpx;
-  background: #ff2442;
+  background: #FF9E59;
   color: #fff;
   display: flex;
   align-items: center;

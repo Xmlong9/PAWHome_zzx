@@ -48,7 +48,9 @@
             <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap" wx:if="{{!isSelfPost}}">
               {{post.isFollowed ? '已关注' : '+ 关注'}}
             </view>
-            <view class="manage-btn" bindtap="onPostActionTap">…</view>
+            <view class="manage-btn" bindtap="onPostActionTap">
+              <image class="a-icon" src="/assets/icons/community/ellipsis.svg" mode="aspectFit" style="width: 32rpx; height: 32rpx;"></image>
+            </view>
           </view>
 
           <view class="content-text">
@@ -118,13 +120,20 @@
         <view class="share-users">
           <block wx:for="{{shareTargets}}" wx:key="id">
             <view
-              class="share-user {{selectedShareIds.includes(item.id)?'selected':''}}"
+              class="share-user {{selectedShareIds.includes(item.id + '')?'selected':''}}"
               bindtap="onToggleShareTarget"
               data-id="{{item.id}}"
             >
               <view class="avatar-wrap">
                 <image class="share-user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
-                <view class="check-icon" wx:if="{{selectedShareIds.includes(item.id)}}">✓</view>
+                <view class="check-icon" wx:if="{{selectedShareIds.includes(item.id + '')}}">
+                  <view class="check-icon-inner">
+                    <text class="check-icon-mark">✓</text>
+                  </view>
+                </view>
+                <view class="uncheck-icon" wx:else>
+                  <view class="uncheck-circle"></view>
+                </view>
               </view>
               <text class="share-user-name">{{item.nickname}}</text>
               <text class="share-user-status" wx:if="{{item.group==='mutual'}}">互关好友</text>
@@ -185,8 +194,7 @@
         <text class="placeholder">跟朋友说点什么吧.....</text>
       </view>
       <view class="send-btns">
-        <view class="btn-group" bindtap="onSendInternalShare">建群并发送</view>
-        <view class="btn-single" bindtap="onSendInternalShare">分别发送</view>
+        <view class="btn-single" bindtap="onSendInternalShare">发送</view>
       </view>
     </view>
     

@@ -51,6 +51,7 @@ def register_routes(bp) -> None:
             q = (
                 db.session.query(Post, view_count.label("viewCount"))
                 .outerjoin(PostHistory, PostHistory.post_id == Post.id)
+                .filter(Post.visibility == "public")
                 .group_by(Post.id)
                 .order_by(
                     view_count.desc(),
@@ -62,7 +63,7 @@ def register_routes(bp) -> None:
             rows = q.offset((page - 1) * page_size).limit(page_size).all()
             items = [r[0] for r in rows]
         else:
-            q = Post.query.order_by(Post.created_at.desc())
+            q = Post.query.filter(Post.visibility == "public").order_by(Post.created_at.desc())
             items = q.offset((page - 1) * page_size).limit(page_size).all()
         cards = []
         for p in items:

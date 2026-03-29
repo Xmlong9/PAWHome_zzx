@@ -31,9 +31,9 @@ Page({
     this.loadPosts(true);
   },
 
-  onShow() {
+  async onShow() {
     this.setData({ showBlob: true });
-    this.refreshMessageBadge()
+    this.startMessageBadgePolling()
     const needRefresh = wx.getStorageSync("community_need_refresh")
     if (needRefresh) {
       wx.setStorageSync("community_need_refresh", false)
@@ -43,6 +43,11 @@ Page({
 
   onHide() {
     this.setData({ showBlob: false });
+    this.stopMessageBadgePolling()
+  },
+
+  onUnload() {
+    this.stopMessageBadgePolling()
   },
 
   onPullDownRefresh() {
@@ -151,7 +156,26 @@ Page({
     navigateToWithTransition('/pages/messages/index');
   },
 
+  startMessageBadgePolling() {
+    const self = this as any
+    if (self._badgeTimer) clearInterval(self._badgeTimer)
+    this.refreshMessageBadge()
+    self._badgeTimer = setInterval(() => {
+      this.refreshMessageBadge()
+    }, 15000)
+  },
+
+  stopMessageBadgePolling() {
+    const self = this as any
+    if (!self._badgeTimer) return
+    clearInterval(self._badgeTimer)
+    self._badgeTimer = null
+  },
+
   async refreshMessageBadge() {
+    const self = this as any
+    if (self._refreshingBadge) return
+    self._refreshingBadge = true
     try {
       const [summary, conversations] = await Promise.all([
         getNotificationUnreadSummary(),
@@ -164,6 +188,8 @@ Page({
     } catch {
       const cached = Number(wx.getStorageSync("community_message_unread_total") || 0)
       this.setData({ hasUnreadMessage: cached > 0 })
+    } finally {
+      self._refreshingBadge = false
     }
   },
 

@@ -351,6 +351,22 @@ class IMConversation(db.Model, TimestampMixin):
     )
 
 
+class IMConversationRead(db.Model, TimestampMixin):
+    __tablename__ = "im_conversation_reads"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    conversation_id = db.Column(
+        db.String(36), db.ForeignKey("im_conversations.id"), index=True, nullable=False
+    )
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
+    last_read_at = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "user_id", name="uq_im_conversation_read"),
+        Index("ix_im_conversation_reads_conv_user", "conversation_id", "user_id"),
+    )
+
+
 class IMMessage(db.Model, TimestampMixin):
     __tablename__ = "im_messages"
 

@@ -13,6 +13,7 @@ from flask import current_app, g, request
 
 from ...auth import require_auth
 from ...extensions import db
+from sqlalchemy import and_, or_
 from ...models import (
     Comment,
     CommentLike,
@@ -58,6 +59,19 @@ def _ensure_comment_pin_table() -> None:
 
 def _ensure_post_pin_table() -> None:
     PostPin.__table__.create(bind=db.engine, checkfirst=True)
+
+
+def _can_view_post(p: Post, me: User) -> bool:
+    if p.author_id == me.id:
+        return True
+    if p.visibility == "public":
+        return True
+    if p.visibility == "followers":
+        return (
+            Follow.query.filter_by(follower_id=me.id, followee_id=p.author_id).first()
+            is not None
+        )
+    return False
 
 
 def _post_to_dict(p: Post, me_id: str | None, include_view_count: bool = False) -> dict:
@@ -210,16 +224,22 @@ def register_routes(bp) -> None:
         post_type = request.args.get("type")
         tab = request.args.get("tab")
 
+        followee_rows = Follow.query.filter_by(follower_id=me.id).all()
+        followee_ids = [x.followee_id for x in followee_rows]
+
         base_q = Post.query
         if tab == "following":
-            followee_rows = Follow.query.filter_by(follower_id=me.id).all()
-            followee_ids = [x.followee_id for x in followee_rows]
             if followee_ids:
                 base_q = base_q.filter(Post.author_id.in_(followee_ids))
             else:
                 base_q = base_q.filter(Post.author_id == "__none__")
         if isinstance(post_type, str) and post_type and post_type != "all":
             base_q = base_q.filter_by(post_type=post_type)
+
+        allowed = [Post.author_id == me.id, Post.visibility == "public"]
+        if followee_ids:
+            allowed.append(and_(Post.visibility == "followers", Post.author_id.in_(followee_ids)))
+        base_q = base_q.filter(or_(*allowed))
 
         total = base_q.count()
 
@@ -275,7 +295,17 @@ def register_routes(bp) -> None:
         me: User = g.current_user
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
-        q = Post.query.filter_by(author_id=user_id).order_by(Post.created_at.desc())
+        q = Post.query.filter_by(author_id=user_id)
+        if me.id != user_id:
+            is_following = (
+                Follow.query.filter_by(follower_id=me.id, followee_id=user_id).first()
+                is not None
+            )
+            if is_following:
+                q = q.filter(Post.visibility.in_(["public", "followers"]))
+            else:
+                q = q.filter(Post.visibility == "public")
+        q = q.order_by(Post.created_at.desc())
         total = q.count()
         items = q.offset((page - 1) * page_size).limit(page_size).all()
         include_view_count = me.id == user_id
@@ -288,6 +318,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
 
         h = PostHistory.query.filter_by(user_id=me.id, post_id=p.id).first()
         if h is None:
@@ -305,6 +337,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if p.author_id != me.id:
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         if not p.media_json:
             return fail(code="BAD_REQUEST", message="post has no media", status_code=400)
         try:
@@ -366,12 +400,16 @@ def register_routes(bp) -> None:
                 [str(x) for x in images if isinstance(x, (str, int, float))]
             )
 
+        visibility = data.get("visibility")
+        if not isinstance(visibility, str) or visibility not in {"public", "followers", "private"}:
+            visibility = "public"
+
         p = Post(
             author_id=me.id,
             content=content.strip(),
             media_json=media_json,
             location_name=(data.get("location") if isinstance(data.get("location"), str) else None),
-            visibility=(data.get("visibility") if isinstance(data.get("visibility"), str) else "public"),
+            visibility=visibility,
             post_type=(data.get("type") if isinstance(data.get("type"), str) else "all"),
         )
         db.session.add(p)
@@ -460,8 +498,11 @@ def register_routes(bp) -> None:
     @require_auth
     def share_targets(post_id: str):
         me: User = g.current_user
-        if Post.query.get(post_id) is None:
+        p = Post.query.get(post_id)
+        if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
 
         following_rows = Follow.query.filter_by(follower_id=me.id).all()
         follower_rows = Follow.query.filter_by(followee_id=me.id).all()
@@ -496,8 +537,11 @@ def register_routes(bp) -> None:
     @require_auth
     def share_link(post_id: str):
         me: User = g.current_user
-        if Post.query.get(post_id) is None:
+        p = Post.query.get(post_id)
+        if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         trace = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
         path = f"/pages/post-detail/index?id={post_id}&from={me.id}&trace={trace}"
         short_url = f"https://pawhome.app/p/{post_id[:8]}?u={me.id[:8]}&t={trace}"
@@ -510,6 +554,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         if PostLike.query.filter_by(user_id=me.id, post_id=post_id).first() is None:
             db.session.add(PostLike(user_id=me.id, post_id=post_id))
             p.like_count += 1
@@ -533,6 +579,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         deleted = PostLike.query.filter_by(user_id=me.id, post_id=post_id).delete()
         if deleted:
             p.like_count = max(0, p.like_count - deleted)
@@ -546,6 +594,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         if PostFavorite.query.filter_by(user_id=me.id, post_id=post_id).first() is None:
             db.session.add(PostFavorite(user_id=me.id, post_id=post_id))
             p.favorite_count += 1
@@ -569,6 +619,8 @@ def register_routes(bp) -> None:
         p = Post.query.get(post_id)
         if p is None:
             return fail(code="NOT_FOUND", message="post not found", status_code=404)
+        if not _can_view_post(p, me):
+            return fail(code="FORBIDDEN", message="forbidden", status_code=403)
         deleted = PostFavorite.query.filter_by(user_id=me.id, post_id=post_id).delete()
         if deleted:
             p.favorite_count = max(0, p.favorite_count - deleted)

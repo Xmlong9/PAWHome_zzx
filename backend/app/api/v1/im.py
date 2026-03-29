@@ -6,7 +6,7 @@ from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import IMConversation, IMMessage, User
+from ...models import IMConversation, IMConversationRead, IMMessage, User
 from ...responses import fail, ok
 
 
@@ -47,6 +47,16 @@ def register_routes(bp) -> None:
                 .order_by(IMMessage.created_at.desc())
                 .first()
             )
+            read_state = IMConversationRead.query.filter_by(
+                conversation_id=c.id, user_id=me.id
+            ).first()
+            last_read_at = read_state.last_read_at if read_state else None
+            unread_q = IMMessage.query.filter(IMMessage.conversation_id == c.id).filter(
+                IMMessage.sender_id != me.id
+            )
+            if last_read_at is not None:
+                unread_q = unread_q.filter(IMMessage.created_at > last_read_at)
+            unread_count = unread_q.count()
             result.append(
                 {
                     "id": c.id,
@@ -55,7 +65,7 @@ def register_routes(bp) -> None:
                     "peerAvatarUrl": peer.avatar_url if peer else "",
                     "lastMessage": last.content if last else "",
                     "lastMessageAt": _ms(last.created_at if last else c.last_message_at),
-                    "unreadCount": 0,
+                    "unreadCount": unread_count,
                 }
             )
 
@@ -127,4 +137,15 @@ def register_routes(bp) -> None:
         conv = IMConversation.query.get(conversation_id)
         if conv is None or me.id not in {conv.user_a_id, conv.user_b_id}:
             return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
+        read_state = IMConversationRead.query.filter_by(
+            conversation_id=conversation_id, user_id=me.id
+        ).first()
+        if read_state is None:
+            read_state = IMConversationRead(
+                conversation_id=conversation_id, user_id=me.id, last_read_at=datetime.utcnow()
+            )
+            db.session.add(read_state)
+        else:
+            read_state.last_read_at = datetime.utcnow()
+        db.session.commit()
         return ok({"ok": True})

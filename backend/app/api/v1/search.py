@@ -5,7 +5,9 @@ from flask import g, request
 from ...auth import require_auth
 import json
 
-from ...models import Post, ShopProduct, User
+from sqlalchemy import and_, or_
+
+from ...models import Follow, Post, ShopProduct, User
 from ...responses import ok
 
 
@@ -21,13 +23,23 @@ def register_routes(bp) -> None:
     @bp.get("/search/posts")
     @require_auth
     def search_posts():
-        _me: User = g.current_user
+        me: User = g.current_user
         q = (request.args.get("q") or "").strip()
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
+
+        followee_rows = Follow.query.filter_by(follower_id=me.id).all()
+        followee_ids = [x.followee_id for x in followee_rows]
+
         query = Post.query
         if q:
             query = query.filter(Post.content.contains(q))
+
+        allowed = [Post.author_id == me.id, Post.visibility == "public"]
+        if followee_ids:
+            allowed.append(and_(Post.visibility == "followers", Post.author_id.in_(followee_ids)))
+        query = query.filter(or_(*allowed))
+
         query = query.order_by(Post.created_at.desc())
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()

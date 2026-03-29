@@ -687,6 +687,85 @@
 **实现要点**
 - 移除聊天页消息列表的空态节点，仅保留消息列表与输入栏。
 
+---
+
+## 私信未读数与社区红点提示
+
+**目的**
+- 当有人给我发私信时，社区页左上角信封图标能出现红点提示未读。
+- 打开会话后能正确清空未读，避免红点长期不消失。
+
+**入口**
+- 社区页：`PawHome/miniprogram/pages/community/index`
+- 消息页（私信列表）：`PawHome/miniprogram/pages/messages/index`
+- 聊天页（会话已读）：`PawHome/miniprogram/pages/chat/index`
+- 后端会话列表：`GET /im/conversations`
+- 后端标记已读：`POST /im/conversations/<conversation_id>/read`
+
+**数据流/状态**
+- 后端新增会话已读状态表：`IMConversationRead(conversation_id, user_id, last_read_at)`
+- 会话列表返回 `unreadCount`：
+  - 统计该用户在该会话中 `created_at > last_read_at` 且 `sender_id != user_id` 的消息条数
+- 前端红点来源：
+  - 社区页聚合 `notifications/unread-summary.total + 私信会话 unreadCount 总和`，大于 0 则显示红点
+
+**关键分支**
+- 进入聊天页/轮询收到对端新消息：调用 `markConversationRead(conversationId)` 写入 `last_read_at`，从而清空未读。
+- 社区页可见时启用轻量轮询刷新红点（默认 15s），避免停留在社区页时红点不更新。
+
+**边界条件**
+- 服务端尚未建表：启动后端时执行 `db.create_all()` 自动补齐缺失表（不影响已有数据）。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/community/index.ts`
+  - `PawHome/miniprogram/services/im.ts`
+  - `PawHome/miniprogram/pages/chat/index.ts`
+- 后端：
+  - `backend/app/models.py`
+  - `backend/app/api/v1/im.py`
+  - `backend/run.py`
+
+### 变更 2026-03-29：不自动建表（避免改动真实数据库）
+
+**目的**
+- 避免后端启动时对真实数据库执行任何自动建表写入。
+
+**实现要点**
+- 移除 `backend/run.py` 中的 `db.create_all()`；数据库结构变更改为手动执行初始化脚本或迁移流程。
+
+---
+
+## 帖子可见性（全部可见/仅关注可见/仅自己可见）
+
+**目的**
+- 让发帖时设置的可见性真实生效：仅自己可见的帖子不应被其他用户在列表/主页/搜索/详情中看到。
+
+**可见性规则**
+- `public`：所有登录用户可见。
+- `followers`：仅作者本人 + 关注作者的用户可见。
+- `private`：仅作者本人可见。
+
+**入口**
+- 列表：`GET /posts`
+- 用户主页帖子列表：`GET /users/<user_id>/posts`
+- 详情：`GET /posts/<post_id>`
+- 首页/社区投送：`GET /feeds/community`
+- 搜索：`GET /search/posts`
+
+**实现要点**
+- 后端读取侧统一过滤：
+  - 始终允许作者本人看到自己的所有帖子
+  - 其他用户只能看到 `public`，以及在已关注作者时看到 `followers`
+  - `private`（及未知 visibility 值）对非作者不可见
+- 交互接口（点赞/收藏/分享等）在读取帖子时同样做可见性校验，避免通过已知 id 绕过。
+
+**相关文件**
+- 后端：
+  - `backend/app/api/v1/posts.py`
+  - `backend/app/api/v1/feeds.py`
+  - `backend/app/api/v1/search.py`
+
 #### 回退 2026-03-29：恢复聊天页空态文案
 
 **说明**

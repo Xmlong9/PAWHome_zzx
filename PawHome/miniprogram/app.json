@@ -17,6 +17,7 @@
     "pages/shop/order/logistics/index",
     "pages/shop/recharge",
     "pages/shop/customer-service",
+    "pages/shop/customer-service-chat/index",
     "pages/shop/favorites",
     "pages/service/index",
     "pages/my/index",

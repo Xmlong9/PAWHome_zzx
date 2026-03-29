@@ -58,15 +58,29 @@ def main() -> None:
                     )
                 )
 
-        if RechargeOption.query.count() == 0:
-            options = [
-                ("r1", 1000, "¥10"),
-                ("r2", 3000, "¥30"),
-                ("r3", 5000, "¥50"),
-                ("r4", 10000, "¥100"),
-            ]
-            for i, (oid, cents, label) in enumerate(options):
-                db.session.add(RechargeOption(id=oid, amount_cents=cents, bonus_cents=0, label=label, sort=i))
+        options = [
+            ("r1", 3000, 0, "¥30"),
+            ("r2", 6800, 800, "¥68"),
+            ("r3", 12800, 2000, "¥128"),
+            ("r4", 32800, 6800, "¥328"),
+        ]
+        for i, (oid, amount_cents, bonus_cents, label) in enumerate(options):
+            row = RechargeOption.query.get(oid)
+            if row is None:
+                db.session.add(
+                    RechargeOption(
+                        id=oid,
+                        amount_cents=amount_cents,
+                        bonus_cents=bonus_cents,
+                        label=label,
+                        sort=i,
+                    )
+                )
+            else:
+                row.amount_cents = amount_cents
+                row.bonus_cents = bonus_cents
+                row.label = label
+                row.sort = i
 
         if CustomerServiceFaq.query.count() == 0:
             faqs = [

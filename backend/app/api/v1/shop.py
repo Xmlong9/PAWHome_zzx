@@ -12,6 +12,8 @@ from ...models import (
     CartItem,
     CustomerServiceFaq,
     RechargeOption,
+    SupportConversation,
+    SupportMessage,
     ShopFavorite,
     ShopOrder,
     ShopOrderEvent,
@@ -49,6 +51,46 @@ def _cents(amount) -> int:
     if isinstance(amount, (int, float)):
         return int(round(float(amount) * 100))
     return 0
+
+
+def _ensure_recharge_options_seeded() -> None:
+    options = [
+        ("r1", 3000, 0, "¥30"),
+        ("r2", 6800, 800, "¥68"),
+        ("r3", 12800, 2000, "¥128"),
+        ("r4", 32800, 6800, "¥328"),
+    ]
+    changed = False
+    for i, (oid, amount_cents, bonus_cents, label) in enumerate(options):
+        row = RechargeOption.query.get(oid)
+        if row is None:
+            db.session.add(
+                RechargeOption(
+                    id=oid,
+                    amount_cents=amount_cents,
+                    bonus_cents=bonus_cents,
+                    label=label,
+                    sort=i,
+                )
+            )
+            changed = True
+            continue
+
+        next_sort = i
+        if (
+            int(row.amount_cents or 0) != int(amount_cents)
+            or int(row.bonus_cents or 0) != int(bonus_cents)
+            or (row.label or "") != label
+            or int(row.sort or 0) != int(next_sort)
+        ):
+            row.amount_cents = amount_cents
+            row.bonus_cents = bonus_cents
+            row.label = label
+            row.sort = next_sort
+            changed = True
+
+    if changed:
+        db.session.commit()
 
 
 def _product_to_dict(p: ShopProduct, favorite: bool) -> dict:
@@ -92,6 +134,11 @@ def _address_to_dict(a: Address) -> dict:
 
 def _ensure_order_event_table():
     ShopOrderEvent.__table__.create(db.engine, checkfirst=True)
+
+
+def _ensure_support_tables():
+    SupportConversation.__table__.create(db.engine, checkfirst=True)
+    SupportMessage.__table__.create(db.engine, checkfirst=True)
 
 
 def _add_order_event(order_id: str, event_type: str, at: datetime, message: str | None = None):
@@ -504,6 +551,7 @@ def register_routes(bp) -> None:
     @bp.get("/shop/recharge/options")
     @require_auth
     def list_recharge_options():
+        _ensure_recharge_options_seeded()
         options = RechargeOption.query.order_by(RechargeOption.sort.asc()).all()
         return ok(
             {
@@ -528,10 +576,20 @@ def register_routes(bp) -> None:
         option_id = data.get("optionId")
         cents = 0
         if isinstance(option_id, str) and option_id:
+            _ensure_recharge_options_seeded()
             opt = RechargeOption.query.get(option_id)
             if opt is None:
-                return fail(code="NOT_FOUND", message="option not found", status_code=404)
-            cents = int(opt.amount_cents or 0) + int(opt.bonus_cents or 0)
+                fallback = {
+                    "r1": 3000,
+                    "r2": 6800 + 800,
+                    "r3": 12800 + 2000,
+                    "r4": 32800 + 6800,
+                }.get(option_id)
+                if fallback is None:
+                    return fail(code="NOT_FOUND", message="option not found", status_code=404)
+                cents = int(fallback)
+            else:
+                cents = int(opt.amount_cents or 0) + int(opt.bonus_cents or 0)
         else:
             amount = data.get("amount")
             cents = _cents(amount)
@@ -550,6 +608,135 @@ def register_routes(bp) -> None:
     def list_faqs():
         faqs = CustomerServiceFaq.query.order_by(CustomerServiceFaq.sort.asc()).all()
         return ok({"list": [{"id": f.id, "q": f.question, "a": f.answer} for f in faqs]})
+
+    @bp.post("/shop/support/conversations")
+    @require_auth
+    def create_support_conversation():
+        _ensure_support_tables()
+        me: User = g.current_user
+        data = request.get_json(silent=True) or {}
+        mode = data.get("mode")
+        if mode not in {"smart", "human"}:
+            mode = "smart"
+
+        conv = (
+            SupportConversation.query.filter_by(user_id=me.id, channel="shop", mode=mode)
+            .order_by(SupportConversation.updated_at.desc())
+            .first()
+        )
+        if conv is None or conv.status != "open":
+            conv = SupportConversation(user_id=me.id, channel="shop", mode=mode, status="open")
+            db.session.add(conv)
+            db.session.commit()
+
+        return ok(
+            {
+                "id": conv.id,
+                "mode": conv.mode,
+                "status": conv.status,
+                "createdAt": _ms(conv.created_at),
+                "lastMessageAt": _ms(conv.last_message_at or conv.updated_at),
+            }
+        )
+
+    @bp.get("/shop/support/conversations")
+    @require_auth
+    def list_support_conversations():
+        _ensure_support_tables()
+        me: User = g.current_user
+        rows = (
+            SupportConversation.query.filter_by(user_id=me.id, channel="shop")
+            .order_by(SupportConversation.updated_at.desc())
+            .limit(50)
+            .all()
+        )
+        return ok(
+            {
+                "list": [
+                    {
+                        "id": c.id,
+                        "mode": c.mode,
+                        "status": c.status,
+                        "createdAt": _ms(c.created_at),
+                        "lastMessageAt": _ms(c.last_message_at or c.updated_at),
+                    }
+                    for c in rows
+                ]
+            }
+        )
+
+    @bp.get("/shop/support/conversations/<cid>/messages")
+    @require_auth
+    def list_support_messages(cid: str):
+        _ensure_support_tables()
+        me: User = g.current_user
+        conv = SupportConversation.query.get(cid)
+        if conv is None or conv.user_id != me.id:
+            return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
+        rows = (
+            SupportMessage.query.filter_by(conversation_id=cid)
+            .order_by(SupportMessage.created_at.asc())
+            .limit(200)
+            .all()
+        )
+        return ok(
+            {
+                "list": [
+                    {
+                        "id": m.id,
+                        "role": m.sender_role,
+                        "type": m.message_type,
+                        "content": m.content,
+                        "createdAt": _ms(m.created_at),
+                    }
+                    for m in rows
+                ]
+            }
+        )
+
+    def _smart_reply(text: str) -> str:
+        t = (text or "").strip()
+        if not t:
+            return "请描述下你的问题，我来帮你看看。"
+        faqs = CustomerServiceFaq.query.order_by(CustomerServiceFaq.sort.asc()).all()
+        for f in faqs:
+            if f.question.strip() == t:
+                return f.answer
+        for f in faqs:
+            if t in (f.question or "") or (f.question or "") in t:
+                return f.answer
+        return "我先记下了～如果是订单/退款/地址修改等问题，可以点上方常见问题快速获取答案；也可以转人工客服。"
+
+    @bp.post("/shop/support/conversations/<cid>/messages")
+    @require_auth
+    def send_support_message(cid: str):
+        _ensure_support_tables()
+        me: User = g.current_user
+        conv = SupportConversation.query.get(cid)
+        if conv is None or conv.user_id != me.id:
+            return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
+
+        data = request.get_json(silent=True) or {}
+        content = data.get("content")
+        if not isinstance(content, str) or not content.strip():
+            return fail(code="BAD_REQUEST", message="content required", status_code=400)
+
+        now = _utcnow()
+        db.session.add(
+            SupportMessage(conversation_id=cid, sender_role="user", message_type="text", content=content.strip())
+        )
+        conv.last_message_at = now
+        db.session.commit()
+
+        if conv.mode == "smart":
+            reply = _smart_reply(content)
+            db.session.add(
+                SupportMessage(conversation_id=cid, sender_role="bot", message_type="text", content=reply)
+            )
+            conv.last_message_at = _utcnow()
+            db.session.commit()
+
+        return ok({"ok": True})
 
     @bp.get("/user/addresses")
     @require_auth

@@ -23,8 +23,14 @@ Page({
       await payOrderMock(id)
       wx.showToast({ title: "支付成功", icon: "success" })
       wx.redirectTo({ url: `/pages/shop/order/list?highlight=${encodeURIComponent(id)}&paid=1` })
-    } catch {
-      wx.showToast({ title: "支付失败", icon: "none" })
+    } catch (error) {
+      const msg = (error as any)?.message as string | undefined
+      if (msg === "INSUFFICIENT_BALANCE") {
+        wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+        wx.navigateTo({ url: "/pages/shop/recharge" })
+      } else {
+        wx.showToast({ title: "支付失败", icon: "none" })
+      }
     } finally {
       wx.hideLoading()
     }

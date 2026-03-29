@@ -76,6 +76,134 @@
 
 ---
 
+## 商城-余额充值与余额支付（演示版）
+
+**目的**
+- 提供可演示的“余额充值→余额入库→下单后用余额支付→余额扣减”闭环。
+
+**入口**
+- 充值页：`/pages/shop/recharge`
+- 结算页：`/pages/shop/order/checkout`
+- 订单支付：订单列表/订单详情的“去支付”
+
+**数据流/状态**
+- Mock 模式（演示）：
+  - 钱包余额：`wx.setStorageSync("wallet_balance")`
+  - 钱包流水：`wx.setStorageSync("shop_wallet_txs")`（JSON 数组）
+  - 订单：`wx.setStorageSync("shop_orders")`（JSON 数组）
+- 非 Mock 模式：
+  - 充值：`POST /shop/recharge`
+  - 下单：`POST /shop/order`（包含 `payType`）
+  - 支付：`POST /shop/orders/:id/pay`
+
+**关键分支**
+- 结算页新增 `payType=balance`：
+  - 当 `walletBalance < payableAmount` 时提示“余额不足”并引导去充值。
+- 余额支付在结算页点击“提交订单”后会自动完成支付（演示用），成功后直接跳转订单列表并展示“已支付”提示。
+- 支付时扣减余额（Mock）：
+  - 若订单 `payType=balance` 且余额充足：扣减 `wallet_balance`、写入一条 `shop_wallet_txs`、订单状态变更为 `shipping`。
+  - 若余额不足：支付失败并引导去充值。
+
+**边界条件**
+- 订单非 `pending_pay` 状态不重复扣款。
+- 余额使用小数并统一保留两位。
+
+**相关文件**
+- `PawHome/miniprogram/pages/shop/recharge.ts`
+- `PawHome/miniprogram/pages/shop/order/checkout.ts`
+- `PawHome/miniprogram/pages/shop/order/checkout.wxml`
+- `PawHome/miniprogram/pages/shop/order/list.ts`
+- `PawHome/miniprogram/pages/shop/order/detail/index.ts`
+- `PawHome/miniprogram/services/shop.ts`
+
+### 变更 2026-03-29：充值档位加载失败兜底
+
+**问题现象**
+- 充值页未展示档位列表，点击“立即充值”无响应（实际是档位请求失败导致 `selectedId` 为空）。
+
+**修复方案**
+- 充值页拉取档位增加 `try/catch`，失败时使用内置固定档位兜底。
+- 点击充值时若未选择档位，toast 提示“请选择充值金额”。
+
+### 变更 2026-03-29：后端充值接口 404 自动降级
+
+**问题现象**
+- 在非 Mock 环境下调用 `POST /shop/recharge` 返回 404，导致演示充值失败。
+
+**修复方案**
+- `services/shop.ts` 中 `listRechargeOptions/submitRecharge` 在接口 404/NOT_FOUND 时自动降级到本地 Mock 逻辑：余额写入 `wallet_balance`，并写入一条 `shop_wallet_txs` 记录。
+
+### 变更 2026-03-29：后端自动补齐充值档位（app.db）
+
+**目的**
+- 让充值与余额入库不依赖手动跑 seed 脚本：即使 `recharge_options` 为空也能正常充值。
+
+**实现要点**
+- 后端在 `GET /shop/recharge/options` 与 `POST /shop/recharge` 内部调用 `_ensure_recharge_options_seeded()`：当表为空时自动插入 `r1~r4`。
+- 当请求带 `optionId=r1~r4` 但数据库查不到对应记录时，后端使用内置兜底金额继续入账并写入 `wallets.balance_cents`。
+
+### 变更 2026-03-29：统一充值档位金额（前后端一致）
+
+**问题现象**
+- 小程序展示的档位为 `30/68(+8)/128(+20)/328(+68)`，但后端 `recharge_options` 可能为另一套金额，导致 `optionId` 对应不上、入账金额不一致。
+
+**修复方案**
+- 后端 `recharge_options` 固定为：
+  - `r1=30`、`r2=68+8`、`r3=128+20`、`r4=328+68`（单位分存储到 `amount_cents/bonus_cents`）。
+- 种子脚本与运行时补齐逻辑均采用同一套配置，避免环境差异。
+
+---
+
+## 商城-客服中心（智能客服/人工客服/历史会话）
+
+**目的**
+- 在商店内提供客服能力：
+  - 智能客服：基于 FAQ 自动回复（秒回，演示效果）
+  - 人工客服：进入对话界面，消息入库，后续可在管理端接入回复
+  - 历史会话：展示并可继续进入历史对话
+
+**入口**
+- 客服中心页：`/pages/shop/customer-service`
+- 客服聊天页：`/pages/shop/customer-service-chat/index`
+
+**数据流/状态**
+- FAQ：
+  - 小程序通过 `GET /api/v1/shop/customer-service/faqs` 拉取常见问题列表。
+- 会话/消息入库（SQLite：`backend/instance/app.db`）：
+  - `support_conversations`：按用户维护客服会话（`mode=smart|human`）
+  - `support_messages`：会话消息（`sender_role=user|bot|agent`）
+
+**关键分支**
+- 智能客服（`mode=smart`）：
+  - 用户发送消息后，后端根据 FAQ 精确/模糊匹配生成一条 `bot` 回复并入库。
+- 人工客服（`mode=human`）：
+  - 仅入库用户消息；人工回复由后续“管理端”实现。
+
+**管理端回复（预留）**
+- 人工客服的“回复”不在小程序端生成：
+  - 管理端选择某个 `support_conversations.id` 会话
+  - 写入一条 `support_messages` 记录：
+    - `conversation_id = <会话ID>`
+    - `sender_role = "agent"`
+    - `content = <客服回复文本>`
+- 小程序端进入该会话时通过 `GET /shop/support/conversations/<cid>/messages` 拉取消息，即可看到 `agent` 回复。
+
+**边界条件**
+- 所有客服接口要求登录态（`Authorization: Bearer <token>`）。
+- 会话与消息表使用 `checkfirst=True` 自动建表，避免需要手动迁移。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/shop/customer-service.ts`
+  - `PawHome/miniprogram/pages/shop/customer-service.wxml`
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.ts`
+  - `PawHome/miniprogram/services/support.ts`
+- 后端：
+  - `backend/app/models.py`
+  - `backend/app/api/v1/shop.py`
+
+---
+
 ## 微信登录后昵称头像入库（含头像上传）
 
 **目的**

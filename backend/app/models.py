@@ -320,6 +320,33 @@ class CustomerServiceFaq(db.Model, TimestampMixin):
     sort = db.Column(db.Integer, default=0, nullable=False)
 
 
+class SupportConversation(db.Model, TimestampMixin):
+    __tablename__ = "support_conversations"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
+    channel = db.Column(db.String(32), default="shop", nullable=False)
+    mode = db.Column(db.String(16), default="smart", nullable=False)
+    status = db.Column(db.String(16), default="open", nullable=False)
+    last_message_at = db.Column(db.DateTime, nullable=True)
+
+
+class SupportMessage(db.Model, TimestampMixin):
+    __tablename__ = "support_messages"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    conversation_id = db.Column(
+        db.String(36), db.ForeignKey("support_conversations.id"), index=True, nullable=False
+    )
+    sender_role = db.Column(db.String(16), default="user", nullable=False)
+    message_type = db.Column(db.String(16), default="text", nullable=False)
+    content = db.Column(db.Text, nullable=False)
+
+    __table_args__ = (
+        Index("ix_support_messages_conv_created", "conversation_id", "created_at"),
+    )
+
+
 class ShopOrder(db.Model, TimestampMixin):
     __tablename__ = "shop_orders"
 

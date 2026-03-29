@@ -1,4 +1,4 @@
-import { CheckoutPreview, buildCheckoutPreview, submitOrder, getDefaultAddress, listAddresses, UserAddress } from "../../../services/shop"
+import { CheckoutPreview, buildCheckoutPreview, submitOrder, getDefaultAddress, listAddresses, UserAddress, payOrderMock } from "../../../services/shop"
 
 Page({
   data: {
@@ -6,14 +6,20 @@ Page({
     productId: "",
     count: 1,
     address: null as UserAddress | null,
-    payType: "wx" as "wx" | "alipay",
-    preview: null as CheckoutPreview | null
+    payType: "wx" as "wx" | "alipay" | "balance",
+    preview: null as CheckoutPreview | null,
+    walletBalance: Number(wx.getStorageSync("wallet_balance") || 0)
   },
   onShow() {
     const picked = wx.getStorageSync("checkout_selected_address")
     if (picked && typeof picked === "object") {
       wx.removeStorageSync("checkout_selected_address")
       this.setData({ address: picked as UserAddress })
+    }
+    const walletBalance = Number(wx.getStorageSync("wallet_balance") || 0)
+    this.setData({ walletBalance })
+    if (this.data.payType === "balance" && this.data.preview && walletBalance + 1e-9 < this.data.preview.payableAmount) {
+      this.setData({ payType: "wx" })
     }
   },
   async onLoad(options: Record<string, string | undefined>) {
@@ -45,13 +51,25 @@ Page({
         productId: this.data.productId || undefined,
         count: this.data.count
       })
-      this.setData({ preview })
+      const walletBalance = Number(wx.getStorageSync("wallet_balance") || 0)
+      this.setData({ preview, walletBalance })
+      if (this.data.payType === "balance" && walletBalance + 1e-9 < preview.payableAmount) {
+        this.setData({ payType: "wx" })
+      }
     } catch {
       wx.showToast({ title: "预览失败", icon: "none" })
     }
   },
   choosePayType(e: WechatMiniprogram.TouchEvent) {
-    const { value } = e.currentTarget.dataset as { value: "wx" | "alipay" }
+    const { value } = e.currentTarget.dataset as { value: "wx" | "alipay" | "balance" }
+    if (value === "balance") {
+      const preview = this.data.preview
+      if (preview && this.data.walletBalance + 1e-9 < preview.payableAmount) {
+        wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+        wx.navigateTo({ url: "/pages/shop/recharge" })
+        return
+      }
+    }
     this.setData({ payType: value })
   },
   goChooseAddress() {
@@ -63,6 +81,11 @@ Page({
     const preview = this.data.preview
     if (!preview || !preview.items.length) {
       wx.showToast({ title: "暂无可下单商品", icon: "none" })
+      return
+    }
+    if (this.data.payType === "balance" && this.data.walletBalance + 1e-9 < preview.payableAmount) {
+      wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+      wx.navigateTo({ url: "/pages/shop/recharge" })
       return
     }
     if (!this.data.address) {
@@ -79,8 +102,24 @@ Page({
         address: `${a.name} ${a.phone} ${a.province}${a.city}${a.district}${a.detail}`,
         payType: this.data.payType
       })
-      wx.showToast({ title: "下单成功", icon: "success" })
-      wx.navigateTo({ url: `/pages/shop/order/list?highlight=${order.id}` })
+      if (this.data.payType === "balance") {
+        try {
+          await payOrderMock(order.id)
+          wx.showToast({ title: "支付成功", icon: "success" })
+          wx.navigateTo({ url: `/pages/shop/order/list?highlight=${order.id}&paid=1` })
+        } catch (error) {
+          const msg = (error as any)?.message as string | undefined
+          if (msg === "INSUFFICIENT_BALANCE") {
+            wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+            wx.navigateTo({ url: "/pages/shop/recharge" })
+            return
+          }
+          wx.showToast({ title: "支付失败", icon: "none" })
+        }
+      } else {
+        wx.showToast({ title: "下单成功", icon: "success" })
+        wx.navigateTo({ url: `/pages/shop/order/list?highlight=${order.id}` })
+      }
     } catch {
       wx.showToast({ title: "下单失败", icon: "none" })
     }

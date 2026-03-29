@@ -24,10 +24,14 @@ export type ShopCartItem = {
 
 export type ShopOrderStatus = "all" | "pending_pay" | "shipping" | "done" | "closed"
 
+export type ShopPayType = "wx" | "alipay" | "balance"
+
 export type ShopOrder = {
   id: string
   status: Exclude<ShopOrderStatus, "all">
   amount: number
+  payType?: ShopPayType
+  paidAt?: number
   createdAt: number
   productNames: string[]
   items: Array<{
@@ -71,6 +75,8 @@ const MOCK = () => isMockEnabled()
 const STORAGE_PRODUCTS = "shop_products"
 const STORAGE_CART = "shop_cart"
 const STORAGE_ORDERS = "shop_orders"
+const STORAGE_WALLET_TXS = "shop_wallet_txs"
+const STORAGE_RECHARGE_API_DISABLED_UNTIL = "shop_recharge_api_disabled_until"
 const PRODUCT_IMAGE_MAP: Record<string, string> = {
   p1: "/assets/images/shop/商品1.jpg",
   p2: "/assets/images/shop/商品2.jpg",
@@ -226,6 +232,41 @@ const getCartSync = () => readJSON<ShopCartItem[]>(STORAGE_CART, [])
 const setCartSync = (list: ShopCartItem[]) => writeJSON(STORAGE_CART, list)
 const getOrdersSync = () => readJSON<ShopOrder[]>(STORAGE_ORDERS, [])
 const setOrdersSync = (list: ShopOrder[]) => writeJSON(STORAGE_ORDERS, list)
+
+export type WalletTx = {
+  id: string
+  type: "recharge" | "pay"
+  amount: number
+  createdAt: number
+  balanceAfter: number
+  orderId?: string
+}
+
+export const getWalletBalanceSync = () => Number(wx.getStorageSync("wallet_balance") || 0)
+
+const setWalletBalanceSync = (value: number) => {
+  wx.setStorageSync("wallet_balance", Number(value.toFixed(2)))
+}
+
+const getWalletTxsSync = () => readJSON<WalletTx[]>(STORAGE_WALLET_TXS, [])
+
+const appendWalletTxSync = (tx: WalletTx) => {
+  const list = getWalletTxsSync()
+  writeJSON(STORAGE_WALLET_TXS, [tx, ...list])
+}
+
+const isRechargeApiDisabled = () => {
+  const until = Number(wx.getStorageSync(STORAGE_RECHARGE_API_DISABLED_UNTIL) || 0)
+  return Number.isFinite(until) && until > Date.now()
+}
+
+const markRechargeApiDisabled = (ms = 60_000) => {
+  wx.setStorageSync(STORAGE_RECHARGE_API_DISABLED_UNTIL, Date.now() + ms)
+}
+
+const clearRechargeApiDisabled = () => {
+  wx.removeStorageSync(STORAGE_RECHARGE_API_DISABLED_UNTIL)
+}
 
 export const listAddresses = async (): Promise<UserAddress[]> => {
   if (!MOCK()) {
@@ -467,6 +508,7 @@ export const submitOrder = async (params: { from: "cart" | "detail"; productId?:
     id: `SO${Math.floor(now() / 1000)}`,
     status: "pending_pay",
     amount: preview.payableAmount,
+    payType: params.payType,
     createdAt: now(),
     productNames: preview.items.map((item) => item.product.name),
     items: preview.items.map((item) => ({
@@ -521,10 +563,28 @@ export const payOrderMock = async (id: string): Promise<void> => {
   }
   ensureSeed()
   const orders = getOrdersSync()
+  const target = orders.find((o) => o.id === id)
+  if (!target) throw new Error("ORDER_NOT_FOUND")
+  if (target.status !== "pending_pay") return
+  const payType: ShopPayType = target.payType || "wx"
+  if (payType === "balance") {
+    const current = getWalletBalanceSync()
+    if (current + 1e-9 < target.amount) throw new Error("INSUFFICIENT_BALANCE")
+    const nextBalance = Number((current - target.amount).toFixed(2))
+    setWalletBalanceSync(nextBalance)
+    appendWalletTxSync({
+      id: `wtx_${now()}`,
+      type: "pay",
+      amount: target.amount,
+      createdAt: now(),
+      balanceAfter: nextBalance,
+      orderId: id
+    })
+  }
   setOrdersSync(
     orders.map((o) => {
       if (o.id === id) {
-        return { ...o, status: "shipping" }
+        return { ...o, status: "shipping", paidAt: now() }
       }
       return o
     })
@@ -568,26 +628,61 @@ export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> 
 
 export const listRechargeOptions = async (): Promise<Array<{ id: string; amount: number; bonus: number }>> => {
   if (!MOCK()) {
-    const res = await request<{ list: Array<{ id: string; amount: number; bonus: number }> }>({ url: "/shop/recharge/options", method: "GET" })
-    return res.list || []
+    if (isRechargeApiDisabled()) return [...fallbackRechargeOptions]
+    try {
+      const res = await request<{ list: Array<{ id: string; amount: number; bonus: number }> }>({ url: "/shop/recharge/options", method: "GET" })
+      const list = res.list || []
+      clearRechargeApiDisabled()
+      return list.length ? list : [...fallbackRechargeOptions]
+    } catch (error) {
+      const statusCode = (error as any)?.statusCode as number | undefined
+      if (statusCode === 404) markRechargeApiDisabled()
+      return [...fallbackRechargeOptions]
+    }
   }
-  return [
-    { id: "r1", amount: 30, bonus: 0 },
-    { id: "r2", amount: 68, bonus: 8 },
-    { id: "r3", amount: 128, bonus: 20 },
-    { id: "r4", amount: 328, bonus: 68 }
-  ]
+  return [...fallbackRechargeOptions]
 }
 
 export const submitRecharge = async (optionId: string): Promise<{ balance: number }> => {
   if (!MOCK()) {
-    return await request<{ balance: number }>({ url: "/shop/recharge", method: "POST", data: { optionId } })
+    if (isRechargeApiDisabled()) return await submitRechargeMock(optionId)
+    try {
+      const res = await request<{ balance: number }>({ url: "/shop/recharge", method: "POST", data: { optionId } })
+      clearRechargeApiDisabled()
+      return res
+    } catch (error) {
+      const statusCode = (error as any)?.statusCode as number | undefined
+      const msg = (error as any)?.message as string | undefined
+      const is404 = statusCode === 404 || (typeof msg === "string" && msg.includes("404"))
+      if (!is404) throw error
+      markRechargeApiDisabled()
+      return await submitRechargeMock(optionId)
+    }
   }
-  const option = (await listRechargeOptions()).find((item) => item.id === optionId)
-  const current = Number(wx.getStorageSync("wallet_balance") || 0)
+  return await submitRechargeMock(optionId)
+}
+
+const fallbackRechargeOptions: Array<{ id: string; amount: number; bonus: number }> = [
+  { id: "r1", amount: 30, bonus: 0 },
+  { id: "r2", amount: 68, bonus: 8 },
+  { id: "r3", amount: 128, bonus: 20 },
+  { id: "r4", amount: 328, bonus: 68 }
+]
+
+const submitRechargeMock = async (optionId: string): Promise<{ balance: number }> => {
+  const options = await listRechargeOptions()
+  const option = options.find((item) => item.id === optionId)
+  const current = getWalletBalanceSync()
   const value = option ? option.amount + option.bonus : 0
   const balance = Number((current + value).toFixed(2))
-  wx.setStorageSync("wallet_balance", balance)
+  setWalletBalanceSync(balance)
+  appendWalletTxSync({
+    id: `wtx_${now()}`,
+    type: "recharge",
+    amount: Number(value.toFixed(2)),
+    createdAt: now(),
+    balanceAfter: balance
+  })
   return { balance }
 }
 

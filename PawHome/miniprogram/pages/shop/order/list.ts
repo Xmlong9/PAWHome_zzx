@@ -101,6 +101,12 @@ Page({
       this.loadOrders()
     } catch (error) {
       wx.hideLoading()
+      const msg = (error as any)?.message as string | undefined
+      if (msg === "INSUFFICIENT_BALANCE") {
+        wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+        wx.navigateTo({ url: "/pages/shop/recharge" })
+        return
+      }
       wx.showToast({ title: '支付失败', icon: 'none' })
     }
   },

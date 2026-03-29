@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import g, request
 
@@ -13,6 +13,8 @@ from ...responses import fail, ok
 def _ms(dt: datetime | None) -> int:
     if dt is None:
         return 0
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
     return int(dt.timestamp() * 1000)
 
 
@@ -126,4 +128,3 @@ def register_routes(bp) -> None:
         if conv is None or me.id not in {conv.user_a_id, conv.user_b_id}:
             return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
         return ok({"ok": True})
-

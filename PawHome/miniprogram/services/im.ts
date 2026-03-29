@@ -186,6 +186,31 @@ export const formatTime = (ts: number | string) => {
   return `${y}-${m}-${dd}`
 }
 
+export const formatChatTime = (ts: number | string) => {
+  const ms = toMs(ts)
+  if (!ms) return ""
+  const nowBj = new Date(now() + BEIJING_OFFSET_MS)
+  const dateBj = new Date(ms + BEIJING_OFFSET_MS)
+
+  const yNow = nowBj.getUTCFullYear()
+  const y = dateBj.getUTCFullYear()
+  const m = dateBj.getUTCMonth() + 1
+  const d = dateBj.getUTCDate()
+  const hh = String(dateBj.getUTCHours()).padStart(2, "0")
+  const mm = String(dateBj.getUTCMinutes()).padStart(2, "0")
+
+  const m2 = String(m).padStart(2, "0")
+  const d2 = String(d).padStart(2, "0")
+
+  const sameYear = y === yNow
+  const sameDay =
+    sameYear && m === nowBj.getUTCMonth() + 1 && d === nowBj.getUTCDate()
+
+  if (sameDay) return `${hh}:${mm}`
+  if (sameYear) return `${m2}-${d2} ${hh}:${mm}`
+  return `${y}-${m2}-${d2} ${hh}:${mm}`
+}
+
 export const listConversations = async (): Promise<IMConversation[]> => {
   if (!MOCK()) {
     const res = await request<{ list: IMConversation[] }>({ url: "/im/conversations", method: "GET" })

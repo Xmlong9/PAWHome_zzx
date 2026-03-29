@@ -29,6 +29,7 @@
         <view class="bubble">
           <text user-select>{{item.text}}</text>
         </view>
+        <view class="msg-time">{{item.timeText}}</view>
       </view>
     </block>
   </scroll-view>

@@ -1,4 +1,11 @@
-import { IMMessage, createConversation, listMessages, markConversationRead, sendTextMessage } from "../../services/im"
+import {
+  IMMessage,
+  createConversation,
+  formatChatTime,
+  listMessages,
+  markConversationRead,
+  sendTextMessage
+} from "../../services/im"
 import { getUserProfile } from "../../services/user"
 import { isMockEnabled } from "../../services/mock"
 import {
@@ -8,7 +15,7 @@ import {
   reenterPageIfNeeded
 } from "../../utils/transition"
 
-type ChatMessage = IMMessage & { from: "me" | "them"; renderKey: string }
+type ChatMessage = IMMessage & { from: "me" | "them"; renderKey: string; timeText: string }
 
 const getSelfId = () => (wx.getStorageSync("userId") as string) || "me"
 const POLL_INTERVAL_MS = 2000
@@ -161,7 +168,8 @@ Page({
     const uiList: ChatMessage[] = list.map((m) => ({
         ...m,
         from: m.senderId === selfId ? "me" : "them",
-        renderKey: m.id
+      renderKey: m.id,
+      timeText: formatChatTime(m.createdAt)
       }))
     const next = this.mergeServerMessages(this.data.messages || [], uiList)
     this.setData({ messages: next })
@@ -228,7 +236,8 @@ Page({
       const remote: ChatMessage[] = list.map((m) => ({
           ...m,
           from: m.senderId === selfId ? "me" : "them",
-          renderKey: m.id
+        renderKey: m.id,
+        timeText: formatChatTime(m.createdAt)
         }))
       const merged = this.mergeServerMessages(prev, remote)
 
@@ -350,7 +359,8 @@ Page({
       createdAt: Date.now(),
       status: "pending",
       from: "me",
-      renderKey: clientMsgId
+      renderKey: clientMsgId,
+      timeText: formatChatTime(Date.now())
     }
 
     const optimisticMessages = [...(this.data.messages || []), optimistic]

@@ -116,6 +116,18 @@ page {
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04);
 }
 
+.msg-time {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #94a3b8;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.row.me .msg-time {
+  align-self: flex-start;
+}
+
 .row.me .bubble {
   background: #FF9E59;
   color: #fff;

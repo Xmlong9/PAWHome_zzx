@@ -25,6 +25,8 @@ def register_routes(bp) -> None:
     def search_posts():
         me: User = g.current_user
         q = (request.args.get("q") or "").strip()
+        post_type = request.args.get("type")
+        sort = request.args.get("sort")
         page = max(1, _int_arg("page", 1))
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
 
@@ -35,12 +37,19 @@ def register_routes(bp) -> None:
         if q:
             query = query.filter(Post.content.contains(q))
 
+        if isinstance(post_type, str) and post_type and post_type != "all":
+            query = query.filter(Post.post_type == post_type)
+
         allowed = [Post.author_id == me.id, Post.visibility == "public"]
         if followee_ids:
             allowed.append(and_(Post.visibility == "followers", Post.author_id.in_(followee_ids)))
         query = query.filter(or_(*allowed))
 
-        query = query.order_by(Post.created_at.desc())
+        if sort == "latest":
+            query = query.order_by(Post.created_at.desc())
+        else:
+            score = Post.like_count + Post.comment_count + Post.favorite_count
+            query = query.order_by(score.desc(), Post.created_at.desc())
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()
 
@@ -50,7 +59,17 @@ def register_routes(bp) -> None:
             try:
                 v = json.loads(p.media_json)
                 if isinstance(v, list) and v:
-                    return str(v[0])
+                    first = v[0]
+                    return str(first) if first is not None else ""
+                if isinstance(v, dict):
+                    vtype = v.get("type")
+                    if vtype == "video":
+                        cover = v.get("coverUrl")
+                        return str(cover) if isinstance(cover, str) else ""
+                    images = v.get("images")
+                    if isinstance(images, list) and images:
+                        first = images[0]
+                        return str(first) if first is not None else ""
             except json.JSONDecodeError:
                 return ""
             return ""

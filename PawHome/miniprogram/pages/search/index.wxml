@@ -81,10 +81,10 @@
     </block>
 
     <!-- 结果列表 -->
-    <scroll-view scroll-y class="result-list">
+    <scroll-view scroll-y class="result-list" bindscrolltolower="onScrollToLower" lower-threshold="120">
       <block wx:if="{{searchType === 'community'}}">
-        <view class="post-item" wx:for="{{results}}" wx:key="id">
-          <image class="post-img" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="post-item" wx:for="{{results}}" wx:key="id" bindtap="openCommunityItem" data-id="{{item.id}}">
+          <image class="post-img" src="{{item.image || '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
           <view class="post-info">
             <view class="post-title">{{item.title}}</view>
             <view class="post-summary">{{item.summary}}</view>
@@ -99,7 +99,7 @@
       
       <block wx:if="{{searchType === 'shop'}}">
         <!-- 简单的商店结果 mock -->
-        <view class="shop-item" wx:for="{{results}}" wx:key="id">
+        <view class="shop-item" wx:for="{{results}}" wx:key="id" bindtap="openShopItem" data-id="{{item.id}}">
           <image class="shop-img" src="{{item.image}}" mode="aspectFill"></image>
           <view class="shop-info">
             <view class="shop-title">{{item.title}}</view>
@@ -109,7 +109,9 @@
         </view>
       </block>
 
-      <view class="empty-state" wx:if="{{results.length === 0}}">没有找到相关内容</view>
+      <view class="empty-state" wx:if="{{!loading && results.length === 0}}">没有找到相关内容</view>
+      <view class="list-loading" wx:if="{{loading}}">加载中...</view>
+      <view class="list-no-more" wx:if="{{!loading && hasSearched && results.length > 0 && !hasMore}}">没有更多了</view>
     </scroll-view>
   </view>
 

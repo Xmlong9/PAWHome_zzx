@@ -770,3 +770,62 @@
 
 **说明**
 - 仍保留 `scrollTop` 方案用于稳定滚动，但恢复空会话时的居中提示文案。
+
+---
+
+## 社区搜索页（与商店搜索区分，主页与社区共用）
+
+**目的**
+- 商店搜索只搜商品；社区搜索只搜帖子内容。
+- 主页与社区入口共用同一套社区搜索页，保证体验一致。
+
+**入口**
+- 小程序搜索页：`PawHome/miniprogram/pages/search/index`
+  - 社区搜索：`/pages/search/index?type=community`
+  - 商店搜索：`/pages/search/index?type=shop`
+- 后端搜索接口：
+  - 社区：`GET /search/posts`
+  - 商店：`GET /search/products`
+
+**数据流/状态**
+- 搜索类型：由路由参数 `type` 决定（`community`/`shop`）。
+- 搜索历史：按类型分开存储到本地缓存：
+  - `search_history_community`
+  - `search_history_shop`
+- 社区搜索支持：
+  - 分类：仅输出 `type=all|cat|dog`（其他分类先映射为 `all`）
+  - 排序：`sort=hot|latest`
+  - 分页：`page/pageSize` 上拉追加加载
+
+**关键分支**
+- 新关键词/切换分类/切换排序：重置 `page=1`、清空结果并重新请求。
+- 触底加载：`hasMore && !loading` 时 `page+1` 追加请求。
+- 点击结果：
+  - 社区：进入帖子详情 `/pages/post-detail/index?id=...`
+  - 商店：进入商品详情 `/pages/shop/detail?id=...`
+
+**边界条件**
+- 后端对社区搜索返回结果继续遵循帖子可见性规则（public/followers/private），避免私密帖子被搜索到。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/search/index.ts`
+  - `PawHome/miniprogram/pages/search/index.wxml`
+  - `PawHome/miniprogram/services/search.ts`
+- 后端：
+  - `backend/app/api/v1/search.py`
+
+### 变更 2026-03-29：搜索结果封面补齐（视频 coverUrl / 图片首图）
+
+**问题现象**
+- 社区搜索结果列表中帖子封面为空，显示为灰色占位块。
+
+**根因**
+- `GET /search/posts` 仅支持 `media_json` 为数组时取首图；当帖子为视频（`{"type":"video","coverUrl":...}`）或对象结构（`{"images":[...]}`）时，封面解析返回空字符串。
+
+**修复方案**
+- 后端搜索接口解析 `media_json`：
+  - 数组：取第 1 张图
+  - 视频对象：取 `coverUrl`
+  - 图片对象：取 `images[0]`
+- 前端搜索页对空 `image` 增加占位图兜底，避免布局塌陷。

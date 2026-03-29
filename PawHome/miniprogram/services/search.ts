@@ -10,8 +10,17 @@ export type SearchResult = {
   price?: number
 }
 
-export async function searchCommunity(q: string, page = 1, pageSize = 10): Promise<{ list: SearchResult[]; total: number }> {
-  return request({ url: "/search/posts", method: "GET", data: { q, page, pageSize } })
+export async function searchCommunity(
+  q: string,
+  page = 1,
+  pageSize = 10,
+  options?: { type?: string; sort?: "hot" | "latest" }
+): Promise<{ list: SearchResult[]; total: number }> {
+  return request({
+    url: "/search/posts",
+    method: "GET",
+    data: { q, page, pageSize, type: options?.type, sort: options?.sort }
+  })
 }
 
 export async function searchShop(q: string, page = 1, pageSize = 10): Promise<{ list: SearchResult[]; total: number }> {

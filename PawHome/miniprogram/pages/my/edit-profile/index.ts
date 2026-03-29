@@ -39,13 +39,12 @@ Page({
     wx.showLoading({ title: '保存中...' })
     try {
       const avatarUrl = this.data.userInfo?.avatarUrl
-      const payload: Partial<UserProfile> = {
-        nickname: this.data.nickname,
-        gender: this.data.gender as "男" | "女",
-        birthday: this.data.birthday,
-        location: this.data.location,
-        signature: this.data.signature
-      }
+      const payload: Partial<UserProfile> = {}
+      if (this.data.nickname) payload.nickname = this.data.nickname
+      if (this.data.gender) payload.gender = this.data.gender as "男" | "女"
+      if (this.data.birthday) payload.birthday = this.data.birthday
+      if (this.data.location) payload.location = this.data.location
+      if (this.data.signature) payload.signature = this.data.signature
       if (typeof avatarUrl === "string" && avatarUrl) {
         payload.avatarUrl = avatarUrl
       }

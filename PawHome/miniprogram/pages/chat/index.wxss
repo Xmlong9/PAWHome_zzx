@@ -8,6 +8,8 @@ page {
 .page {
   height: 100vh;
   width: 100vw;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .custom-nav {
@@ -62,6 +64,24 @@ page {
   padding-top: calc(44px + env(safe-area-inset-top));
 }
 
+.empty {
+  padding: 260rpx 0 120rpx;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.empty-title {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #475569;
+}
+
+.empty-desc {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
 .row {
   display: flex;
   align-items: flex-start;
@@ -78,6 +98,10 @@ page {
   height: 72rpx;
   border-radius: 50%;
   flex-shrink: 0;
+  background: #eaeaea;
+}
+
+.avatar-empty {
   background: #eaeaea;
 }
 

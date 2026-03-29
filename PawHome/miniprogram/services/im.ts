@@ -8,7 +8,7 @@ export type IMConversation = {
   peerNickname: string
   peerAvatarUrl: string
   lastMessage: string
-  lastMessageAt: number
+  lastMessageAt: number | string
   unreadCount: number
 }
 
@@ -18,7 +18,7 @@ export type IMMessage = {
   conversationId: string
   senderId: string
   text: string
-  createdAt: number
+  createdAt: number | string
   status?: "pending" | "sent" | "failed"
 }
 
@@ -31,6 +31,49 @@ const storageMessagesKey = (conversationId: string) => `im_messages_${conversati
 const now = () => Date.now()
 
 const getSelfId = () => (wx.getStorageSync("userId") as string) || "me"
+
+const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000
+
+const toMs = (v: unknown): number => {
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return v < 1e12 ? v * 1000 : v
+  }
+  if (typeof v === "string") {
+    const s = v.trim()
+    if (!s) return 0
+    if (/^\d+$/.test(s)) {
+      const n = Number(s)
+      if (!Number.isFinite(n)) return 0
+      return n < 1e12 ? n * 1000 : n
+    }
+
+    const hasTz = /([zZ]|[+-]\d{2}:?\d{2})$/.test(s)
+    if (hasTz) {
+      const ms = Date.parse(s)
+      return Number.isFinite(ms) ? ms : 0
+    }
+
+    const m = s.match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.(\d{1,3}))?)?$/
+    )
+    if (m) {
+      const y = Number(m[1])
+      const mo = Number(m[2])
+      const d = Number(m[3])
+      const hh = Number(m[4] || "0")
+      const mm = Number(m[5] || "0")
+      const ss = Number(m[6] || "0")
+      const ms = Number((m[7] || "0").padEnd(3, "0"))
+      const utc = Date.UTC(y, mo - 1, d, hh, mm, ss, ms)
+      if (utc - now() > 5 * 60 * 1000) return utc - BEIJING_OFFSET_MS
+      return utc
+    }
+
+    const ms = Date.parse(s)
+    return Number.isFinite(ms) ? ms : 0
+  }
+  return 0
+}
 
 const readConversations = (): IMConversation[] => {
   const v = wx.getStorageSync(STORAGE_CONVERSATIONS)
@@ -125,8 +168,10 @@ const ensureSeed = () => {
   ])
 }
 
-export const formatTime = (ts: number) => {
-  const diff = Math.max(0, now() - ts)
+export const formatTime = (ts: number | string) => {
+  const ms = toMs(ts)
+  if (!ms) return ""
+  const diff = Math.max(0, now() - ms)
   const min = Math.floor(diff / 60000)
   if (min < 1) return "刚刚"
   if (min < 60) return `${min}分钟前`
@@ -134,10 +179,10 @@ export const formatTime = (ts: number) => {
   if (h < 24) return `${h}小时前`
   const d = Math.floor(h / 24)
   if (d < 7) return `${d}天前`
-  const date = new Date(ts)
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, "0")
-  const dd = String(date.getDate()).padStart(2, "0")
+  const date = new Date(ms + BEIJING_OFFSET_MS)
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0")
+  const dd = String(date.getUTCDate()).padStart(2, "0")
   return `${y}-${m}-${dd}`
 }
 
@@ -148,7 +193,7 @@ export const listConversations = async (): Promise<IMConversation[]> => {
   }
   ensureSeed()
   const list = readConversations()
-  return list.sort((a, b) => b.lastMessageAt - a.lastMessageAt)
+  return list.sort((a, b) => toMs(b.lastMessageAt) - toMs(a.lastMessageAt))
 }
 
 export const createConversation = async (peerId: string): Promise<{ id: string }> => {
@@ -180,7 +225,7 @@ export const listMessages = async (conversationId: string): Promise<IMMessage[]>
     return res.list || []
   }
   ensureSeed()
-  return readMessages(conversationId).sort((a, b) => a.createdAt - b.createdAt)
+  return readMessages(conversationId).sort((a, b) => toMs(a.createdAt) - toMs(b.createdAt))
 }
 
 export const markConversationRead = async (conversationId: string): Promise<void> => {

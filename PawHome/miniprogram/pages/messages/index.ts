@@ -226,10 +226,6 @@ Page({
 
   goBack() {
     const pages = getCurrentPages()
-    if (pages.length > 1) {
-      navigateBackWithTransition()
-      return
-    }
     wx.switchTab({ url: '/pages/community/index' })
   },
 

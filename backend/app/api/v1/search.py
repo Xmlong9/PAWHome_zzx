@@ -4,6 +4,7 @@ from flask import g, request
 
 from ...auth import require_auth
 import json
+from urllib.parse import quote
 
 from sqlalchemy import and_, or_
 
@@ -53,26 +54,34 @@ def register_routes(bp) -> None:
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()
 
+        default_cover = f"{request.host_url.rstrip('/')}/media/{quote('推送3.jpg')}"
+
         def img(p: Post) -> str:
             if not p.media_json:
-                return ""
+                return default_cover
             try:
                 v = json.loads(p.media_json)
                 if isinstance(v, list) and v:
                     first = v[0]
-                    return str(first) if first is not None else ""
+                    if first is None or str(first) == "":
+                        return default_cover
+                    return str(first)
                 if isinstance(v, dict):
                     vtype = v.get("type")
                     if vtype == "video":
                         cover = v.get("coverUrl")
-                        return str(cover) if isinstance(cover, str) else ""
+                        if isinstance(cover, str) and cover:
+                            return cover
+                        return default_cover
                     images = v.get("images")
                     if isinstance(images, list) and images:
                         first = images[0]
-                        return str(first) if first is not None else ""
+                        if first is None or str(first) == "":
+                            return default_cover
+                        return str(first)
             except json.JSONDecodeError:
-                return ""
-            return ""
+                return default_cover
+            return default_cover
 
         return ok(
             {

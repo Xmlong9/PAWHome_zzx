@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
+import re
+import sys
+import threading
+import time
 from datetime import datetime, timezone
 
 from flask import g, request
@@ -23,6 +28,116 @@ from ...models import (
     Wallet,
 )
 from ...responses import fail, ok
+
+
+_ARK_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+_ARK_DEFAULT_MODEL = "ep-20260330013048-7zdsl"
+_SHOP_SUPPORT_PHONE = "4008888888"
+
+_ark_client_lock = threading.Lock()
+_ark_client = None
+
+
+def _get_ark_client():
+    global _ark_client
+    if _ark_client is not None:
+        return _ark_client
+    with _ark_client_lock:
+        if _ark_client is not None:
+            return _ark_client
+        api_key = os.getenv("ARK_API_KEY") or ""
+        if not api_key:
+            _ark_client = None
+            return None
+        from openai import OpenAI
+
+        _ark_client = OpenAI(base_url=_ARK_BASE_URL, api_key=api_key)
+        return _ark_client
+
+
+def _support_system_prompt() -> str:
+    return (
+        "你是爱宠家商店的智能客服助手。"
+        "你只能回答与商店与订单相关的问题：下单、支付、退款/退货/换货、物流、发货、收货、地址、商品信息、库存、价格、购物车、优惠券、售后。"
+        "对于问候语（如“你好/您好/在吗”）或用户询问“你是谁/怎么用/能做什么”，请先友好自我介绍并引导用户提供订单号/商品名/遇到的情况。"
+        "除上述问候与使用说明外，如果用户问题不在上述范围内，请直接拒答，并提示“我只能回答订单、商店相关的问题”。"
+        "回答要简洁、可执行，尽量给出用户下一步操作路径。"
+        "不要编造订单状态与物流信息；如果缺少关键信息，请先追问订单号或商品名。"
+        f"客服电话：{_SHOP_SUPPORT_PHONE}。如果用户询问客服电话，直接返回该号码。"
+    )
+
+
+def _call_doubao_text(text: str, *, conversation_id: str, user_id: str) -> str:
+    client = _get_ark_client()
+    if client is None:
+        return ""
+    model_id = os.getenv("ARK_MODEL_ID") or _ARK_DEFAULT_MODEL
+    rows = (
+        SupportMessage.query.filter_by(conversation_id=conversation_id)
+        .order_by(SupportMessage.created_at.desc())
+        .limit(12)
+        .all()
+    )
+    rows = list(reversed(rows))
+    messages = [{"role": "system", "content": _support_system_prompt()}]
+    for m in rows:
+        role = "user" if m.sender_role == "user" else "assistant"
+        content = (m.content or "").strip()
+        if not content:
+            continue
+        messages.append({"role": role, "content": content})
+    resp = client.chat.completions.create(
+        model=model_id,
+        messages=messages,
+        temperature=0.2,
+    )
+    choice = resp.choices[0] if getattr(resp, "choices", None) else None
+    msg = getattr(choice, "message", None) if choice is not None else None
+    content = getattr(msg, "content", "") if msg is not None else ""
+    return (content or "").strip()
+
+
+def _support_ai_allow(*, user_id: str, conversation_id: str) -> bool:
+    return _support_ai_limiter.allow(user_id=user_id, conversation_id=conversation_id)
+
+
+class _SupportAiLimiter:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._hits: dict[str, list[float]] = {}
+
+    def allow(self, *, user_id: str, conversation_id: str) -> bool:
+        now = time.time()
+        window = 60.0
+        user_key = f"u:{user_id}"
+        conv_key = f"c:{conversation_id}"
+        with self._lock:
+            if not self._allow_key(user_key, now, window, 20):
+                return False
+            if not self._allow_key(conv_key, now, window, 10):
+                return False
+            return True
+
+    def _allow_key(self, key: str, now: float, window: float, limit: int) -> bool:
+        hits = self._hits.get(key)
+        if hits is None:
+            self._hits[key] = [now]
+            return True
+        cutoff = now - window
+        i = 0
+        for ts in hits:
+            if ts >= cutoff:
+                break
+            i += 1
+        if i:
+            hits[:] = hits[i:]
+        if len(hits) >= limit:
+            return False
+        hits.append(now)
+        return True
+
+
+_support_ai_limiter = _SupportAiLimiter()
 
 
 def _money(cents: int) -> float:
@@ -694,17 +809,118 @@ def register_routes(bp) -> None:
             }
         )
 
-    def _smart_reply(text: str) -> str:
+    def _normalize_support_text(text: str) -> str:
+        t = (text or "").strip()
+        if not t:
+            return ""
+        punct = " \t\r\n，。！？!?、,.；;：:（）()【】[]{}<>《》“”\"'’‘-—_~`·|/\\"
+        for ch in punct:
+            t = t.replace(ch, "")
+        return t
+
+    def _support_in_scope(text: str) -> bool:
+        t = _normalize_support_text(text)
+        if not t:
+            return False
+        if re.search(r"(?i)so\d{6,}", t):
+            return True
+        if re.search(r"\d{10,}", t):
+            return True
+        if re.search(r"(?i)[a-z]{1,4}\d{6,}", t):
+            return True
+        keywords = [
+            "订单",
+            "退款",
+            "退货",
+            "换货",
+            "售后",
+            "物流",
+            "快递",
+            "发货",
+            "收货",
+            "支付",
+            "付款",
+            "地址",
+            "商品",
+            "价格",
+            "库存",
+            "购物车",
+            "优惠券",
+            "商店",
+            "下单",
+            "客服",
+            "人工",
+            "智能",
+            "ai",
+            "AI",
+            "怎么用",
+            "你是谁",
+            "是什么",
+            "你好",
+            "您好",
+            "在吗",
+            "嗨",
+            "哈喽",
+            "hello",
+            "hi",
+        ]
+        return any(k in t for k in keywords)
+
+    def _smart_reply(text: str, *, conversation_id: str, user_id: str) -> str:
         t = (text or "").strip()
         if not t:
             return "请描述下你的问题，我来帮你看看。"
         faqs = CustomerServiceFaq.query.order_by(CustomerServiceFaq.sort.asc()).all()
+        tn = _normalize_support_text(t)
         for f in faqs:
-            if f.question.strip() == t:
+            if _normalize_support_text(f.question or "") == tn:
                 return f.answer
-        for f in faqs:
-            if t in (f.question or "") or (f.question or "") in t:
-                return f.answer
+        if not _support_in_scope(t):
+            return "我只能回答订单、商店相关的问题。你可以描述下订单号/商品名/遇到的情况，我来帮你处理。"
+        try:
+            allow_fn = getattr(sys.modules[__name__], "_support_ai_allow")
+            if not allow_fn(user_id=user_id, conversation_id=conversation_id):
+                return "提问太频繁，请稍后再试。"
+            fn = getattr(sys.modules[__name__], "_call_doubao_text")
+            order_id = ""
+            m = re.search(r"(?i)so\d{6,}", t)
+            if m:
+                order_id = m.group(0).upper()
+            if order_id:
+                order = ShopOrder.query.filter_by(id=order_id, user_id=user_id).first()
+                if order is not None:
+                    items = (
+                        ShopOrderItem.query.filter_by(order_id=order_id)
+                        .order_by(ShopOrderItem.created_at.asc())
+                        .limit(20)
+                        .all()
+                    )
+                    latest_event = (
+                        ShopOrderEvent.query.filter_by(order_id=order_id)
+                        .order_by(ShopOrderEvent.at.desc())
+                        .first()
+                    )
+                    latest_text = (latest_event.message or latest_event.event_type) if latest_event is not None else ""
+                    ctx_lines = [
+                        f"订单号：{order.id}",
+                        f"下单时间：{_ms(order.created_at)}",
+                        f"金额：{_money(int(order.total_cents or 0))}",
+                    ]
+                    if latest_text:
+                        ctx_lines.append(f"物流最新：{latest_text}")
+                    if items:
+                        ctx_lines.append("商品：")
+                        for it in items[:5]:
+                            ctx_lines.append(
+                                f"- {it.title_snapshot} x{int(it.quantity or 0)}（单价{_money(int(it.price_cents or 0))}）"
+                            )
+                    ctx = "\n".join(ctx_lines)
+                    t = f"{t}\n\n【订单信息】\n{ctx}"
+            r = fn(t, conversation_id=conversation_id, user_id=user_id)
+            if isinstance(r, str) and r.strip():
+                return r.strip()
+        except Exception:
+            pass
         return "我先记下了～如果是订单/退款/地址修改等问题，可以点上方常见问题快速获取答案；也可以转人工客服。"
 
     @bp.post("/shop/support/conversations/<cid>/messages")
@@ -717,19 +933,60 @@ def register_routes(bp) -> None:
             return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
 
         data = request.get_json(silent=True) or {}
+        message_type = data.get("messageType")
+        if not isinstance(message_type, str) or not message_type:
+            message_type = "text"
         content = data.get("content")
-        if not isinstance(content, str) or not content.strip():
-            return fail(code="BAD_REQUEST", message="content required", status_code=400)
+        order_id = data.get("orderId")
+        user_text_for_ai = ""
+        stored_content = ""
+        stored_type = message_type
+
+        if message_type == "text":
+            if not isinstance(content, str) or not content.strip():
+                return fail(code="BAD_REQUEST", message="content required", status_code=400)
+            stored_content = content.strip()
+            user_text_for_ai = stored_content
+        elif message_type == "order_card":
+            if not isinstance(order_id, str) or not order_id.strip():
+                return fail(code="BAD_REQUEST", message="orderId required", status_code=400)
+            oid = order_id.strip().upper()
+            order = ShopOrder.query.filter_by(id=oid, user_id=me.id).first()
+            if order is None:
+                return fail(code="NOT_FOUND", message="order not found", status_code=404)
+            items = (
+                ShopOrderItem.query.filter_by(order_id=oid)
+                .order_by(ShopOrderItem.created_at.asc())
+                .limit(50)
+                .all()
+            )
+            snapshot = {
+                "orderId": oid,
+                "amount": _money(int(order.total_cents or 0)),
+                "createdAt": _ms(order.created_at),
+                "items": [
+                    {
+                        "name": it.title_snapshot,
+                        "price": _money(int(it.price_cents or 0)),
+                        "count": int(it.quantity or 0),
+                    }
+                    for it in items
+                ],
+            }
+            stored_content = json.dumps(snapshot, ensure_ascii=False)
+            user_text_for_ai = oid
+        else:
+            return fail(code="BAD_REQUEST", message="unsupported messageType", status_code=400)
 
         now = _utcnow()
         db.session.add(
-            SupportMessage(conversation_id=cid, sender_role="user", message_type="text", content=content.strip())
+            SupportMessage(conversation_id=cid, sender_role="user", message_type=stored_type, content=stored_content)
         )
         conv.last_message_at = now
         db.session.commit()
 
         if conv.mode == "smart":
-            reply = _smart_reply(content)
+            reply = _smart_reply(user_text_for_ai, conversation_id=cid, user_id=me.id)
             db.session.add(
                 SupportMessage(conversation_id=cid, sender_role="bot", message_type="text", content=reply)
             )

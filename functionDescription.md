@@ -188,6 +188,100 @@
     - `content = <客服回复文本>`
 - 小程序端进入该会话时通过 `GET /shop/support/conversations/<cid>/messages` 拉取消息，即可看到 `agent` 回复。
 
+### 变更 2026-03-30：智能客服接入豆包 AI（Ark OpenAI SDK）
+
+**目的**
+- 智能客服由豆包 AI 兜底生成回复，实现“AI 全面接管”，同时保证已配置 FAQ 的问答严格一致。
+- 将回答范围限制在“订单/商店”场景，避免越界回答。
+
+**入口**
+- 发送消息：`POST /api/v1/shop/support/conversations/<cid>/messages`
+- 拉取消息：`GET /api/v1/shop/support/conversations/<cid>/messages`
+
+**数据流/状态**
+- 后端在 `mode=smart` 下处理用户消息：
+  1) 将用户消息写入 `support_messages(sender_role=user)`。
+  2) FAQ 强一致：对用户输入与 FAQ 题干做规范化后“全等匹配”，命中则直接写入 `support_messages(sender_role=bot)`，内容为 FAQ 设定答案原文。
+  3) 越界拦截：若不属于订单/商店范围，直接返回固定拒答文案（不调用 AI）。
+  4) 限流：按 `user_id`（20/min）与 `conversation_id`（10/min）做内存滑窗限流，触发则返回“提问太频繁”。
+  5) 豆包兜底：未命中 FAQ 且未越界且未触发限流时，调用 Ark OpenAI SDK（`chat.completions`），将回复写入 `support_messages(sender_role=bot)`。
+
+**边界条件**
+- 环境变量：
+  - `ARK_API_KEY`：方舟 API Key（缺失则不调用 AI，走兜底文案）。
+  - `ARK_MODEL_ID`：推理接入点 ID（缺失则使用默认值）。
+- AI 调用失败（网络/鉴权/异常）不会影响用户消息入库；bot 回复使用兜底文案。
+- 限流为单机内存实现，多进程/多实例需替换为 Redis/网关限流以保持一致性。
+
+**相关文件**
+- 后端：
+  - `backend/app/api/v1/shop.py`
+  - `backend/requirements.txt`
+  - `backend/tests/test_support_ai.py`
+
+### 变更 2026-03-30：支持订单号触发智能回复
+
+**目的**
+- 用户直接发送订单号（如 `SO1774613445`）时，不应被误判为越界；需要进入智能客服回复流程。
+
+**实现要点**
+- 范围判断增加订单号模式识别（如 `SO` + 数字、长数字、字母+数字组合），命中即视为订单相关。
+- 同时允许部分“客服/智能/AI 相关”的使用说明问题进入智能回复，避免反复拒答影响体验。
+
+### 变更 2026-03-30：问候语也进入智能回复
+
+**目的**
+- 用户输入“你好/您好/在吗”等问候语时，允许进入智能回复（由 AI 做自我介绍与引导），但仍受“只回答订单/商店相关”边界约束。
+
+**实现要点**
+- 将常见问候语加入范围判断白名单，使其不触发越界拒答。
+
+### 变更 2026-03-30：优化问候语的 AI 回复风格
+
+**目的**
+- 当用户发送问候语或询问“你是谁/怎么用/能做什么”时，AI 先友好自我介绍并引导到订单/商店问题，而不是直接输出越界拒答提示。
+
+**实现要点**
+- 更新 system prompt：将“问候语与使用说明”作为允许回答的特例，其余无关问题仍需拒答并提示范围。
+
+### 变更 2026-03-30：智能客服自动查询订单并注入真实上下文
+
+**目的**
+- 当用户提供订单号（或通过订单卡片发送订单）时，智能客服可基于后端真实订单数据回答：买了什么、花了多少钱、下单时间、物流最新节点、客服电话等。
+
+**数据流/状态**
+- `mode=smart` 下发送消息：
+  - 若识别到订单号：后端校验订单归属（仅允许查询当前登录用户的订单），提取订单金额/下单时间/商品快照/最新物流事件，并拼接到 AI 输入文本中，再调用豆包生成回复。
+
+**边界条件**
+- 未找到订单或无权限：不注入订单上下文，AI 会引导用户确认订单号或转人工。
+- 物流节点来自后端订单事件（模拟/事件流），不保证等同真实快递对接。
+
+**相关文件**
+- 后端：
+  - `backend/app/api/v1/shop.py`
+  - `backend/tests/test_support_ai.py`
+
+### 变更 2026-03-30：发订单给客服（底部弹窗 + 订单卡片）
+
+**目的**
+- 点击“发订单给客服”后，从底部弹出最近 5 单列表，用户选择后发送“订单卡片”消息给智能客服，并触发基于真实订单数据的回答。
+
+**实现要点**
+- 新增消息类型：`messageType=order_card`，发送时携带 `orderId`；后端落库 `support_messages.message_type=order_card`，content 存储订单快照 JSON。
+- 小程序端在聊天页展示订单卡片；选择订单后调用发送接口并刷新消息列表。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.ts`
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.wxml`
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.wxss`
+  - `PawHome/miniprogram/services/support.ts`
+  - `PawHome/miniprogram/services/shop.ts`
+- 后端：
+  - `backend/app/api/v1/shop.py`
+  - `backend/tests/test_support_ai.py`
+
 **边界条件**
 - 所有客服接口要求登录态（`Authorization: Bearer <token>`）。
 - 会话与消息表使用 `checkfirst=True` 自动建表，避免需要手动迁移。

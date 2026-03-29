@@ -11,7 +11,7 @@ export type SupportConversation = {
 export type SupportMessage = {
   id: string
   role: "user" | "bot" | "agent" | string
-  type: "text" | string
+  type: "text" | "order_card" | string
   content: string
   createdAt: number
 }
@@ -41,3 +41,10 @@ export const sendSupportMessage = async (conversationId: string, content: string
   })
 }
 
+export const sendSupportOrderCard = async (conversationId: string, orderId: string): Promise<void> => {
+  await request<void>({
+    url: `/shop/support/conversations/${encodeURIComponent(conversationId)}/messages`,
+    method: "POST",
+    data: { messageType: "order_card", orderId }
+  })
+}

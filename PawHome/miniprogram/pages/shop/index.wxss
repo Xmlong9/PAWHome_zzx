@@ -145,6 +145,7 @@
   color: #777;
   min-height: 56rpx;
   line-height: 1.4;
+  flex: 1; /* 让描述部分占据剩余空间，把底部的价格收藏栏顶下去 */
 }
 
 .product-bottom {
@@ -152,6 +153,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12rpx;
+  margin-top: auto; /* 强制底部对齐 */
 }
 
 .price-wrap {

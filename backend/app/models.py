@@ -4,7 +4,7 @@ import uuid
 import random
 from datetime import datetime
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint, event
 
 from .extensions import db
 
@@ -15,6 +15,14 @@ def _uuid() -> str:
 
 def _public_id() -> str:
     return "".join(str(random.randint(0, 9)) for _ in range(8))
+
+
+def _pinyin_full_and_initials(text: str) -> tuple[str, str]:
+    if not text:
+        return "", ""
+    from .pinyin import to_pinyin_full_and_initials
+
+    return to_pinyin_full_and_initials(text)
 
 
 class TimestampMixin:
@@ -215,12 +223,32 @@ class ShopProduct(db.Model, TimestampMixin):
 
     id = db.Column(db.String(36), primary_key=True, default=_uuid)
     title = db.Column(db.String(128), nullable=False)
+    title_pinyin = db.Column(db.String(512), index=True, nullable=True)
+    title_initials = db.Column(db.String(256), index=True, nullable=True)
     description = db.Column(db.Text, nullable=True)
     price_cents = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(8), default="CNY", nullable=False)
     images_json = db.Column(db.Text, nullable=True)
     stock = db.Column(db.Integer, default=0, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+
+@event.listens_for(ShopProduct, "before_insert")
+def _shop_product_before_insert(mapper, connection, target):
+    full, initials = _pinyin_full_and_initials(getattr(target, "title", "") or "")
+    if full:
+        target.title_pinyin = full
+    if initials:
+        target.title_initials = initials
+
+
+@event.listens_for(ShopProduct, "before_update")
+def _shop_product_before_update(mapper, connection, target):
+    full, initials = _pinyin_full_and_initials(getattr(target, "title", "") or "")
+    if full:
+        target.title_pinyin = full
+    if initials:
+        target.title_initials = initials
 
 
 class ShopFavorite(db.Model, TimestampMixin):

@@ -64,3 +64,12 @@ def require_auth(fn: Callable[..., T]) -> Callable[..., Any]:
 
     return wrapper
 
+
+def optional_auth(fn: Callable[..., T]) -> Callable[..., Any]:
+    @wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any):
+        user = get_user_from_request()
+        g.current_user = user
+        return fn(*args, **kwargs)
+
+    return wrapper

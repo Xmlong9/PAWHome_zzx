@@ -868,6 +868,70 @@
   - `backend/app/search_lexicon.py`
   - `backend/app/api/v1/search.py`
 
+### 变更 2026-03-29：搜索匿名访问、商品拼音匹配与前端实时搜索缓存
+
+**目的**
+- 未登录也能进行商品/社区搜索（仅返回公开内容），降低使用门槛。
+- 商品搜索支持拼音首字母与全拼输入（例如 `ms/maosha` 命中“猫砂”类商品）。
+- 搜索输入改为实时触发（防抖），并增加本地结果缓存与关键词高亮。
+
+**实现要点**
+- 后端：
+  - 搜索接口改为可选登录态：未登录时帖子仅返回 `visibility=public`。
+  - 商品表增加 `title_pinyin/title_initials` 两个可检索字段，并在写入时自动填充。
+- 小程序：
+  - 输入框 `bindinput` 实时触发搜索，400ms 防抖，避免频繁请求。
+  - 搜索结果按关键词+筛选维度缓存到本地（24h 过期 + LRU 淘汰），缓存命中先展示再后台刷新。
+  - 标题/摘要支持关键词高亮展示，并展示搜索建议/自动补全列表。
+
+**相关文件**
+- 后端：
+  - `backend/app/auth.py`
+  - `backend/app/api/v1/search.py`
+  - `backend/app/pinyin.py`
+  - `backend/app/pinyin_dict.json`
+  - `backend/app/models.py`
+  - `backend/scripts/migrate_add_shop_product_pinyin.py`
+  - `backend/tests/test_search_anonymous_pinyin.py`
+  - `backend/tests/test_pinyin.py`
+- 小程序：
+  - `PawHome/miniprogram/pages/search/index.ts`
+  - `PawHome/miniprogram/pages/search/index.wxml`
+  - `PawHome/miniprogram/pages/search/index.wxss`
+  - `PawHome/miniprogram/utils/searchCache.ts`
+  - `PawHome/miniprogram/utils/debounce.ts`
+  - `PawHome/miniprogram/utils/searchCache.test.ts`
+  - `PawHome/miniprogram/utils/debounce.test.ts`
+
+### 变更 2026-03-29：可选 SQLite FTS5 全文索引（自动降级）
+
+**目的**
+- 在数据量增大时提升搜索性能：优先走 SQLite FTS5 虚拟表进行全文匹配，并在未启用 FTS 时自动降级到原有 `contains/LIKE` 查询。
+
+**实现要点**
+- 后端增加 FTS 检索实现：
+  - 若库中存在 `posts_fts / shop_products_fts`，搜索接口优先用 FTS 取当前页命中的 `id` 列表与 `total`。
+  - 若 FTS 未创建或 `q` 为空，则走原有 ORM 模糊匹配逻辑。
+- 提供迁移脚本在存量数据库上创建虚拟表与触发器，并执行 `rebuild` 回填索引。
+
+**相关文件**
+- 后端：
+  - `backend/app/search_fts.py`
+  - `backend/app/api/v1/search.py`
+  - `backend/scripts/migrate_add_search_fts.py`
+
+### 变更 2026-03-29：自动补齐 shop_products 拼音字段（修复旧库 500）
+
+**问题现象**
+- 旧的 `instance/app.db` 中 `shop_products` 表缺少 `title_pinyin/title_initials` 字段，导致任何读取商品列表的接口（如 `/api/v1/shop/products`）在 ORM 查询时触发 500。
+
+**修复方案**
+- 应用启动时自动检测并补齐缺失字段，回填存量数据，并创建索引，保证旧库可无感升级。
+
+**相关文件**
+- `backend/app/schema_ensure.py`
+- `backend/app/__init__.py`
+
 ---
 
 ## 竖视频播放留白背景白底

@@ -837,3 +837,51 @@
 
 **实现要点**
 - 后端 `GET /search/posts` 当解析不到任何封面时返回默认封面 URL：`/media/推送3.jpg`（自动 URL 编码）。
+
+### 变更 2026-03-29：模糊搜索（同音错字/去空格/用品泛词）
+
+**目的**
+- 让用户输入存在空格、同音错字或泛词时仍能搜到目标内容，例如：`猫砂` 可通过 `猫莎/猫啥/猫 砂/猫咪用品` 等输入匹配到。
+
+**实现要点**
+- 后端新增宠物词库与查询扩展：
+  - 输入归一化：保留中文/字母/数字，去空格与符号
+  - 同音近字：针对 `砂` 的常见误写（`沙/莎/啥`）做归一化与扩展
+  - 用品泛词：当查询包含 `猫+用品` / `狗+用品` / `宠物+用品` 时，扩展为一组常用用品关键词（如猫砂、猫粮、猫砂盆、牵引绳等）
+  - 扩展数量限制：帖子最多 40 个 term、商品最多 60 个 term，避免 SQL 过长
+- 搜索接口应用：
+  - `GET /search/posts`：对 `Post.content` 做 OR contains
+  - `GET /search/products`：对 `ShopProduct.title/description` 做 OR contains
+
+### 变更 2026-03-29：扩充宠物词库（猫狗用品）
+
+**目标**
+- 将 `宠物用品/猫咪用品/狗狗用品` 这类“泛词”扩展为更细的可命中商品关键词（例如：`逗猫棒/猫条/猫砂/胸背/拾便袋/伊丽莎白圈` 等），即使商品标题里不写“宠物玩具/猫咪用品”也能搜到。
+
+**实现要点**
+- 扩充 `backend/app/search_lexicon.py`：
+  - 新增常见猫狗用品的同义词/别名（清洁、喂养、出行、护理、医疗等）
+  - 用品 bundle 补齐更多细项，并在扩展逻辑中对“用品类泛词”降低别名扩展优先级，优先扩展到具体商品词
+
+**相关文件**
+- 后端：
+  - `backend/app/search_lexicon.py`
+  - `backend/app/api/v1/search.py`
+
+---
+
+## 竖视频播放留白背景白底
+
+**目的**
+- 竖视频在帖子详情页按 `contain` 展示时，会出现左右留白；将留白背景从黑色改为白色，提升观感一致性。
+
+**入口**
+- 小程序帖子详情页：`PawHome/miniprogram/pages/post-detail/index`
+
+**实现要点**
+- `<video>` 使用标准属性 `object-fit="contain"`。
+- 视频节点与容器使用 `background-color` 显式设置为白色（避免默认黑底）。
+
+**相关文件**
+- `PawHome/miniprogram/pages/post-detail/index.wxml`
+- `PawHome/miniprogram/pages/post-detail/index.wxss`

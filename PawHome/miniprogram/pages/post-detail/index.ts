@@ -185,7 +185,9 @@ Page({
     const windowWidth = sysInfo.windowWidth || 375
     const next = Math.round((h / w) * windowWidth)
     const minH = 220
-    const maxH = 520
+    const windowHeight = sysInfo.windowHeight || sysInfo.screenHeight || 812
+    const reserved = (this.data.safeAreaTop || 0) + 44 + (this.data.safeAreaBottom || 0) + 120
+    const maxH = Math.max(520, Math.round(windowHeight - reserved))
     const clamped = Math.max(minH, Math.min(maxH, next))
     if (Math.abs(clamped - (this.data.mediaHeight || 0)) < 2) return
     this.setData({ mediaHeight: clamped, mediaBgColor: "#ffffff" })

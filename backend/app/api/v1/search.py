@@ -8,6 +8,7 @@ from urllib.parse import quote
 
 from sqlalchemy import and_, or_
 
+from ...search_lexicon import expand_pet_query
 from ...models import Follow, Post, ShopProduct, User
 from ...responses import ok
 
@@ -36,7 +37,9 @@ def register_routes(bp) -> None:
 
         query = Post.query
         if q:
-            query = query.filter(Post.content.contains(q))
+            terms = expand_pet_query(q, max_terms=40)
+            if terms:
+                query = query.filter(or_(*[Post.content.contains(t) for t in terms]))
 
         if isinstance(post_type, str) and post_type and post_type != "all":
             query = query.filter(Post.post_type == post_type)
@@ -124,7 +127,19 @@ def register_routes(bp) -> None:
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
         query = ShopProduct.query.filter_by(is_active=True)
         if q:
-            query = query.filter(ShopProduct.title.contains(q))
+            terms = expand_pet_query(q, max_terms=60)
+            if terms:
+                query = query.filter(
+                    or_(
+                        *[
+                            or_(
+                                ShopProduct.title.contains(t),
+                                ShopProduct.description.contains(t),
+                            )
+                            for t in terms
+                        ]
+                    )
+                )
         query = query.order_by(ShopProduct.created_at.desc())
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()

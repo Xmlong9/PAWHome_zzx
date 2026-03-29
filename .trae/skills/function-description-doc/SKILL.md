@@ -9,10 +9,15 @@ description: 将功能解释/功能变更沉淀到根目录 functionDescription.
 
 - 先在对话里用清晰条目解释功能实现逻辑（入口、数据流/状态、关键分支、边界条件、相关文件）。
 
-### 2) 再同步写入 functionDescription.md（必须）
+### 2) 同步写入与飞书同步（必须）
 
-- 写入文件：项目根目录 `functionDescription.md`
-- 写入方式：追加（禁止覆盖既有内容）
+- **本地写入**：追加到项目根目录 `functionDescription.md`（禁止覆盖）。
+- **飞书同步**：将更新后的完整 Markdown 内容同步到 [飞书功能说明文档](https://pcnui6krocmi.feishu.cn/docx/Kz9EdZ4N0oggDixrlIncqmNRnfh)。
+- **大文件分段同步**：若 `functionDescription.md` 超过 20,000 字符，单次同步会因命令长度限制而失败。此时必须：
+  1. 使用 `Get-Content -Raw -Encoding UTF8` 读取完整内容。
+  2. 按 `---` 分隔符拆分内容块。
+  3. 第一个块使用 `--mode overwrite` 同步（清除旧内容并写入头部）。
+  4. 后续所有块依次使用 `--mode append` 同步。
 - 每个功能一条，用二级标题开头：`## <功能名>`
 - 内容至少包含：
   - **目的**

@@ -25,7 +25,7 @@
     <view class="tab-content" hidden="{{currentTab !== 'content'}}">
       <view class="post-detail" wx:if="{{post}}">
         <view class="media-carousel" wx:if="{{post.videoUrl}}" style="margin-top: 0; height: {{mediaHeight}}px; background-color: {{mediaBgColor}};">
-          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls show-mute-btn objectFit="contain" style="height: {{mediaHeight}}px; background: {{mediaBgColor}};" bindloadedmetadata="onVideoMeta" binderror="onVideoError"></video>
+          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls show-mute-btn object-fit="contain" style="height: {{mediaHeight}}px; background-color: {{mediaBgColor}};" bindloadedmetadata="onVideoMeta" binderror="onVideoError"></video>
         </view>
 
         <view class="media-carousel" wx:if="{{!post.videoUrl && post.images && post.images.length > 0}}" style="margin-top: 0;background-color: {{mediaBgColor}};">

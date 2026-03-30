@@ -21,6 +21,8 @@
     "pages/shop/favorites",
     "pages/service/index",
     "pages/service/success/index",
+    "pages/service/appointments/index",
+    "pages/service/appointments/detail/index",
     "pages/vaccine/record/index",
     "pages/vaccine/import/index",
     "pages/vaccine/appointment/index",

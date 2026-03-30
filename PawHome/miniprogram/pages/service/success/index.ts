@@ -1,3 +1,27 @@
+import { getBaseUrl } from "../../../config/env"
+import { getPetList } from "../../../services/user"
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const base = getBaseUrl()
+  const origin = base.split("/").slice(0, 3).join("/")
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+
+function safeDecode(value: any): string {
+  if (typeof value !== "string") return ""
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 Page({
   data: {
     petName: '涛涛',
@@ -7,18 +31,34 @@ Page({
     date: '2024-05-20',
     time: '14:30',
     tipsTitle: '接种须知',
-    tips: [] as any[]
+    tips: [] as any[],
+    type: "vaccine",
+    petId: "",
+    appointmentId: ""
   },
 
-  onLoad(options: any) {
-    if (options.petName) this.setData({ petName: decodeURIComponent(options.petName) });
-    if (options.itemName) this.setData({ itemName: decodeURIComponent(options.itemName) });
-    if (options.storeName) this.setData({ storeName: decodeURIComponent(options.storeName) });
-    if (options.date) this.setData({ date: options.date });
-    if (options.time) this.setData({ time: options.time });
+  async onLoad(options: any) {
+    const type = safeDecode(options?.type) || "vaccine"
+    const appointmentId = safeDecode(options?.appointmentId)
+    const petId = safeDecode(options?.petId)
+    const petName = safeDecode(options?.petName) || ""
+    const itemName = safeDecode(options?.itemName) || ""
+    const storeName = safeDecode(options?.storeName) || ""
+    const date = safeDecode(options?.date) || ""
+    const time = safeDecode(options?.time) || ""
+    this.setData({
+      type,
+      appointmentId,
+      petId,
+      petName: petName || this.data.petName,
+      itemName: itemName || this.data.itemName,
+      storeName: storeName || this.data.storeName,
+      date: date || this.data.date,
+      time: time || this.data.time
+    })
 
-    const type = options.type || 'vaccine';
-    this.initTips(type);
+    this.initTips(type)
+    await this.tryLoadPetAvatar(petId, petName)
   },
 
   initTips(type: string) {
@@ -64,6 +104,33 @@ Page({
   },
 
   goOrderList() {
-    wx.switchTab({ url: '/pages/my/index' });
+    const type = this.data.type || "vaccine"
+    if (type === "vaccine") {
+      wx.redirectTo({ url: "/pages/vaccine/record/index" })
+      return
+    }
+    wx.redirectTo({ url: `/pages/service/index?type=${encodeURIComponent(type)}` });
+  },
+
+  goAppointmentRecords() {
+    const type = this.data.type || "vaccine"
+    if (type === "vaccine") {
+      wx.navigateTo({ url: "/pages/vaccine/appointments/index" })
+      return
+    }
+    wx.navigateTo({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
+  },
+
+  async tryLoadPetAvatar(petId: string, petName: string) {
+    try {
+      const list = await getPetList()
+      const pets = list || []
+      const pet = (petId
+        ? pets.find((p: any) => p.id === petId)
+        : pets.find((p: any) => p.name === petName)) || null
+      const avatar = pet?.avatarUrl || ""
+      if (avatar) this.setData({ petAvatar: toAbsoluteUrl(avatar) })
+    } catch {
+    }
   }
 });

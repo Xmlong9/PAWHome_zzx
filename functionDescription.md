@@ -1720,3 +1720,63 @@
 **相关文件**
 - `backend/app/schema_ensure.py`
 - `PawHome/miniprogram/pages/service/index.(ts|wxml|wxss)`
+
+---
+
+## 服务预约页地图交互（美容/医疗/寄养）
+
+**目的**
+- 美容/医疗/寄养预约页的“选择门店/医院”区域使用原生 `<map>` 展示真实地图底图，并提供与疫苗预约页一致的点位交互与切换动效。
+
+**入口**
+- 服务预约页：`/pages/service/index?type=beauty|medical|foster`
+
+**数据流/状态**
+- 门店列表来自 `GET /services/providers?serviceType=...`。
+- 页面根据 providerId 生成演示用坐标点位，构建 `markers` 并渲染 `<map>`：
+  - 点击点位或列表切换门店：更新 `selectedStoreId/selectedStore`，并触发“拉远 → 平移 → 拉近”动画序列（通过 `setTimeout` 调度）。
+  - `cover-view slot="callout"` 绘制圆点脉冲 marker，使用 `marker-id="{{id - 0}}"` 确保 markerId 为 number。
+
+**边界条件**
+- 当前 provider 数据未提供真实经纬度，页面使用同城（杭州周边）预置坐标用于演示；后续可升级为后端下发真实坐标。
+
+### 变更 2026-03-31 预置坐标优化
+
+- 将门店/医院的演示坐标调整到杭州主城区道路附近，避免 marker 落在河道/山里导致底图观感异常。
+
+**相关文件**
+- `PawHome/miniprogram/pages/service/index.ts`
+- `PawHome/miniprogram/pages/service/index.wxml`
+- `PawHome/miniprogram/pages/service/index.wxss`
+
+---
+
+## 服务预约体验修复（弹窗样式/日期/成功页/预约记录）
+
+**目的**
+- 统一美容/医疗/寄养/疫苗的预约体验：底部预约弹窗改为白底、日期展示正确、成功页展示真实宠物头像与正确返回路径，并提供预约记录查看入口。
+
+**入口**
+- 服务预约页：`/pages/service/index?type=vaccine|beauty|medical|foster`
+- 服务预约成功页：`/pages/service/success/index?...`
+- 服务预约记录页：`/pages/service/appointments/index?type=beauty|medical|foster`
+
+**数据流/状态**
+- 日期选项：由 `buildServiceDateOptions(availableDates)` 生成；为避免小程序 Date 解析差异导致“今天/明天”错位，改用 `new Date(y, m-1, d)` 解析 `YYYY-MM-DD`。
+- 成功页展示：
+  - 通过 query 传入 `petId/appointmentId`（并对参数统一解码），成功页使用 `GET /api/v1/users/me/pets` 匹配宠物并展示真实头像。
+  - “返回XX页”根据服务类型跳回对应预约页（vaccine 跳回疫苗主页）。
+  - 增加“查看记录”入口：vaccine 进入疫苗预约记录，其余类型进入服务预约记录。
+- 服务预约记录：
+  - 新增服务预约记录列表/详情页，按 `serviceType + petId` 拉取预约并按 `appointmentAt` 分组为“未过期/历史”。
+
+**边界条件**
+- 底部弹窗仅调整样式（白底 + 分割线），不改变原有交互逻辑。
+
+**相关文件**
+- `PawHome/miniprogram/pages/service/index.wxss`
+- `PawHome/miniprogram/pages/service/index.ts`
+- `PawHome/miniprogram/pages/service/success/index.(ts|wxml)`
+- `PawHome/miniprogram/pages/service/appointments/index.(ts|wxml|wxss|json)`
+- `PawHome/miniprogram/pages/service/appointments/detail/index.(ts|wxml|wxss|json)`
+- `PawHome/miniprogram/utils/serviceBooking.ts`

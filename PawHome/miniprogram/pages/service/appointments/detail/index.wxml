@@ -1,0 +1,29 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">预约信息</view>
+    <view class="row">
+      <view class="label">宠物名称</view>
+      <view class="val">{{petName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">服务项目</view>
+      <view class="val">{{itemName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">门店/医院</view>
+      <view class="val">{{storeName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">预约时间</view>
+      <view class="val">{{date}} {{time}}</view>
+    </view>
+    <view class="row" wx:if="{{statusText}}">
+      <view class="label">状态</view>
+      <view class="val">{{statusText}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="danger-btn" bindtap="onDelete">删除记录</view>
+  </view>
+</view>

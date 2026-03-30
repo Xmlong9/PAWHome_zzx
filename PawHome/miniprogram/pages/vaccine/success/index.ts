@@ -10,11 +10,11 @@ Page({
   },
 
   onLoad(options: any) {
-    if (options.petName) this.setData({ petName: decodeURIComponent(options.petName) });
-    if (options.itemName) this.setData({ itemName: decodeURIComponent(options.itemName) });
-    if (options.storeName) this.setData({ storeName: decodeURIComponent(options.storeName) });
-    if (options.date) this.setData({ date: options.date });
-    if (options.time) this.setData({ time: options.time });
+    if (options.petName) this.setData({ petName: safeDecode(options.petName) });
+    if (options.itemName) this.setData({ itemName: safeDecode(options.itemName) });
+    if (options.storeName) this.setData({ storeName: safeDecode(options.storeName) });
+    if (options.date) this.setData({ date: safeDecode(options.date) });
+    if (options.time) this.setData({ time: safeDecode(options.time) });
   },
 
   goRecord() {
@@ -26,3 +26,11 @@ Page({
   }
 });
 
+function safeDecode(value: any): string {
+  if (typeof value !== "string") return ""
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}

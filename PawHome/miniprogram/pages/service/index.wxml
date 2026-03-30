@@ -34,10 +34,34 @@
 
   <!-- Store/Hospital Selector -->
   <view class="section">
-    <view class="section-title">选择{{storeLabel}}</view>
+    <view class="section-title-row">
+      <view class="section-title">选择{{storeLabel}}</view>
+      <view class="section-link" bindtap="goAppointmentRecords">查看记录</view>
+    </view>
     <view class="store-container">
       <view class="map-placeholder">
-        <image src="/assets/images/home/advertise@1x.png" mode="aspectFill" class="map-img"></image>
+        <map
+          id="serviceMap"
+          class="map-real"
+          latitude="{{mapLat}}"
+          longitude="{{mapLng}}"
+          scale="{{mapScale}}"
+          markers="{{mapMarkers}}"
+          enable-scroll="{{false}}"
+          enable-zoom="{{false}}"
+          show-location="{{false}}"
+          bindmarkertap="onMapMarkerTap"
+          bindcallouttap="onMapMarkerTap"
+        >
+          <cover-view slot="callout">
+            <block wx:for="{{mapMarkers}}" wx:key="id">
+              <cover-view marker-id="{{item.id - 0}}" class="map-marker {{item.active?'active':''}}" bindtap="selectStore" data-id="{{item.providerId}}">
+                <cover-view class="marker-pulse"></cover-view>
+                <cover-view class="marker-dot"></cover-view>
+              </cover-view>
+            </block>
+          </cover-view>
+        </map>
       </view>
       <view class="store-list">
         <view class="store-card {{selectedStoreId == item.id ? 'active' : ''}}" wx:for="{{stores}}" wx:key="id" bindtap="selectStore" data-id="{{item.id}}">

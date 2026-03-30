@@ -41,6 +41,10 @@ Page({
     stores: [] as any[],
     selectedStoreId: "",
     selectedStore: null as any,
+    mapMarkers: [] as any[],
+    mapLat: 30.2760,
+    mapLng: 120.1650,
+    mapScale: 17,
     days: [] as any[],
     selectedDate: "",
     selectedDateLabel: "",
@@ -85,6 +89,7 @@ Page({
         selectedStoreId,
         selectedStore: stores[0] || null
       })
+      this.refreshMap()
       if (selectedStoreId) {
         await this.loadOfferings(type, selectedStoreId)
       }
@@ -165,9 +170,59 @@ Page({
 
   async selectStore(e: any) {
     const selectedStoreId = e.currentTarget.dataset.id
+    if (selectedStoreId === this.data.selectedStoreId) return
     const selectedStore = this.data.stores.find((store: any) => store.id === selectedStoreId) || null
     this.setData({ selectedStoreId, selectedStore })
+
+    const points = getStorePoints(this.data.stores || [])
+    const selected = points.find((x) => x.providerId === selectedStoreId)
+    this.setData({ mapScale: 11 })
+    setTimeout(() => {
+      if (selected) {
+        this.setData({
+          mapLat: selected.latitude,
+          mapLng: selected.longitude
+        })
+      }
+      setTimeout(() => {
+        this.setData({ mapScale: 17 })
+        this.refreshMap()
+      }, 400)
+    }, 400)
     await this.loadOfferings(this.data.type, selectedStoreId)
+  },
+
+  onMapMarkerTap(e: any) {
+    const markerId = e.detail.markerId
+    if (markerId === undefined) return
+    const marker = this.data.mapMarkers.find((m: any) => m.id === markerId)
+    if (!marker) return
+    this.selectStore({ currentTarget: { dataset: { id: marker.providerId } } })
+  },
+
+  refreshMap() {
+    const points = getStorePoints(this.data.stores || [])
+    const selected = points.find((x) => x.providerId === this.data.selectedStoreId) || points[0] || null
+    const mapMarkers = points.map((item) => ({
+      ...item,
+      active: item.providerId === (selected?.providerId || "")
+    }))
+    const updateData: any = { mapMarkers }
+    if (selected && this.data.mapLat === 30.2760 && this.data.mapLng === 120.1650) {
+      updateData.mapLat = selected.latitude
+      updateData.mapLng = selected.longitude
+      updateData.mapScale = 17
+    }
+    this.setData(updateData)
+  },
+
+  goAppointmentRecords() {
+    const type = this.data.type || "beauty"
+    if (type === "vaccine") {
+      wx.navigateTo({ url: "/pages/vaccine/appointments/index" })
+      return
+    }
+    wx.navigateTo({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
   },
 
   async selectDate(e: any) {
@@ -234,6 +289,8 @@ Page({
       wx.navigateTo({
         url: `/pages/service/success/index${buildSuccessQuery({
           type: this.data.type,
+          appointmentId: appointment.id,
+          petId: pet.id,
           petName: pet.name,
           itemName: appointment.offering?.name || offering.name,
           storeName: appointment.provider?.name || store.name,
@@ -248,3 +305,38 @@ Page({
     }
   }
 })
+
+function getStorePoints(stores: any[]) {
+  const presets: Record<string, { lat: number; lng: number }> = {
+    "provider-beauty-1": { lat: 30.2760, lng: 120.1650 },
+    "provider-beauty-2": { lat: 30.2868, lng: 120.1765 },
+    "provider-medical-1": { lat: 30.2726, lng: 120.1548 },
+    "provider-medical-2": { lat: 30.2636, lng: 120.1849 },
+    "provider-foster-1": { lat: 30.2516, lng: 120.1708 },
+    "provider-foster-2": { lat: 30.2965, lng: 120.1888 }
+  }
+  return (stores || []).map((s, index) => {
+    const preset = presets[s.id]
+    let lat, lng
+    if (preset) {
+      lat = preset.lat
+      lng = preset.lng
+    } else {
+      lat = 30.2760 + index * 0.01
+      lng = 120.1650 + index * 0.01
+    }
+    return {
+      id: index + 1,
+      providerId: s.id,
+      latitude: lat,
+      longitude: lng,
+      width: 0,
+      height: 0,
+      customCallout: {
+        display: "ALWAYS",
+        anchorY: 0,
+        anchorX: 0
+      }
+    }
+  })
+}

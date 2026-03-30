@@ -45,6 +45,7 @@
 
   <view class="bottom-actions">
     <view class="btn-secondary" bindtap="goOrderList">返回{{tipsTitle === '接种须知' ? '疫苗' : tipsTitle === '就诊须知' ? '医疗' : tipsTitle === '美容须知' ? '美容' : '寄养'}}页</view>
+    <view class="btn-secondary" bindtap="goAppointmentRecords">查看记录</view>
     <view class="btn-primary" bindtap="goHome">返回首页</view>
   </view>
 </view>

@@ -1,18 +1,20 @@
 import json
 import sys
+import os
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import json as _json
 
-from app import create_app
-from app.extensions import db
-from app import models as _models
-from app.models import ShopProduct
-
-
 def main() -> None:
+    db_path = Path(tempfile.gettempdir()) / "pawhome_smoke_api.db"
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+    from app import create_app
+    from app.extensions import db
+    from app.models import ShopProduct
+
     app = create_app()
     with app.app_context():
         db.drop_all()

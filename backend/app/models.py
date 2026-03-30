@@ -180,6 +180,73 @@ class ServiceAppointment(db.Model, TimestampMixin):
     )
 
 
+class VaccineCatalog(db.Model, TimestampMixin):
+    __tablename__ = "vaccine_catalog"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    category = db.Column(db.String(32), index=True, nullable=False)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(256), nullable=True)
+    status = db.Column(db.String(32), default="active", nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("category", "name", name="uq_vaccine_catalog_category_name"),
+        Index("ix_vaccine_catalog_category_sort", "category", "sort_order"),
+    )
+
+
+class VaccineRecord(db.Model, TimestampMixin):
+    __tablename__ = "vaccine_records"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
+    pet_id = db.Column(db.String(36), db.ForeignKey("pets.id"), index=True, nullable=False)
+    vaccine_id = db.Column(db.String(36), db.ForeignKey("vaccine_catalog.id"), index=True, nullable=False)
+    vaccinated_at = db.Column(db.DateTime, index=True, nullable=False)
+    provider_name = db.Column(db.String(128), nullable=True)
+    notes = db.Column(db.String(512), nullable=True)
+
+    __table_args__ = (
+        Index("ix_vaccine_records_pet_vaccine", "pet_id", "vaccine_id"),
+    )
+
+
+class DewormingRecord(db.Model, TimestampMixin):
+    __tablename__ = "deworming_records"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
+    pet_id = db.Column(db.String(36), db.ForeignKey("pets.id"), index=True, nullable=False)
+    record_at = db.Column(db.DateTime, index=True, nullable=False)
+    title = db.Column(db.String(128), nullable=False)
+    provider_name = db.Column(db.String(128), nullable=True)
+    notes = db.Column(db.String(512), nullable=True)
+
+
+class VaccineReminder(db.Model, TimestampMixin):
+    __tablename__ = "vaccine_reminders"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
+    pet_id = db.Column(db.String(36), db.ForeignKey("pets.id"), index=True, nullable=False)
+    appointment_id = db.Column(db.String(36), db.ForeignKey("service_appointments.id"), index=True, nullable=False)
+    vaccine_id = db.Column(db.String(36), db.ForeignKey("vaccine_catalog.id"), index=True, nullable=False)
+    vaccine_name = db.Column(db.String(128), nullable=False)
+    appointment_at = db.Column(db.DateTime, index=True, nullable=False)
+    remind_at = db.Column(db.DateTime, index=True, nullable=False)
+    ahead_days = db.Column(db.Integer, default=1, nullable=False)
+    channel = db.Column(db.String(32), default="push", nullable=False)
+    remark = db.Column(db.String(512), nullable=True)
+    add_to_calendar = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(32), default="active", nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("appointment_id", name="uq_vaccine_reminders_appointment"),
+        Index("ix_vaccine_reminders_pet_remind", "pet_id", "remind_at"),
+    )
+
+
 class Follow(db.Model, TimestampMixin):
     __tablename__ = "follows"
 

@@ -7,7 +7,7 @@ from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Pet, ServiceAppointment, ServiceOffering, ServiceProvider, ServiceSlot, User
+from ...models import Pet, ServiceAppointment, ServiceOffering, ServiceProvider, ServiceSlot, User, VaccineCatalog
 from ...responses import fail, ok
 
 
@@ -161,6 +161,7 @@ def _appointment_to_dict(a: ServiceAppointment) -> dict:
     provider = snapshot.get("provider")
     offering = snapshot.get("offering")
     slot = snapshot.get("slot")
+    vaccine = snapshot.get("vaccine")
     return {
         "id": a.id,
         "petId": a.pet_id,
@@ -179,6 +180,7 @@ def _appointment_to_dict(a: ServiceAppointment) -> dict:
         "provider": provider,
         "offering": offering,
         "slot": slot,
+        "vaccine": vaccine,
         "createdAt": a.created_at.isoformat() if a.created_at else None,
         "updatedAt": a.updated_at.isoformat() if a.updated_at else None,
     }
@@ -295,11 +297,25 @@ def register_routes(bp) -> None:
             if slot.reserved_count >= slot.capacity:
                 return fail(code="CONFLICT", message="slot full", status_code=409)
 
+        vaccine_id = data.get("vaccineId")
+        vaccine = None
+        if service_type.strip() == "vaccine":
+            if not isinstance(vaccine_id, str) or not vaccine_id.strip():
+                return fail(code="BAD_REQUEST", message="vaccineId required", status_code=400)
+            vaccine = VaccineCatalog.query.filter_by(id=vaccine_id.strip(), status="active").first()
+            if vaccine is None:
+                return fail(code="NOT_FOUND", message="vaccine not found", status_code=404)
+
         snapshot = {
             "provider": _provider_snapshot(provider),
             "offering": _offering_snapshot(offering),
             "slot": _slot_snapshot(slot),
             "price": offering.price if offering is not None else None,
+            "vaccine": (
+                {"id": vaccine.id, "name": vaccine.name, "category": vaccine.category}
+                if vaccine is not None
+                else None
+            ),
         }
 
         a = ServiceAppointment(

@@ -105,11 +105,67 @@ page {
   border-radius: 16rpx;
   overflow: hidden;
   margin-bottom: 18rpx;
+  position: relative;
+  background-color: #F2F2F2;
 }
 
-.map-img {
+.map-real {
   width: 100%;
   height: 100%;
+}
+
+.map-marker {
+  position: relative;
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.marker-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 6rpx rgba(255, 158, 94, 0.45);
+}
+
+.marker-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 158, 94, 0.35);
+  transform: translate(-50%, -50%) scale(1);
+  animation: markerPulse 1400ms ease-out infinite;
+  opacity: 0.9;
+}
+
+.map-marker.active .marker-dot {
+  box-shadow: 0 0 0 8rpx rgba(255, 158, 94, 0.55);
+}
+
+.map-marker.active .marker-pulse {
+  background-color: rgba(255, 158, 94, 0.55);
+}
+
+@keyframes markerPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+  }
 }
 
 .hospital-card {
@@ -120,6 +176,15 @@ page {
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 18rpx;
+}
+
+.hospital-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  background-color: #EEEEEE;
+  margin-right: 18rpx;
+  flex-shrink: 0;
 }
 
 .hospital-info {

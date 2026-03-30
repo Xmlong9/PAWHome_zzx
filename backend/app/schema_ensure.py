@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime, time, timedelta
+from urllib.parse import quote
 
 from sqlalchemy import text
 
 from .extensions import db
-from .models import ServiceOffering, ServiceProvider, ServiceSlot
+from .models import ServiceOffering, ServiceProvider, ServiceSlot, VaccineCatalog
 from .pinyin import to_pinyin_full_and_initials
 
 
@@ -347,3 +348,61 @@ def ensure_service_booking_schema() -> None:
     db.create_all()
     _ensure_service_appointment_columns()
     _seed_service_booking_data()
+    _ensure_service_provider_cover_images()
+
+
+def _media_path(filename: str) -> str:
+    return f"/media/{quote(filename)}"
+
+
+def _ensure_service_provider_cover_images() -> None:
+    if not _has_table("service_providers"):
+        return
+
+    mapping = {
+        "provider-vaccine-1": _media_path("宠物医院1.jpg"),
+        "provider-vaccine-2": _media_path("宠物医院2.jpg"),
+    }
+    default_placeholder = "/assets/images/home/advertise@1x.png"
+    changed = False
+    for pid, cover in mapping.items():
+        provider = ServiceProvider.query.filter_by(id=pid).first()
+        if provider is None:
+            continue
+        current = provider.cover_image or ""
+        if (not current) or current == default_placeholder:
+            provider.cover_image = cover
+            changed = True
+    if changed:
+        db.session.commit()
+
+
+def ensure_vaccine_module_schema() -> None:
+    db.create_all()
+    if VaccineCatalog.query.count() > 0:
+        return
+
+    items = [
+        ("vax-core-rabies", "core", "狂犬疫苗", "年度加强或按方案接种", 0),
+        ("vax-core-dog-4", "core", "犬四联", "犬瘟/细小/传染性肝炎/副流感", 1),
+        ("vax-core-dog-8", "core", "犬八联", "按医院方案选择联苗", 2),
+        ("vax-core-cat-3", "core", "猫三联", "猫瘟/鼻支/杯状", 3),
+        ("vax-core-cat-4", "core", "猫四联", "猫三联 + 猫白血病", 4),
+        ("vax-opt-lepto", "optional", "钩端螺旋体疫苗", "高风险环境可选", 0),
+        ("vax-opt-influenza", "optional", "犬流感疫苗", "按地区与流行情况选择", 1),
+        ("vax-opt-corona", "optional", "犬冠状疫苗", "按医院评估选择", 2),
+        ("vax-opt-feLV", "optional", "猫白血病疫苗", "外出猫建议评估", 3),
+        ("vax-opt-bordetella", "optional", "犬窝咳疫苗", "寄养/密集接触环境建议", 4),
+    ]
+    for vid, category, name, description, sort_order in items:
+        db.session.add(
+            VaccineCatalog(
+                id=vid,
+                category=category,
+                name=name,
+                description=description,
+                status="active",
+                sort_order=sort_order,
+            )
+        )
+    db.session.commit()

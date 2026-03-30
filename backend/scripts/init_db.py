@@ -12,8 +12,6 @@ from app import models as _models
 def main() -> None:
     app = create_app()
     with app.app_context():
-        if os.getenv("RESET_DB") == "1":
-            db.drop_all()
         db.create_all()
 
 

@@ -21,9 +21,31 @@
   <view class="section">
     <view class="section-title">选择医院</view>
     <view class="map-card">
-      <image class="map-img" src="/assets/images/home/advertise@1x.png" mode="aspectFill"></image>
+      <map
+        id="myMap"
+        class="map-real"
+        latitude="{{mapLat}}"
+        longitude="{{mapLng}}"
+        scale="{{mapScale}}"
+        markers="{{mapMarkers}}"
+        enable-scroll="{{false}}"
+        enable-zoom="{{false}}"
+        show-location="{{false}}"
+        bindmarkertap="onMapMarkerTap"
+        bindcallouttap="onMapMarkerTap"
+      >
+        <cover-view slot="callout">
+          <block wx:for="{{mapMarkers}}" wx:key="id">
+            <cover-view marker-id="{{item.id - 0}}" class="map-marker {{item.active?'active':''}}" bindtap="selectHospital" data-id="{{item.providerId}}">
+              <cover-view class="marker-pulse"></cover-view>
+              <cover-view class="marker-dot"></cover-view>
+            </cover-view>
+          </block>
+        </cover-view>
+      </map>
     </view>
     <view class="hospital-card" wx:for="{{hospitals}}" wx:key="id">
+      <image class="hospital-cover" src="{{item.coverImage}}" mode="aspectFill"></image>
       <view class="hospital-info">
         <view class="hospital-name">{{item.name}}</view>
         <view class="hospital-sub">距离 {{item.distance}} | 评分 {{item.rating}}</view>

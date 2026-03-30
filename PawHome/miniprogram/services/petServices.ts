@@ -53,6 +53,7 @@ export type PetServiceAppointment = {
   price?: number
   notes: string
   status: string
+  vaccine?: { id: string; name: string; category?: string } | null
   provider?: { id: string; name: string }
   offering?: { id: string; name: string; price: number }
   slot?: { id: string; serviceDate: string; timeLabel: string; appointmentAt: string }
@@ -95,6 +96,7 @@ export function createServiceAppointment(data: {
   offeringId: string
   slotId: string
   appointmentAt: string
+  vaccineId?: string
   notes?: string
 }): Promise<PetServiceAppointment> {
   return request({
@@ -114,5 +116,12 @@ export function listServiceAppointments(params?: {
     url: "/services/appointments",
     method: "GET",
     data: params || {}
+  })
+}
+
+export function getServiceAppointmentDetail(appointmentId: string): Promise<PetServiceAppointment> {
+  return request({
+    url: `/services/appointments/${appointmentId}`,
+    method: "GET"
   })
 }

@@ -10,12 +10,12 @@
     </view>
   </view>
 
-  <view class="remind-card">
+  <view class="remind-card" wx:if="{{upcomingReminder}}">
     <view class="remind-left">
       <view class="remind-title">待接种提醒</view>
-      <view class="remind-sub">狂犬病疫苗年度加强针</view>
+      <view class="remind-sub">{{upcomingSub}}</view>
     </view>
-    <view class="remind-right">3天后</view>
+    <view class="remind-right">{{upcomingLabel}}</view>
   </view>
 
   <view class="tabs">
@@ -32,9 +32,9 @@
       </view>
       <view class="record-line">{{item.line1}}</view>
       <view class="record-line">{{item.line2}}</view>
-      <view class="record-footer">
+      <view class="record-footer" wx:if="{{item.footerText}}">
         <view class="clock-icon"></view>
-        <view class="record-next">下次接种时间：{{item.nextTime}}</view>
+        <view class="record-next">{{item.footerText}}</view>
       </view>
     </view>
   </view>

@@ -1,10 +1,19 @@
+import { getBaseUrl } from "../../config/env"
+
+function getApiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
 Page({
   data: {
     countdown: 3,
-    timer: null as any
+    timer: null as any,
+    bgUrl: ""
   },
 
   onLoad() {
+    this.setData({ bgUrl: `${getApiOrigin()}/media/splash-bg.png` })
     this.startTimer();
   },
 

@@ -1,5 +1,6 @@
 import { request } from "./request"
 import { isMockEnabled } from "./mock"
+import { getBaseUrl } from "../config/env"
 
 export type ShopProduct = {
   id: string
@@ -77,11 +78,44 @@ const STORAGE_CART = "shop_cart"
 const STORAGE_ORDERS = "shop_orders"
 const STORAGE_WALLET_TXS = "shop_wallet_txs"
 const STORAGE_RECHARGE_API_DISABLED_UNTIL = "shop_recharge_api_disabled_until"
+const toAbsoluteUrl = (url: string): string => {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const base = getBaseUrl()
+  const origin = base.split("/").slice(0, 3).join("/")
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+const normalizeProduct = (p: ShopProduct | null): ShopProduct | null => {
+  if (!p) return p
+  return { ...p, imageUrl: toAbsoluteUrl(p.imageUrl) }
+}
+const normalizeProducts = (list: ShopProduct[]): ShopProduct[] => list.map((p) => normalizeProduct(p) as ShopProduct)
 const PRODUCT_IMAGE_MAP: Record<string, string> = {
   p1: "/assets/images/shop/商品1.jpg",
   p2: "/assets/images/shop/商品2.jpg",
   p3: "/assets/images/shop/商品3.jpg",
-  p4: "/assets/images/shop/商品4.jpg"
+  p4: "/assets/images/shop/商品4.jpg",
+  p5: "/media/prod_01.jpg",
+  p6: "/media/prod_02.jpg",
+  p7: "/media/prod_03.jpg",
+  p8: "/media/prod_04.jpg",
+  p9: "/media/prod_05.jpg",
+  p10: "/media/prod_06.jpg",
+  p11: "/media/prod_07.jpg",
+  p12: "/media/prod_08.jpg",
+  p13: "/media/prod_09.jpg",
+  p14: "/media/prod_10.jpg",
+  p15: "/media/prod_11.jpg",
+  p16: "/media/prod_12.jpg",
+  p17: "/media/prod_13.jpg",
+  p18: "/media/prod_14.jpg",
+  p19: "/media/prod_15.jpg",
+  p20: "/media/prod_16.jpg",
+  p21: "/media/prod_17.jpg"
 }
 
 const now = () => Date.now()
@@ -157,6 +191,227 @@ const seedProducts = (): ShopProduct[] => [
     rating: 4.6,
     favorite: true,
     specs: ["经典款", "豪华款"]
+  },
+  {
+    id: "p5",
+    name: "智能自动猫砂盆 MAX",
+    desc: "大入口大空间，减少异味，适合多猫家庭",
+    price: 1599,
+    marketPrice: 1999,
+    imageUrl: PRODUCT_IMAGE_MAP.p5,
+    soldCount: 230,
+    tags: ["智能", "省心"],
+    rating: 4.8,
+    favorite: false,
+    specs: ["标准版", "MAX版"]
+  },
+  {
+    id: "p6",
+    name: "狗狗玩具组合",
+    desc: "磨牙解闷，快乐陪伴",
+    price: 39.9,
+    marketPrice: 59.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p6,
+    soldCount: 1360,
+    tags: ["磨牙", "玩具"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["8件套", "12件套"]
+  },
+  {
+    id: "p7",
+    name: "宠物零食任选 6 款",
+    desc: "39元任选，多品牌混合装",
+    price: 39,
+    marketPrice: 49,
+    imageUrl: PRODUCT_IMAGE_MAP.p7,
+    soldCount: 1980,
+    tags: ["零食", "任选"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["6款任选"]
+  },
+  {
+    id: "p8",
+    name: "透气防潮网眼行军床",
+    desc: "透气防潮，耐磨稳固，四季可用",
+    price: 129,
+    marketPrice: 169,
+    imageUrl: PRODUCT_IMAGE_MAP.p8,
+    soldCount: 740,
+    tags: ["睡窝", "透气"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["M", "L"]
+  },
+  {
+    id: "p9",
+    name: "鸭鸭安抚玩偶",
+    desc: "萌宠伴侣，抱着安睡整晚",
+    price: 29.9,
+    marketPrice: 39.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p9,
+    soldCount: 2180,
+    tags: ["玩具", "陪伴"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["小号", "大号"]
+  },
+  {
+    id: "p10",
+    name: "联名逗猫棒套装",
+    desc: "自由DIY，多种玩法，猫猫更爱玩",
+    price: 29.9,
+    marketPrice: 39.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p10,
+    soldCount: 1640,
+    tags: ["逗猫", "互动"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["3件套", "5件套"]
+  },
+  {
+    id: "p11",
+    name: "多功能立式猫抓板",
+    desc: "玩耍/睡觉/躲猫，一板三用",
+    price: 79,
+    marketPrice: 109,
+    imageUrl: PRODUCT_IMAGE_MAP.p11,
+    soldCount: 3020,
+    tags: ["猫抓板", "耐磨"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["单个", "2个装"]
+  },
+  {
+    id: "p12",
+    name: "磨牙自嗨 5 件套",
+    desc: "磨牙/洁齿/自嗨，尺寸更好玩",
+    price: 29.9,
+    marketPrice: 39.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p12,
+    soldCount: 1120,
+    tags: ["磨牙", "玩具"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["5件套"]
+  },
+  {
+    id: "p13",
+    name: "加宽梳面去毛刷",
+    desc: "加宽梳面，深层去毛，顺滑不伤皮肤",
+    price: 39.9,
+    marketPrice: 59.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p13,
+    soldCount: 1860,
+    tags: ["去毛", "护理"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["单把", "2把装"]
+  },
+  {
+    id: "p14",
+    name: "趣味猫窝（自由DIY）",
+    desc: "多模块组合，玩耍躲藏两不误",
+    price: 129,
+    marketPrice: 169,
+    imageUrl: PRODUCT_IMAGE_MAP.p14,
+    soldCount: 960,
+    tags: ["猫窝", "玩具"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["基础款", "加长款"]
+  },
+  {
+    id: "p15",
+    name: "放山鸡猫粮 2kg×4",
+    desc: "高鲜肉配方，适口性更好",
+    price: 154,
+    marketPrice: 199,
+    imageUrl: PRODUCT_IMAGE_MAP.p15,
+    soldCount: 980,
+    tags: ["猫粮", "主粮"],
+    rating: 4.8,
+    favorite: false,
+    specs: ["2kg×4"]
+  },
+  {
+    id: "p16",
+    name: "Dream 美毛猫粮 1.8kg",
+    desc: "21天美毛，含鱼油更亮毛",
+    price: 129.9,
+    marketPrice: 169.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p16,
+    soldCount: 1240,
+    tags: ["猫粮", "美毛"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["1.8kg"]
+  },
+  {
+    id: "p17",
+    name: "喵梵思蓝袋子猫粮",
+    desc: "好粮不贵，口味丰富更耐吃",
+    price: 89.9,
+    marketPrice: 119.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p17,
+    soldCount: 4500,
+    tags: ["猫粮", "热销"],
+    rating: 4.8,
+    favorite: false,
+    specs: ["1.8kg", "5kg"]
+  },
+  {
+    id: "p18",
+    name: "三拼狗粮 10kg",
+    desc: "鸡肉拼板栗，营养搭配更均衡",
+    price: 239,
+    marketPrice: 299,
+    imageUrl: PRODUCT_IMAGE_MAP.p18,
+    soldCount: 1860,
+    tags: ["狗粮", "主粮"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["10kg"]
+  },
+  {
+    id: "p19",
+    name: "鸭肉配方鲜肉狗粮",
+    desc: "鲜肉配方，更好消化，适口性佳",
+    price: 15.9,
+    marketPrice: 22.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p19,
+    soldCount: 2680,
+    tags: ["狗粮", "鲜肉"],
+    rating: 4.6,
+    favorite: false,
+    specs: ["800g", "2kg"]
+  },
+  {
+    id: "p20",
+    name: "N33 PLUS 鲜肉狗粮",
+    desc: "鲜肉果蔬配方，营养更全面",
+    price: 84.9,
+    marketPrice: 109.9,
+    imageUrl: PRODUCT_IMAGE_MAP.p20,
+    soldCount: 1560,
+    tags: ["狗粮", "鲜肉"],
+    rating: 4.7,
+    favorite: false,
+    specs: ["2kg", "12kg"]
+  },
+  {
+    id: "p21",
+    name: "Care 全价全期猫粮",
+    desc: "80%高肉含量，满足食肉天性",
+    price: 99,
+    marketPrice: 129,
+    imageUrl: PRODUCT_IMAGE_MAP.p21,
+    soldCount: 2360,
+    tags: ["猫粮", "高肉"],
+    rating: 4.7,
+    favorite: true,
+    specs: ["1.5kg", "2.5kg"]
   }
 ]
 
@@ -214,7 +469,17 @@ const ensureSeed = () => {
   if (!products.length) {
     writeJSON(STORAGE_PRODUCTS, seedProducts())
   } else {
-    const next = products.map((item) => ({
+    const seeded = seedProducts()
+    const byId = new Map(products.map((p) => [p.id, p]))
+    for (const s of seeded) {
+      const existing = byId.get(s.id)
+      if (existing) {
+        byId.set(s.id, { ...s, ...existing, favorite: (existing as any).favorite, imageUrl: s.imageUrl })
+      } else {
+        byId.set(s.id, s)
+      }
+    }
+    const next = Array.from(byId.values()).map((item) => ({
       ...item,
       imageUrl: PRODUCT_IMAGE_MAP[item.id] || item.imageUrl
     }))
@@ -370,28 +635,29 @@ export const getDefaultAddress = async (): Promise<UserAddress | null> => {
 export const listProducts = async (): Promise<ShopProduct[]> => {
   if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/products", method: "GET" })
-    return res.list || []
+    return normalizeProducts(res.list || [])
   }
   ensureSeed()
-  return getProductsSync()
+  return normalizeProducts(getProductsSync())
 }
 
 export const getProductDetail = async (id: string): Promise<ShopProduct | null> => {
   if (!MOCK()) {
-    return await request<ShopProduct>({ url: `/shop/products/${encodeURIComponent(id)}`, method: "GET" })
+    const p = await request<ShopProduct>({ url: `/shop/products/${encodeURIComponent(id)}`, method: "GET" })
+    return normalizeProduct(p)
   }
   ensureSeed()
   const product = getProductsSync().find((item) => item.id === id)
-  return product || null
+  return normalizeProduct(product || null)
 }
 
 export const listFavorites = async (): Promise<ShopProduct[]> => {
   if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/favorites", method: "GET" })
-    return res.list || []
+    return normalizeProducts(res.list || [])
   }
   ensureSeed()
-  return getProductsSync().filter((item) => item.favorite)
+  return normalizeProducts(getProductsSync().filter((item) => item.favorite))
 }
 
 export const toggleFavorite = async (productId: string): Promise<boolean> => {
@@ -409,12 +675,12 @@ export const toggleFavorite = async (productId: string): Promise<boolean> => {
 export const listCartItems = async (): Promise<Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }>> => {
   if (!MOCK()) {
     const res = await request<{ list: Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }> }>({ url: "/shop/cart", method: "GET" })
-    return res.list || []
+    return (res.list || []).map((x) => ({ ...x, product: normalizeProduct(x.product) }))
   }
   ensureSeed()
   const products = getProductsSync()
   return getCartSync().map((cartItem) => ({
-    product: products.find((p) => p.id === cartItem.productId) || null,
+    product: normalizeProduct(products.find((p) => p.id === cartItem.productId) || null),
     count: cartItem.count,
     checked: cartItem.checked,
     invalid: cartItem.invalid

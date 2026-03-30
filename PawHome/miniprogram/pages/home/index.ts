@@ -1,4 +1,4 @@
-import { getBanners, getCommunityCards } from "../../services/banners";
+import { getCommunityCards } from "../../services/banners";
 import { getBaseUrl } from "../../config/env";
 
 const HOME_PUSH_FALLBACK_MEDIA = ["推送1.jpg", "推送2.jpg", "推送3.jpg", "推送4.jpg", "推送5.jpg"]
@@ -6,6 +6,17 @@ const HOME_PUSH_FALLBACK_MEDIA = ["推送1.jpg", "推送2.jpg", "推送3.jpg", "
 function getApiOrigin(): string {
   const base = getBaseUrl()
   return base.split("/").slice(0, 3).join("/")
+}
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const origin = getApiOrigin()
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
 }
 
 function hashString(s: string): number {
@@ -21,6 +32,10 @@ function pickHomePushFallbackImageUrl(id: string): string {
   return `${origin}/media/${encodeURIComponent(name)}`
 }
 
+function getShopBannerUrl(): string {
+  return `${getApiOrigin()}/media/shop_banner.png`
+}
+
 Page({
   data: {
     swiperList: [
@@ -32,6 +47,8 @@ Page({
     indicatorBars: [],
     safeTop: 0,
     promo: null as any,
+    promoFallbackUrl: "",
+    promoLocalFallbackUrl: "/assets/images/home/advertise@1x.png",
     hotPosts: [] as any[],
     showBlob: false
   },
@@ -84,10 +101,13 @@ Page({
     const bars = Array.from({ length: this.data.swiperList.length }, (_, i) => i)
     const info = wx.getSystemInfoSync()
     const safeTop = (info.statusBarHeight || 0) + 8
-    this.setData({ indicatorBars: bars, safeTop })
-    getBanners("home_promo").then(list => {
-      if (list && list.length) this.setData({ promo: list[0] })
-    }).catch(() => {})
+    const shopBanner = getShopBannerUrl()
+    this.setData({
+      indicatorBars: bars,
+      safeTop,
+      promo: { imageUrl: shopBanner },
+      promoFallbackUrl: shopBanner
+    })
     getCommunityCards(1, 4).then(list => {
       const items = (list || []).map(item => ({
         ...item,
@@ -95,5 +115,9 @@ Page({
       }))
       if (items.length) this.setData({ hotPosts: items })
     }).catch(() => {})
+  }
+  ,
+  onPromoError() {
+    this.setData({ promo: null, promoFallbackUrl: this.data.promoLocalFallbackUrl })
   }
 });

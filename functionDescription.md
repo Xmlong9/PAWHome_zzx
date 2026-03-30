@@ -384,6 +384,115 @@
 
 ---
 
+## 商城-商品扩展（新增商品与本地商品图）
+
+### 变更 2026-03-30：使用 products 文件夹商品图并新增商品
+
+**目的**
+- 扩充商城商品数量，丰富商品列表展示。
+- 使用本地商品图片资源，保证小程序端可直接加载且不依赖后端静态文件服务。
+
+**入口**
+- 商品列表：`GET /api/v1/shop/products`
+- 商品详情：`GET /api/v1/shop/products/<product_id>`
+
+**数据流/状态**
+- 商品图：
+  - 将 `f:/PAWHome/products` 下的图片复制到小程序包内静态目录：`PawHome/miniprogram/assets/images/shop/products/`
+  - 小程序侧商品图路径形如：`/assets/images/shop/products/prod_01.jpg`
+- Mock 商品种子：
+  - 在 `services/shop.ts` 扩展 `seedProducts()` 与 `PRODUCT_IMAGE_MAP`，新增 `p5~p21`。
+  - `ensureSeed()` 会把新增商品合并到已有本地缓存，避免用户已有数据时看不到新商品。
+- 后端商品种子：
+  - 后端在商品相关接口内调用 `_ensure_shop_products_seeded()`，自动补齐 `p1~p21`（含图片路径 JSON），不依赖手动执行 seed 脚本。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/services/shop.ts`
+  - `PawHome/miniprogram/assets/images/shop/products/*`
+- 后端：
+  - `backend/app/api/v1/shop.py`
+
+### 变更 2026-03-30：校正商品图文与详情页信息
+
+**目的**
+- 修复新增商品后出现的“图片与商品名称/描述不对应”问题。
+- 让商品详情页的“适用信息/问答/评价标签”随品类变化，避免所有商品都显示同一套文案。
+
+**实现要点**
+- 商品数据：
+  - 依据 `prod_01~prod_17.jpg` 图片内容，统一调整 `p5~p21` 的 `name/desc/price/specs`（小程序 Mock 与后端种子保持一致）。
+  - 小程序 Mock 的 `ensureSeed()` 对已缓存的商品数据做“按 seed 更新”，避免老缓存导致仍显示旧文案。
+- 详情页展示：
+  - 详情页根据 `product.id` 归类（猫粮/狗粮/玩具/猫抓板/猫砂盆/宠物床等），动态生成适用信息、问答与评价标签。
+
+### 变更 2026-03-30：商品图改为后端 /media（不打包进小程序）
+
+**目的**
+- 降低小程序包体，商品图片不再放在 `miniprogram/assets` 内。
+- 数据库仅存图片 URL（`/media/prod_XX.jpg`），小程序端自动拼接为可访问的绝对地址。
+
+**实现要点**
+- 图片导入：
+  - 将 `f:/PAWHome/products` 下图片复制到后端 `backend/instance/uploads/`，命名为 `prod_01~prod_17.jpg`。
+  - 后端通过 `GET /media/<filename>` 提供静态访问。
+- 商品数据：
+  - `ShopProduct.images_json` 存储 `/media/prod_XX.jpg`（数组 JSON），后端商品接口直接返回该路径。
+- 小程序展示：
+  - 对 `imageUrl` 做 URL 归一化：`/media/...` 自动转为 `http(s)://<origin>/media/...`；`/assets/...` 保持不变。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/services/shop.ts`
+- 后端：
+  - `backend/app/__init__.py`
+  - `backend/app/api/v1/shop.py`
+
+### 变更 2026-03-30：启动页/商城广告大图迁移到后端 /media
+
+**目的**
+- 进一步减小小程序包体：启动页背景、商城广告位等大图不再随包发布。
+
+**实现要点**
+- 将以下图片迁移到后端 `backend/instance/uploads/`：
+  - `splash-bg.png`（启动页/登录页背景）
+  - `shop_banner.png`（商城广告位）
+  - `startup.png`（历史遗留启动图）
+- 小程序页面运行时根据 `getBaseUrl()` 计算 `origin`，拼出实际访问地址：
+  - `${origin}/media/splash-bg.png`
+  - `${origin}/media/shop_banner.png`
+- 删除小程序包内对应图片文件，避免重复占用体积。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/splash/index.ts`
+  - `PawHome/miniprogram/pages/splash/index.wxml`
+  - `PawHome/miniprogram/pages/home/index.ts`
+  - `PawHome/miniprogram/pages/home/index.wxml`
+  - `PawHome/miniprogram/pages/shop/index.ts`
+- 后端：
+  - `backend/app/__init__.py`
+
+### 变更 2026-03-30：主页/商店广告图加载失败兜底
+
+**目的**
+- 避免后端 `/media` 图片在弱网/域名未配置时加载失败导致页面出现可点击但空白的广告位。
+
+**实现要点**
+- 为首页广告图与商城 Banner 增加图片加载失败事件处理：
+  - 失败时回退到小程序内置轻量图 `assets/images/home/advertise@1x.png` 作为占位，保证视觉不空白且仍可跳转。
+- 首页广告图同时兼容后端下发的 `promo.imageUrl`：对相对路径自动补全为绝对 URL，并在该分支也绑定加载失败兜底。
+- 首页广告图默认与商城页 Banner 保持一致：统一使用 `/media/shop_banner.png`。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/home/index.ts`
+  - `PawHome/miniprogram/pages/home/index.wxml`
+  - `PawHome/miniprogram/pages/shop/index.ts`
+  - `PawHome/miniprogram/pages/shop/index.wxml`
+
+---
+
 ## 评论通知展示评论内容与帖子缩略图
 
 **目的**

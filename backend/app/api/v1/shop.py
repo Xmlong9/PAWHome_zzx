@@ -3,12 +3,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import sys
 import threading
 import time
 from datetime import datetime, timezone
 
-from flask import g, request
+from flask import current_app, g, request
 
 from ...auth import require_auth
 from ...extensions import db
@@ -219,6 +220,7 @@ def _product_to_dict(p: ShopProduct, favorite: bool) -> dict:
                     image_url = first
         except json.JSONDecodeError:
             image_url = "/assets/images/shop/问号猫.png"
+    specs = _product_specs(p.id)
     return {
         "id": p.id,
         "name": p.title,
@@ -230,9 +232,141 @@ def _product_to_dict(p: ShopProduct, favorite: bool) -> dict:
         "tags": [],
         "rating": 4.8,
         "favorite": favorite,
-        "specs": [],
+        "specs": specs,
     }
 
+
+def _product_specs(product_id: str) -> list[str]:
+    mapping: dict[str, list[str]] = {
+        "p1": ["1.5kg", "2.5kg", "5kg"],
+        "p2": ["10支", "20支", "30支"],
+        "p3": ["6L", "12L", "18L"],
+        "p4": ["经典款", "豪华款"],
+        "p5": ["标准版", "MAX版"],
+        "p6": ["8件套", "12件套"],
+        "p7": ["6款任选"],
+        "p8": ["M", "L"],
+        "p9": ["小号", "大号"],
+        "p10": ["3件套", "5件套"],
+        "p11": ["单个", "2个装"],
+        "p12": ["5件套"],
+        "p13": ["单把", "2把装"],
+        "p14": ["基础款", "加长款"],
+        "p15": ["2kg×4"],
+        "p16": ["1.8kg"],
+        "p17": ["1.8kg", "5kg"],
+        "p18": ["10kg"],
+        "p19": ["800g", "2kg"],
+        "p20": ["2kg", "12kg"],
+        "p21": ["1.5kg", "2.5kg"],
+    }
+    return mapping.get(product_id, [])
+
+
+def _ensure_shop_products_seeded() -> None:
+    _ensure_shop_product_media_files()
+    items = [
+        ("p1", "冻干鸡肉猫粮", "高蛋白低敏，适合挑食猫咪", 6990, ["/assets/images/shop/商品1.jpg"]),
+        ("p2", "益生菌猫条礼盒", "肠胃友好，适口性强", 3990, ["/assets/images/shop/商品2.jpg"]),
+        ("p3", "云朵猫砂 6L", "低尘结团快，除味更持久", 2990, ["/assets/images/shop/商品3.jpg"]),
+        ("p4", "猫咪逗猫棒套装", "耐咬材质，互动不伤牙", 1990, ["/assets/images/shop/商品4.jpg"]),
+        ("p5", "智能自动猫砂盆 MAX", "大入口大空间，减少异味，适合多猫家庭", 159900, ["/media/prod_01.jpg"]),
+        ("p6", "狗狗玩具组合", "磨牙解闷，快乐陪伴", 3990, ["/media/prod_02.jpg"]),
+        ("p7", "宠物零食任选 6 款", "39元任选，多品牌混合装", 3900, ["/media/prod_03.jpg"]),
+        ("p8", "透气防潮网眼行军床", "透气防潮，耐磨稳固，四季可用", 12900, ["/media/prod_04.jpg"]),
+        ("p9", "鸭鸭安抚玩偶", "萌宠伴侣，抱着安睡整晚", 2990, ["/media/prod_05.jpg"]),
+        ("p10", "联名逗猫棒套装", "自由DIY，多种玩法，猫猫更爱玩", 2990, ["/media/prod_06.jpg"]),
+        ("p11", "多功能立式猫抓板", "玩耍/睡觉/躲猫，一板三用", 7900, ["/media/prod_07.jpg"]),
+        ("p12", "磨牙自嗨 5 件套", "磨牙/洁齿/自嗨，尺寸更好玩", 2990, ["/media/prod_08.jpg"]),
+        ("p13", "加宽梳面去毛刷", "加宽梳面，深层去毛，顺滑不伤皮肤", 3990, ["/media/prod_09.jpg"]),
+        ("p14", "趣味猫窝（自由DIY）", "多模块组合，玩耍躲藏两不误", 12900, ["/media/prod_10.jpg"]),
+        ("p15", "放山鸡猫粮 2kg×4", "高鲜肉配方，适口性更好", 15400, ["/media/prod_11.jpg"]),
+        ("p16", "Dream 美毛猫粮 1.8kg", "21天美毛，含鱼油更亮毛", 12990, ["/media/prod_12.jpg"]),
+        ("p17", "喵梵思蓝袋子猫粮", "好粮不贵，口味丰富更耐吃", 8990, ["/media/prod_13.jpg"]),
+        ("p18", "三拼狗粮 10kg", "鸡肉拼板栗，营养搭配更均衡", 23900, ["/media/prod_14.jpg"]),
+        ("p19", "鸭肉配方鲜肉狗粮", "鲜肉配方，更好消化，适口性佳", 1590, ["/media/prod_15.jpg"]),
+        ("p20", "N33 PLUS 鲜肉狗粮", "鲜肉果蔬配方，营养更全面", 8490, ["/media/prod_16.jpg"]),
+        ("p21", "Care 全价全期猫粮", "80%高肉含量，满足食肉天性", 9900, ["/media/prod_17.jpg"]),
+    ]
+    changed = False
+    for pid, title, desc, price_cents, images in items:
+        row = ShopProduct.query.get(pid)
+        images_json = json.dumps(images, ensure_ascii=False)
+        if row is None:
+            db.session.add(
+                ShopProduct(
+                    id=pid,
+                    title=title,
+                    description=desc,
+                    price_cents=price_cents,
+                    images_json=images_json,
+                    is_active=True,
+                )
+            )
+            changed = True
+            continue
+
+        next_active = True
+        if (
+            (row.title or "") != title
+            or (row.description or "") != (desc or "")
+            or int(row.price_cents or 0) != int(price_cents)
+            or (row.images_json or "") != images_json
+            or bool(row.is_active) != bool(next_active)
+        ):
+            row.title = title
+            row.description = desc
+            row.price_cents = price_cents
+            row.images_json = images_json
+            row.is_active = next_active
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+
+def _ensure_shop_product_media_files() -> None:
+    try:
+        upload_dir = os.path.join(current_app.instance_path, "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+    except Exception:
+        return
+
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    src_dir = os.path.join(root, "products")
+    if not os.path.isdir(src_dir):
+        return
+
+    names = [
+        "微信图片_20260330152829_829_214.jpg",
+        "微信图片_20260330152830_830_214.jpg",
+        "微信图片_20260330152832_831_214.jpg",
+        "微信图片_20260330152833_832_214.jpg",
+        "微信图片_20260330152834_833_214.jpg",
+        "微信图片_20260330152835_834_214.jpg",
+        "微信图片_20260330152837_835_214.jpg",
+        "微信图片_20260330152838_836_214.jpg",
+        "微信图片_20260330152839_837_214.jpg",
+        "微信图片_20260330152840_838_214.jpg",
+        "微信图片_20260330152841_839_214.jpg",
+        "微信图片_20260330152842_840_214.jpg",
+        "微信图片_20260330152843_841_214.jpg",
+        "微信图片_20260330152844_842_214.jpg",
+        "微信图片_20260330152845_843_214.jpg",
+        "微信图片_20260330152846_844_214.jpg",
+        "微信图片_20260330152847_845_214.jpg",
+    ]
+    for i, name in enumerate(names, start=1):
+        dst = os.path.join(upload_dir, f"prod_{i:02d}.jpg")
+        if os.path.exists(dst):
+            continue
+        src = os.path.join(src_dir, name)
+        if not os.path.isfile(src):
+            continue
+        try:
+            shutil.copyfile(src, dst)
+        except Exception:
+            continue
 
 def _address_to_dict(a: Address) -> dict:
     return {
@@ -279,6 +413,7 @@ def register_routes(bp) -> None:
     @require_auth
     def list_products():
         me: User = g.current_user
+        _ensure_shop_products_seeded()
         products = ShopProduct.query.filter_by(is_active=True).order_by(ShopProduct.created_at.desc()).all()
         fav_ids = {
             f.product_id
@@ -290,6 +425,7 @@ def register_routes(bp) -> None:
     @require_auth
     def get_product(product_id: str):
         me: User = g.current_user
+        _ensure_shop_products_seeded()
         p = ShopProduct.query.get(product_id)
         if p is None or not p.is_active:
             return fail(code="NOT_FOUND", message="product not found", status_code=404)
@@ -300,6 +436,7 @@ def register_routes(bp) -> None:
     @require_auth
     def list_favorites():
         me: User = g.current_user
+        _ensure_shop_products_seeded()
         favs = ShopFavorite.query.filter_by(user_id=me.id).all()
         products = [ShopProduct.query.get(f.product_id) for f in favs]
         products = [p for p in products if p is not None and p.is_active]

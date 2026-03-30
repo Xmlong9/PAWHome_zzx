@@ -1,4 +1,5 @@
 import { ShopProduct, listProducts, toggleFavorite } from "../../services/shop"
+import { getBaseUrl } from "../../config/env"
 
 type ShopEntry = {
   id: string
@@ -11,7 +12,8 @@ Page({
   data: {
     safeTop: 0,
     searchText: "",
-    banners: ["/assets/images/shop/广告.png"],
+    banners: [] as string[],
+    bannerLocalFallbackUrl: "/assets/images/home/advertise@1x.png",
     entries: [
       { id: "order", title: "订单", icon: "/assets/icons/shop/订单.png", url: "/pages/shop/order/list" },
       { id: "recharge", title: "充值", icon: "/assets/icons/shop/充值.png", url: "/pages/shop/recharge" },
@@ -27,9 +29,15 @@ Page({
   },
   onLoad() {
     const info = wx.getSystemInfoSync()
+    const base = getBaseUrl()
+    const origin = base.split("/").slice(0, 3).join("/")
     this.setData({
-      safeTop: (info.statusBarHeight || 0) + 10
+      safeTop: (info.statusBarHeight || 0) + 10,
+      banners: [`${origin}/media/shop_banner.png`]
     })
+  },
+  onBannerError() {
+    this.setData({ banners: [this.data.bannerLocalFallbackUrl] })
   },
   onShow() {
     this.setData({ showBlob: true });

@@ -3,8 +3,8 @@
 ## 1. 启动页 (Splash)
 **文件路径**：`pages/splash/index`
 - 该页面为小程序的首屏页面。
-- 启动页背景图默认使用 `assets/images/login/启动页.png`。
-- **更换启动图**：替换 `assets/images/login/启动页.png` 文件，或在 `pages/splash/index.wxml` 中修改 `src` 路径。
+- 启动页背景图默认使用后端 `/media/splash-bg.png`。
+- **更换启动图**：替换后端 `backend/instance/uploads/splash-bg.png` 文件，或在 `pages/splash/index.ts` 中修改 `bgUrl`。
 - **自动跳转**：内置 2 秒倒计时，倒计时结束后自动跳转至 `pages/login/index`。右上角提供“跳过”按钮可立即跳转。
 
 ## 2. 登录与注册页 (Login)

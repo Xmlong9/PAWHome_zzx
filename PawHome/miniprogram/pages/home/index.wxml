@@ -59,10 +59,10 @@
   </view>
 
   <block wx:if="{{promo && promo.imageUrl}}">
-    <image class="home-shop-hero-banner" src="{{promo.imageUrl}}" mode="widthFix" bindtap="goShop"></image>
+    <image class="home-shop-hero-banner" src="{{promo.imageUrl}}" mode="widthFix" bindtap="goShop" binderror="onPromoError"></image>
   </block>
   <block wx:else>
-    <image class="home-shop-hero-banner" src="/assets/images/shop/广告.png" mode="widthFix" bindtap="goShop"></image>
+    <image class="home-shop-hero-banner" src="{{promoFallbackUrl}}" mode="widthFix" bindtap="goShop" binderror="onPromoError"></image>
   </block>
 
   <view class="group" bindtap="goCommunity">

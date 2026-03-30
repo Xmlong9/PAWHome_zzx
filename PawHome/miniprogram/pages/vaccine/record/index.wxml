@@ -10,7 +10,7 @@
     </view>
   </view>
 
-  <view class="remind-card" wx:if="{{upcomingReminder}}">
+  <view class="remind-card" wx:if="{{upcomingReminder}}" bindtap="openUpcomingDetail">
     <view class="remind-left">
       <view class="remind-title">待接种提醒</view>
       <view class="remind-sub">{{upcomingSub}}</view>
@@ -48,9 +48,9 @@
       <view class="nav-icon icon-bell"></view>
       <view class="nav-text">设置提醒</view>
     </view>
-    <view class="nav-item" bindtap="goImport">
-      <view class="nav-icon icon-add"></view>
-      <view class="nav-text">添加记录</view>
+    <view class="nav-item" bindtap="goAppointments">
+      <view class="nav-icon icon-list"></view>
+      <view class="nav-text">查看记录</view>
     </view>
   </view>
 </view>

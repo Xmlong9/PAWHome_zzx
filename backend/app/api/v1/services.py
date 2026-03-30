@@ -7,7 +7,16 @@ from flask import g, request
 
 from ...auth import require_auth
 from ...extensions import db
-from ...models import Pet, ServiceAppointment, ServiceOffering, ServiceProvider, ServiceSlot, User, VaccineCatalog
+from ...models import (
+    Pet,
+    ServiceAppointment,
+    ServiceOffering,
+    ServiceProvider,
+    ServiceSlot,
+    User,
+    VaccineCatalog,
+    VaccineReminder,
+)
 from ...responses import fail, ok
 
 
@@ -231,12 +240,19 @@ def register_routes(bp) -> None:
         page_size = max(1, min(50, _int_arg("pageSize", 10)))
         status = request.args.get("status")
         service_type = request.args.get("serviceType", "").strip()
+        pet_id = request.args.get("petId", "").strip()
 
         q = ServiceAppointment.query.filter_by(user_id=me.id)
         if isinstance(status, str) and status and status != "all":
             q = q.filter_by(status=status)
+        else:
+            q = q.filter(ServiceAppointment.status != "deleted")
         if service_type:
             q = q.filter_by(service_type=service_type)
+        if pet_id:
+            if Pet.query.filter_by(id=pet_id, user_id=me.id).first() is None:
+                return fail(code="NOT_FOUND", message="pet not found", status_code=404)
+            q = q.filter_by(pet_id=pet_id)
         q = q.order_by(ServiceAppointment.appointment_at.desc(), ServiceAppointment.created_at.desc())
 
         total = q.count()
@@ -352,6 +368,8 @@ def register_routes(bp) -> None:
         a = ServiceAppointment.query.filter_by(user_id=me.id, id=appointment_id).first()
         if a is None:
             return fail(code="NOT_FOUND", message="appointment not found", status_code=404)
+        if a.status == "deleted":
+            return fail(code="NOT_FOUND", message="appointment not found", status_code=404)
         return ok(_appointment_to_dict(a))
 
     @bp.put("/services/appointments/<appointment_id>")
@@ -407,6 +425,8 @@ def register_routes(bp) -> None:
         a = ServiceAppointment.query.filter_by(user_id=me.id, id=appointment_id).first()
         if a is None:
             return fail(code="NOT_FOUND", message="appointment not found", status_code=404)
+        if a.status == "deleted":
+            return fail(code="NOT_FOUND", message="appointment not found", status_code=404)
         if a.status in {"canceled", "completed"}:
             return ok({"ok": True})
         if a.slot_id:
@@ -414,5 +434,29 @@ def register_routes(bp) -> None:
             if slot is not None and slot.reserved_count > 0:
                 slot.reserved_count -= 1
         a.status = "canceled"
+        db.session.commit()
+        return ok({"ok": True})
+
+    @bp.post("/services/appointments/<appointment_id>/delete")
+    @require_auth
+    def delete_appointment(appointment_id: str):
+        me: User = g.current_user
+        a = ServiceAppointment.query.filter_by(user_id=me.id, id=appointment_id).first()
+        if a is None:
+            return fail(code="NOT_FOUND", message="appointment not found", status_code=404)
+        if a.status == "deleted":
+            return ok({"ok": True})
+
+        if a.slot_id:
+            slot = ServiceSlot.query.filter_by(id=a.slot_id).first()
+            if slot is not None and slot.reserved_count > 0:
+                slot.reserved_count -= 1
+
+        a.status = "deleted"
+
+        reminder = VaccineReminder.query.filter_by(user_id=me.id, appointment_id=a.id).first()
+        if reminder is not None:
+            reminder.status = "inactive"
+
         db.session.commit()
         return ok({"ok": True})

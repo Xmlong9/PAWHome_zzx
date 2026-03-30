@@ -111,6 +111,7 @@ export function listServiceAppointments(params?: {
   pageSize?: number
   status?: string
   serviceType?: string
+  petId?: string
 }): Promise<{ list: PetServiceAppointment[]; total: number; page: number; pageSize: number }> {
   return request({
     url: "/services/appointments",
@@ -123,5 +124,12 @@ export function getServiceAppointmentDetail(appointmentId: string): Promise<PetS
   return request({
     url: `/services/appointments/${appointmentId}`,
     method: "GET"
+  })
+}
+
+export function deleteServiceAppointment(appointmentId: string): Promise<{ ok: true }> {
+  return request({
+    url: `/services/appointments/${appointmentId}/delete`,
+    method: "POST"
   })
 }

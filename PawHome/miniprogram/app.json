@@ -25,6 +25,8 @@
     "pages/vaccine/import/index",
     "pages/vaccine/appointment/index",
     "pages/vaccine/reminder/index",
+    "pages/vaccine/appointments/index",
+    "pages/vaccine/appointments/detail/index",
     "pages/vaccine/success/index",
     "pages/my/index",
     "pages/my/edit-profile/index",

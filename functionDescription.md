@@ -1633,3 +1633,69 @@
 1633→
 1634→**相关文件**
 1635→- `PawHome/miniprogram/pages/vaccine/appointment/index.(ts|js|wxml|wxss)`
+1636→
+1637→---
+1638→
+1639→## 接种提醒页预约信息解码
+1640→
+1641→**目的**
+1642→- 修复接种提醒页预约摘要展示乱码（`%E6...`、`10%3A00`），保证中文与时间正常显示。
+1643→
+1644→**入口**
+1645→- 提醒设置页：`/pages/vaccine/reminder/index?appointmentId=...&petName=...&itemName=...&storeName=...&date=...&time=...`
+1646→
+1647→**数据流/状态**
+1648→- 跳转端拼接 query 时对摘要参数做 URL 编码；提醒页 `onLoad` 读取 `options` 后先解码，再写入页面 `data` 用于渲染。
+1649→
+1650→**关键分支**
+1651→- 参数缺失或解码失败：保持原值，不影响页面渲染与保存提醒。
+1652→
+1653→**边界条件**
+1654→- `appointmentId` 不做解码，避免影响按预约 ID 查询提醒的稳定性。
+1655→
+1656→**相关文件**
+1657→- `PawHome/miniprogram/pages/vaccine/reminder/index.ts`
+1658→- `PawHome/miniprogram/pages/vaccine/reminder/index.js`
+1659→- `PawHome/miniprogram/utils/serviceBooking.ts`
+
+---
+
+## 疫苗预约记录（查看记录/详情/过期/删除）
+
+**目的**
+- 预约接种后提供统一入口查看“预约记录”，并支持从待接种提醒直达对应预约详情。
+- 提醒到点后不提前消失：提醒与预约按“预约时间是否已过”自动过期。
+- 历史预约记录默认保留，用户可手动删除。
+
+**入口**
+- 疫苗主页底部按钮：`查看记录` → `/pages/vaccine/appointments/index`
+- 待接种提醒卡片：点击进入 `/pages/vaccine/appointments/detail/index?appointmentId=...`
+- 预约详情页：`接种提醒` → `/pages/vaccine/reminder/index?appointmentId=...`
+
+**数据流/状态**
+- 列表页按宠物筛选预约：`GET /services/appointments?serviceType=vaccine&status=all&petId=...`
+  - 前端将 `appointmentAt < now` 的记录归入“历史”，其余归入“未过期”。
+- 预约详情页读取预约信息：`GET /services/appointments/:id`
+- 删除预约记录：`POST /services/appointments/:id/delete`
+  - 预约记录状态置为 `deleted`（列表默认不返回 deleted）
+  - 若存在对应疫苗提醒，则同时将提醒置为 `inactive`，避免后续继续展示
+- 待接种提醒展示逻辑：`GET /vaccines/reminders/upcoming?petId=...`
+  - 后端按 `appointmentAt >= now` 返回最近一条未过期提醒（而不是按 `remindAt`），保证提醒在“接种前”持续可见，过了预约时间自动消失。
+
+**关键分支**
+- 无预约/无提醒：列表显示空态；主页不展示待接种提醒卡片。
+- 删除后访问详情：后端返回 not found，前端提示加载失败并返回。
+
+**边界条件**
+- 预约记录“过期”不写回数据库，仅按 `appointmentAt` 与当前时间在前端做分组展示。
+- 删除预约记录会释放时段占用（reservedCount 递减），避免占用无效库存。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/vaccine/record/index.(ts|wxml|wxss)`
+  - `PawHome/miniprogram/pages/vaccine/appointments/index.(ts|js|wxml|wxss|json)`
+  - `PawHome/miniprogram/pages/vaccine/appointments/detail/index.(ts|js|wxml|wxss|json)`
+  - `PawHome/miniprogram/services/petServices.ts`
+- 后端：
+  - `backend/app/api/v1/services.py`
+  - `backend/app/api/v1/vaccines.py`

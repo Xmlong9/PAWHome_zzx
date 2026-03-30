@@ -313,8 +313,8 @@ def register_routes(bp) -> None:
         now = datetime.utcnow()
         reminder = (
             VaccineReminder.query.filter_by(user_id=me.id, pet_id=pet.id, status="active")
-            .filter(VaccineReminder.remind_at >= now)
-            .order_by(VaccineReminder.remind_at.asc(), VaccineReminder.created_at.asc())
+            .filter(VaccineReminder.appointment_at >= now)
+            .order_by(VaccineReminder.appointment_at.asc(), VaccineReminder.remind_at.asc(), VaccineReminder.created_at.asc())
             .first()
         )
         return ok({"reminder": _reminder_to_dict(reminder) if reminder is not None else None})

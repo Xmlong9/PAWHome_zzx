@@ -18,11 +18,11 @@ Page({
 
   async onLoad(options) {
     const appointmentId = typeof (options && options.appointmentId) === "string" ? options.appointmentId : "";
-    const petName = typeof (options && options.petName) === "string" ? options.petName : "";
-    const vaccineName = typeof (options && options.itemName) === "string" ? options.itemName : "";
-    const hospitalName = typeof (options && options.storeName) === "string" ? options.storeName : "";
-    const date = typeof (options && options.date) === "string" ? options.date : "";
-    const time = typeof (options && options.time) === "string" ? options.time : "";
+    const petName = typeof (options && options.petName) === "string" ? safeDecode(options.petName) : "";
+    const vaccineName = typeof (options && options.itemName) === "string" ? safeDecode(options.itemName) : "";
+    const hospitalName = typeof (options && options.storeName) === "string" ? safeDecode(options.storeName) : "";
+    const date = typeof (options && options.date) === "string" ? safeDecode(options.date) : "";
+    const time = typeof (options && options.time) === "string" ? safeDecode(options.time) : "";
     this.setData({
       appointmentId,
       petName,
@@ -133,4 +133,12 @@ Page({
 function aheadTextFromDays(days) {
   const v = typeof days === "number" && days >= 0 ? days : 1;
   return `提前 ${v} 天`;
+}
+
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (e) {
+    return value;
+  }
 }

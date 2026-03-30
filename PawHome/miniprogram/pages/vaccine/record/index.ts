@@ -124,11 +124,26 @@ Page({
   },
 
   goReminder() {
-    wx.navigateTo({ url: "/pages/vaccine/reminder/index" });
+    const appointmentId = this.data.upcomingReminder?.appointmentId || "";
+    if (!appointmentId) {
+      wx.showToast({ title: "请先预约接种", icon: "none" });
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/vaccine/reminder/index?appointmentId=${encodeURIComponent(appointmentId)}`
+    });
   },
 
-  goImport() {
-    wx.navigateTo({ url: "/pages/vaccine/import/index" });
+  goAppointments() {
+    wx.navigateTo({ url: "/pages/vaccine/appointments/index" });
+  },
+
+  openUpcomingDetail() {
+    const appointmentId = this.data.upcomingReminder?.appointmentId || "";
+    if (!appointmentId) return;
+    wx.navigateTo({
+      url: `/pages/vaccine/appointments/detail/index?appointmentId=${encodeURIComponent(appointmentId)}`
+    });
   }
 });
 

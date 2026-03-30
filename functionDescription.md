@@ -1699,3 +1699,24 @@
 - 后端：
   - `backend/app/api/v1/services.py`
   - `backend/app/api/v1/vaccines.py`
+
+---
+
+## 服务门店封面图（美容/医疗/寄养）
+
+**目的**
+- 将美容/医疗/寄养的门店封面替换为真实图片，展示效果与疫苗预约页一致。
+
+**入口**
+- 服务预约页：`/pages/service/index?type=beauty|medical|foster`
+
+**数据流/状态**
+- 后端启动时对 `ServiceProvider.cover_image` 做增量补齐：当 `cover_image` 为空或仍为占位图时，按 providerId 映射到 `/media/<filename>`。
+- 前端服务预约页展示门店列表时渲染 `coverImage`，并将相对路径转为绝对 URL 供 `<image>` 使用。
+
+**边界条件**
+- 仅对占位图做替换，不覆盖已配置封面。
+
+**相关文件**
+- `backend/app/schema_ensure.py`
+- `PawHome/miniprogram/pages/service/index.(ts|wxml|wxss)`

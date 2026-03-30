@@ -41,6 +41,7 @@
       </view>
       <view class="store-list">
         <view class="store-card {{selectedStoreId == item.id ? 'active' : ''}}" wx:for="{{stores}}" wx:key="id" bindtap="selectStore" data-id="{{item.id}}">
+          <image class="store-cover" src="{{item.coverImage}}" mode="aspectFill"></image>
           <view class="store-info">
             <view class="store-name">{{item.name}}</view>
             <view class="store-desc">距离 {{item.distance}} | 评分 {{item.rating}}</view>

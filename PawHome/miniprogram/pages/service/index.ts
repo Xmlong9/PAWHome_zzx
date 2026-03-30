@@ -6,6 +6,19 @@ import {
 } from "../../services/petServices"
 import { getPetList } from "../../services/user"
 import { buildServiceDateOptions, buildSuccessQuery } from "../../utils/serviceBooking"
+import { getBaseUrl } from "../../config/env"
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const base = getBaseUrl()
+  const origin = base.split("/").slice(0, 3).join("/")
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
 
 function getMeta(type: string) {
   if (type === "beauty") return { pageTitle: "美容预约", itemLabel: "美容项目", storeLabel: "门店" }
@@ -59,7 +72,10 @@ Page({
         name: item.name,
         avatar: item.avatarUrl || "/assets/images/home/littleface@1x.png"
       }))
-      const stores = providerPayload.list || []
+      const stores = (providerPayload.list || []).map((item) => ({
+        ...item,
+        coverImage: toAbsoluteUrl(item.coverImage || "")
+      }))
       const selectedPetId = pets[0]?.id || ""
       const selectedStoreId = stores[0]?.id || ""
       this.setData({

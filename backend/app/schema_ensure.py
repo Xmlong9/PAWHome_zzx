@@ -362,6 +362,12 @@ def _ensure_service_provider_cover_images() -> None:
     mapping = {
         "provider-vaccine-1": _media_path("宠物医院1.jpg"),
         "provider-vaccine-2": _media_path("宠物医院2.jpg"),
+        "provider-medical-1": _media_path("宠物医院1.jpg"),
+        "provider-medical-2": _media_path("宠物医院2.jpg"),
+        "provider-beauty-1": _media_path("门店1.jpg"),
+        "provider-beauty-2": _media_path("门店2.jpg"),
+        "provider-foster-1": _media_path("门店3.jpg"),
+        "provider-foster-2": _media_path("门店4.jpg"),
     }
     default_placeholder = "/assets/images/home/advertise@1x.png"
     changed = False

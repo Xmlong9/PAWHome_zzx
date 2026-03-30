@@ -1,0 +1,49 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">预约信息</view>
+    <view class="kv-row">
+      <view class="kv-key">宠物名称</view>
+      <view class="kv-val">{{petName}}</view>
+    </view>
+    <view class="kv-row">
+      <view class="kv-key">疫苗名称</view>
+      <view class="kv-val">{{vaccineName}}</view>
+    </view>
+    <view class="kv-row">
+      <view class="kv-key">接种医院</view>
+      <view class="kv-val">{{hospitalName}}</view>
+    </view>
+    <view class="kv-row">
+      <view class="kv-key">预约时间</view>
+      <view class="kv-val">{{date}} {{time}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">提醒设置</view>
+    <view class="tap-row" bindtap="pickAhead">
+      <view class="tap-key">提前提醒时间</view>
+      <view class="tap-val">{{aheadText}}</view>
+      <view class="arrow"></view>
+    </view>
+    <view class="divider"></view>
+    <view class="tap-row" bindtap="pickChannel">
+      <view class="tap-key">提醒方式</view>
+      <view class="tap-val">{{channelText}}</view>
+      <view class="arrow"></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">备注信息</view>
+    <textarea class="remark" placeholder="添加备注信息，如需要携带的物品或注意事项" value="{{remark}}" bindinput="onRemarkInput" cursor-spacing="80" show-confirm-bar="false" maxlength="200"></textarea>
+    <view class="toggle-row">
+      <view class="toggle-key">添加到系统日历</view>
+      <switch checked="{{addToCalendar}}" bindchange="onToggle" color="#FF9E5E" />
+    </view>
+  </view>
+
+  <view class="bottom-btn" bindtap="save">
+    <view class="bottom-btn-text">保存提醒</view>
+  </view>
+</view>

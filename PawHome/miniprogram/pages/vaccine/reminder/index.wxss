@@ -1,0 +1,114 @@
+page {
+  background-color: #F7F8FA;
+}
+
+.page {
+  padding: 24rpx 24rpx 160rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.card {
+  background-color: #FFFFFF;
+  border-radius: 18rpx;
+  padding: 26rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #111111;
+  margin-bottom: 18rpx;
+}
+
+.kv-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx 0;
+}
+
+.kv-key {
+  font-size: 26rpx;
+  color: #999999;
+}
+
+.kv-val {
+  font-size: 26rpx;
+  color: #111111;
+  font-weight: 700;
+}
+
+.tap-row {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+}
+
+.tap-key {
+  flex: 1;
+  font-size: 26rpx;
+  color: #111111;
+  font-weight: 700;
+}
+
+.tap-val {
+  font-size: 26rpx;
+  color: #999999;
+  margin-right: 10rpx;
+}
+
+.arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-right: 2rpx solid #CCCCCC;
+  border-bottom: 2rpx solid #CCCCCC;
+  transform: rotate(-45deg);
+}
+
+.divider {
+  height: 1rpx;
+  background-color: #EEEEEE;
+}
+
+.remark {
+  width: 100%;
+  height: 140rpx;
+  font-size: 26rpx;
+  color: #111111;
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 22rpx;
+}
+
+.toggle-key {
+  font-size: 26rpx;
+  color: #111111;
+  font-weight: 700;
+}
+
+.bottom-btn {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  height: 96rpx;
+  background-color: #FF9E5E;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-btn-text {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #000000;
+}

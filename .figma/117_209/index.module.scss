@@ -1,0 +1,57 @@
+* {
+  box-sizing: border-box;
+}
+
+.group3 {
+  position: relative;
+  width: 375px;
+  height: 861px;
+
+  .vector {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    align-items: flex-start;
+    border-radius: 47px;
+    background: #ffffff;
+    padding: 17px 24px 707px 34px;
+    width: 375px;
+    height: 737px;
+
+    .group {
+      width: 316px;
+      height: 12px;
+    }
+  }
+
+  .clipPathGroup {
+    display: flex;
+    position: absolute;
+    top: 44px;
+    left: 0;
+    align-items: flex-start;
+    padding-bottom: 765px;
+    width: 375px;
+    height: 817px;
+    background-image: url(../image/mnd3lk0g-vvdph5t.svg);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+
+    .vector2 {
+      display: flex;
+      flex-grow: 1;
+      align-items: center;
+      box-shadow: 0px 1px 2px 0px #0000000d;
+      background-color: #ffffff;
+      padding: 12px 160px 12px 143px;
+      background-image: linear-gradient(#00000000, #00000000);
+
+      .group2 {
+        width: 72px;
+        height: 28px;
+      }
+    }
+  }
+}

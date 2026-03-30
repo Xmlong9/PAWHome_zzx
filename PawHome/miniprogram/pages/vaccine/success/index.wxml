@@ -1,0 +1,62 @@
+<view class="page">
+  <view class="success-banner">
+    <view class="success-circle">
+      <icon type="success" size="44" color="#FFFFFF" />
+    </view>
+    <view class="success-text">预约成功</view>
+  </view>
+
+  <view class="summary-card">
+    <view class="pet-info">
+      <image class="pet-avatar" src="{{petAvatar}}" mode="aspectFill"></image>
+      <view class="pet-details">
+        <view class="pet-name">{{petName}}</view>
+        <view class="pet-meta">{{petMeta}}</view>
+      </view>
+    </view>
+
+    <view class="detail-list">
+      <view class="detail-item">
+        <view class="detail-icon icon-syringe"></view>
+        <view class="detail-value">{{itemName}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-calendar"></view>
+        <view class="detail-value">{{date}} {{time}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-hospital"></view>
+        <view class="detail-value">{{storeName}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-doctor"></view>
+        <view class="detail-value">X医生</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tips">
+    <view class="tips-title">接种须知</view>
+    <view class="tip-item">
+      <view class="tip-icon icon-clock"></view>
+      <view class="tip-text">请提前 15 分钟到达医院</view>
+    </view>
+    <view class="tip-item">
+      <view class="tip-icon icon-fork"></view>
+      <view class="tip-text">接种前 4 小时禁食</view>
+    </view>
+    <view class="tip-item">
+      <view class="tip-icon icon-id"></view>
+      <view class="tip-text">请携带宠物证件</view>
+    </view>
+    <view class="tip-item">
+      <view class="tip-icon icon-eye"></view>
+      <view class="tip-text">接种后需观察 30 分钟</view>
+    </view>
+  </view>
+
+  <view class="bottom-actions">
+    <view class="btn-secondary" bindtap="goRecord">返回疫苗页</view>
+    <view class="btn-primary" bindtap="goHome">返回首页</view>
+  </view>
+</view>

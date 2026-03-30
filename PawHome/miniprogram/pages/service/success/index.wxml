@@ -1,0 +1,50 @@
+<view class="success-page">
+  <view class="success-header-box">
+    <view class="success-icon-wrap">
+      <icon type="success" size="48" color="#07C160" />
+    </view>
+    <view class="success-text">预约成功</view>
+  </view>
+
+  <view class="summary-card">
+    <view class="pet-info">
+      <image class="pet-avatar" src="{{petAvatar}}" mode="aspectFill"></image>
+      <view class="pet-details">
+        <view class="pet-name">{{petName}}</view>
+        <view class="pet-meta">宠物</view>
+      </view>
+    </view>
+    
+    <view class="detail-list">
+      <view class="detail-item">
+        <view class="detail-icon icon-syringe"></view>
+        <view class="detail-value">{{itemName}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-calendar"></view>
+        <view class="detail-value">{{date}} {{time}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-hospital"></view>
+        <view class="detail-value">{{storeName}}</view>
+      </view>
+      <view class="detail-item">
+        <view class="detail-icon icon-doctor"></view>
+        <view class="detail-value">X医生</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tips-section">
+    <view class="tips-title">{{tipsTitle}}</view>
+    <view class="tip-item" wx:for="{{tips}}" wx:key="index">
+      <view class="tip-icon icon-{{item.iconType}}"></view>
+      <view class="tip-text">{{item.text}}</view>
+    </view>
+  </view>
+
+  <view class="bottom-actions">
+    <view class="btn-secondary" bindtap="goOrderList">返回{{tipsTitle === '接种须知' ? '疫苗' : tipsTitle === '就诊须知' ? '医疗' : tipsTitle === '美容须知' ? '美容' : '寄养'}}页</view>
+    <view class="btn-primary" bindtap="goHome">返回首页</view>
+  </view>
+</view>

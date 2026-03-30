@@ -16,7 +16,7 @@
     <view class="carousel">
       <view class="card-shadow"></view>
       <swiper class="swiper" vertical="true" circular autoplay interval="4000" bindchange="onSwiperChange">
-        <block wx:for="{{swiperList}}" wx:key="src">
+        <block wx:for="{{swiperList}}" wx:key="id">
           <swiper-item>
             <view class="carousel-card">
               <view class="indicator">

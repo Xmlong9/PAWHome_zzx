@@ -1,1 +1,105 @@
-<view class="container"><text>服务</text></view>
+<view class="service-page">
+  <!-- Pet Selector -->
+  <view class="pet-selector">
+    <scroll-view scroll-x class="pet-scroll" enable-flex="true" show-scrollbar="false">
+      <view class="pet-list">
+        <view class="pet-item" wx:for="{{pets}}" wx:key="id" bindtap="selectPet" data-id="{{item.id}}">
+          <view class="pet-avatar-wrap {{selectedPetId == item.id ? 'active' : ''}}">
+            <image class="pet-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+            <view class="pet-check" wx:if="{{selectedPetId == item.id}}">
+              <view class="pet-check-inner">✓</view>
+            </view>
+          </view>
+          <view class="pet-name {{selectedPetId == item.id ? 'active-text' : ''}}">{{item.name}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- Service Item Selector -->
+  <view class="section">
+    <view class="section-title">选择{{itemLabel}}</view>
+    <view class="item-list">
+      <view class="service-item {{selectedItemId == item.id ? 'active' : ''}}" wx:for="{{serviceItems}}" wx:key="id" bindtap="selectItem" data-id="{{item.id}}">
+        <view class="item-header">
+          <view class="item-name">{{item.name}}</view>
+          <view class="item-price">¥{{item.price}}</view>
+        </view>
+        <view class="item-body">
+          <view class="item-desc" wx:for="{{item.descList}}" wx:key="*this" wx:for-item="desc">{{desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Store/Hospital Selector -->
+  <view class="section">
+    <view class="section-title">选择{{storeLabel}}</view>
+    <view class="store-container">
+      <view class="map-placeholder">
+        <image src="/assets/images/home/advertise@1x.png" mode="aspectFill" class="map-img"></image>
+      </view>
+      <view class="store-list">
+        <view class="store-card {{selectedStoreId == item.id ? 'active' : ''}}" wx:for="{{stores}}" wx:key="id" bindtap="selectStore" data-id="{{item.id}}">
+          <view class="store-info">
+            <view class="store-name">{{item.name}}</view>
+            <view class="store-desc">距离 {{item.distance}} | 评分 {{item.rating}}</view>
+            <view class="store-desc">营业时间: {{item.hours}}</view>
+          </view>
+          <view class="btn-select-store {{selectedStoreId == item.id ? 'btn-active' : ''}}">{{selectedStoreId == item.id ? '选择' : '选择'}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">预约时间</view>
+    <view class="time-row" bindtap="openSheet">
+      <view class="time-row-text">{{selectedDate == 'today' ? '今天' : selectedDate == 'tomorrow' ? '明天' : '后天'}} {{selectedTime}}</view>
+      <view class="time-row-btn">选择</view>
+    </view>
+  </view>
+</view>
+
+<!-- Bottom Sheet (Time & Form) -->
+<view class="sheet-mask" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
+<view class="bottom-sheet" wx:if="{{showSheet}}">
+  <!-- Date Selector -->
+  <view class="date-selector">
+    <view class="date-item {{selectedDate == 'today' ? 'active' : ''}}" bindtap="selectDate" data-val="today">今天</view>
+    <view class="date-item {{selectedDate == 'tomorrow' ? 'active' : ''}}" bindtap="selectDate" data-val="tomorrow">明天</view>
+    <view class="date-item {{selectedDate == 'after_tomorrow' ? 'active' : ''}}" bindtap="selectDate" data-val="after_tomorrow">后天</view>
+  </view>
+  
+  <!-- Time Slots -->
+  <view class="time-selector">
+    <view class="time-item {{selectedTime == item ? 'active' : ''}}" wx:for="{{timeSlots}}" wx:key="*this" bindtap="selectTimeSlot" data-val="{{item}}">{{item}}</view>
+  </view>
+
+  <!-- Textarea -->
+  <view class="remark-wrap">
+    <textarea class="remark-input" placeholder="请填写宠物特殊情况或其他需求" bindinput="bindRemarkInput" value="{{remark}}" cursor-spacing="80" show-confirm-bar="false" maxlength="200"></textarea>
+  </view>
+
+  <!-- Price Summary -->
+  <view class="price-summary">
+    <view class="price-row">
+      <text class="price-label">{{itemLabel}}费用</text>
+      <text class="price-val">¥{{totalPrice}}</text>
+    </view>
+    <view class="price-row">
+      <text class="price-label">接种服务费</text>
+      <text class="price-val">¥0</text>
+    </view>
+    <view class="divider-line"></view>
+  </view>
+
+  <view class="btn-submit-full" bindtap="submitOrder">确认预约</view>
+</view>
+
+<view class="page-bottom-bar" wx:if="{{!showSheet}}">
+  <view class="page-total">
+    合计: <text class="page-total-val">¥{{totalPrice}}</text>
+  </view>
+  <view class="page-btn" bindtap="openSheet">确认预约</view>
+</view>

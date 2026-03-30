@@ -783,6 +783,65 @@
 - `PawHome/miniprogram/pages/post-detail/index.wxml`
 - `PawHome/miniprogram/pages/post-detail/index.wxss`
 
+---
+
+## 疫苗记录与导入链路
+
+**目的**
+- 为宠物疫苗场景提供独立的记录查看、预约、提醒和记录导入入口，避免首页疫苗入口继续落到通用服务页后再二次分流。
+
+**入口**
+- 小程序首页金刚区点击“疫苗”：`PawHome/miniprogram/pages/home/index`
+- 疫苗记录页底部操作区点击“添加记录”：`PawHome/miniprogram/pages/vaccine/record/index`
+
+**数据流/状态**
+- 首页 `goServiceVaccine` 直接跳转到 `pages/vaccine/record/index`，形成疫苗业务独立入口。
+- `app.json` 注册 `record / import / appointment / reminder / success` 五个疫苗页面，保证页面栈跳转和开发者工具编译都能正确识别路由。
+- 疫苗记录页通过 `petIndex` 和 `activeTab` 维护当前宠物与记录分组，切换时调用 `refreshRecords` 刷新当前展示数据。
+- 用户在记录页点击“添加记录”后进入 `pages/vaccine/import/index`，导入完成后再回跳到记录页，形成闭环。
+
+**关键分支**
+- 首页只有“疫苗”入口改为独立路由；“美容 / 医疗 / 寄养”仍沿用 `pages/service/index?type=...` 的通用服务预约流程。
+- 记录页底部提供三条分支：预约、提醒、导入，分别跳转到对应疫苗子页面。
+- 导入页当前支持“相册导入”和“拍照扫描”两条采集路径，提交后跳回记录页。
+
+**边界条件**
+- 若 `app.json` 未注册疫苗页面，即使页面目录存在，也会在跳转或开发者工具编译时出现找不到页面的错误。
+- 导入页目前是前端占位流程，图片选择成功后仅反馈提示，不包含真实上传、识别和落库逻辑。
+- 记录页当前数据仍为 mock，导入回跳保证链路完整，但不会持久化新增记录。
+
+**相关文件**
+- `PawHome/miniprogram/app.json`
+- `PawHome/miniprogram/pages/home/index.ts`
+- `PawHome/miniprogram/pages/home/index.wxml`
+- `PawHome/miniprogram/pages/vaccine/record/index.ts`
+- `PawHome/miniprogram/pages/vaccine/record/index.wxml`
+- `PawHome/miniprogram/pages/vaccine/import/index.ts`
+- `PawHome/miniprogram/pages/vaccine/import/index.wxml`
+
+---
+
+## 小程序列表渲染 key 唯一性（主页轮播）
+
+**目的**
+- 避免 `wx:for` 渲染时因 `wx:key` 重复触发告警与节点复用异常。
+
+**入口**
+- 小程序主页：`PawHome/miniprogram/pages/home/index`
+
+**数据流/状态**
+- 主页轮播数据 `swiperList` 以对象数组维护，每个元素包含稳定的 `id` 与展示用 `src`。
+
+**关键分支**
+- `wx:key` 不使用 `src`（图片路径可能重复），改为使用稳定且唯一的 `id`。
+
+**边界条件**
+- 即使多张轮播使用同一张图片（同一路径），也不会出现重复 key。
+
+**相关文件**
+- `PawHome/miniprogram/pages/home/index.wxml`
+- `PawHome/miniprogram/pages/home/index.ts`
+
 ### 变更 2026-03-29：删除/置顶收纳到“更多”菜单
 
 **问题现象**
@@ -1317,6 +1376,27 @@
 
 ---
 
+## 统一服务预约（疫苗/医疗/美容/寄养）
+
+**目的**
+- 为主页金刚区的四大服务（疫苗、医疗、美容、寄养）提供统一的预约表单与成功页，避免开发多套冗余页面。
+
+**入口**
+- 小程序主页金刚区点击对应图标：`PawHome/miniprogram/pages/service/index?type=vaccine|medical|beauty|foster`
+
+**数据流/状态**
+- 前端通过 `type` 参数动态初始化页面标题与可选项文案（如：疫苗显示“选择医院/选择疫苗”，寄养显示“选择门店/寄养房型”）。
+- `pages/service/index` 收集：所选宠物、服务项目、门店、日期、时间。
+- 确认预约后通过 URL 传参跳转到 `pages/service/success/index`，并在成功页展示汇总信息与提示。
+
+**相关文件**
+- `PawHome/miniprogram/pages/service/index.ts`
+- `PawHome/miniprogram/pages/service/index.wxml`
+- `PawHome/miniprogram/pages/service/index.wxss`
+- `PawHome/miniprogram/pages/service/success/index.*`
+
+---
+
 ## 竖视频播放留白背景白底
 
 **目的**
@@ -1332,3 +1412,31 @@
 **相关文件**
 - `PawHome/miniprogram/pages/post-detail/index.wxml`
 - `PawHome/miniprogram/pages/post-detail/index.wxss`
+
+---
+
+## 疫苗预约页底部确认按钮布局
+
+**目的**
+- 避免疫苗预约页的“确认预约”按钮固定悬浮在页面底部时遮挡医院列表、时间选择和费用明细，保证内容可完整滚动查看。
+
+**入口**
+- 小程序疫苗预约页：`PawHome/miniprogram/pages/vaccine/appointment/index`
+
+**数据流/状态**
+- 页面内容仍按“宠物 / 疫苗 / 医院 / 时间 / 备注 / 费用明细”顺序渲染。
+- “确认预约”按钮改为页面内容流中的底部区域，跟随页面一起滚动到最下方展示。
+- 底部区域继续保留安全区内边距，避免按钮贴到系统手势区域。
+
+**关键分支**
+- 结构上新增 `page-footer` 包裹底部按钮，替代原来的单独安全区占位节点。
+- 样式上移除按钮的 `position: fixed`，改为常规块级布局，并保留整行宽度与原有视觉样式。
+
+**边界条件**
+- 小屏幕或开发者工具模拟高度较小时，页面底部内容不再被悬浮按钮压住。
+- 带底部安全区的设备仍会为按钮预留额外内边距，避免误触或被系统区域遮挡。
+
+**相关文件**
+- `PawHome/miniprogram/pages/vaccine/appointment/index.wxml`
+- `PawHome/miniprogram/pages/vaccine/appointment/index.wxss`
+- `PawHome/miniprogram/utils/vaccineAppointmentLayout.test.ts`

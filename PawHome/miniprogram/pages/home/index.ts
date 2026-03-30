@@ -39,9 +39,9 @@ function getShopBannerUrl(): string {
 Page({
   data: {
     swiperList: [
-      { src: '/assets/images/home/slideshow1@1x.png' },
-      { src: '/assets/images/home/slideshow1@1x.png' },
-      { src: '/assets/images/home/slideshow1@1x.png' }
+      { id: 0, src: "/assets/images/home/slideshow1@1x.png" },
+      { id: 1, src: "/assets/images/home/slideshow1@1x.png" },
+      { id: 2, src: "/assets/images/home/slideshow1@1x.png" }
     ],
     current: 0,
     indicatorBars: [],
@@ -84,7 +84,7 @@ Page({
   goService(){ wx.navigateTo({ url: '/pages/service/index' }); },
   goMy(){ wx.switchTab({ url: '/pages/my/index' }); },
   goHome(){ wx.switchTab({ url: '/pages/home/index' }); },
-  goServiceVaccine(){ wx.navigateTo({ url: '/pages/service/index?type=vaccine' }); },
+  goServiceVaccine(){ wx.navigateTo({ url: '/pages/vaccine/record/index' }); },
   goServiceBeauty(){ wx.navigateTo({ url: '/pages/service/index?type=beauty' }); },
   goServiceMedical(){ wx.navigateTo({ url: '/pages/service/index?type=medical' }); },
   goServiceFoster(){ wx.navigateTo({ url: '/pages/service/index?type=foster' }); }

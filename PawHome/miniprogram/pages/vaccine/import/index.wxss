@@ -1,0 +1,91 @@
+page {
+  background-color: #FFFFFF;
+}
+
+.page {
+  padding: 24rpx 24rpx 160rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.section {
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #111111;
+  margin-bottom: 18rpx;
+}
+
+.action-row {
+  display: flex;
+  gap: 18rpx;
+}
+
+.action-card {
+  flex: 1;
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 22rpx;
+}
+
+.action-title {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #111111;
+  margin-bottom: 8rpx;
+}
+
+.action-sub {
+  font-size: 24rpx;
+  color: #999999;
+  line-height: 1.4;
+}
+
+.import-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 22rpx;
+  margin-bottom: 18rpx;
+}
+
+.import-name {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #111111;
+  margin-bottom: 6rpx;
+}
+
+.import-sub {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.import-status {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #07C160;
+}
+
+.bottom-btn {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  height: 96rpx;
+  background-color: #111111;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-btn-text {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #FFFFFF;
+}

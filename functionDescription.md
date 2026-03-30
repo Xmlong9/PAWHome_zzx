@@ -1487,6 +1487,23 @@
 1487→- `PawHome/miniprogram/utils/serviceBooking.ts`
 1488→- `PawHome/miniprogram/utils/serviceBooking.test.ts`
 1489→
+### 变更 2026-03-31：预约日期选项解析与“今天/明天/后天”修复
+
+**问题现象**
+- 在预约时间选择弹窗/日期 tab 中，日期显示可能比真实日期少一天（例如 3/31 显示为 3/30），导致“今天/明天/后天”标签错乱。
+
+**根因**
+- `availableDates` 可能包含 ISO/带时区的日期字符串（如 `2026-03-31T00:00:00Z`），旧实现对非严格 `YYYY-MM-DD` 走 `new Date(value)` 解析，在不同运行环境下会发生时区换算导致日期回退。
+- 天数差用毫秒差除以 86400000，在夏令时等场景可能出现非整天，从而误判 today/tomorrow。
+
+**修复方案**
+- 日期解析仅取“日期部分”（兼容 `YYYY-MM-DD`、`YYYY/MM/DD` 及后续带时间的字符串），统一用 `new Date(y, m-1, d)` 构造“本地当天 00:00”，避免引擎/时区差异。
+- “今天/明天/后天”计算改为按本地年月日转成 `Date.UTC(y,m,d)` 的日级时间戳再做天数差，规避夏令时导致的 23/25 小时问题。
+
+**相关文件**
+- `PawHome/miniprogram/utils/serviceBooking.ts`
+- `PawHome/miniprogram/utils/serviceBooking.test.ts`
+
 1490→---
 1491→
 1492→## 疫苗模块真实数据链路（宠物/记录/驱虫/预约→提醒）

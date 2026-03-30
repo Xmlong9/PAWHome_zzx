@@ -110,7 +110,7 @@ Page({
       totalPrice: serviceItems[0]?.price || 0
     })
     if (selectedItemId) {
-      await this.loadSlots(serviceItems[0], serviceItems[0]?.availableDates?.[0] || "")
+      await this.loadSlots(serviceItems[0], "")
     } else {
       this.setData({
         days: [],
@@ -165,7 +165,7 @@ Page({
     const selectedItemId = e.currentTarget.dataset.id
     const item = this.data.serviceItems.find((current: any) => current.id === selectedItemId)
     this.setData({ selectedItemId, totalPrice: item?.price || 0 })
-    await this.loadSlots(item, item?.availableDates?.[0] || "")
+    await this.loadSlots(item, "")
   },
 
   async selectStore(e: any) {

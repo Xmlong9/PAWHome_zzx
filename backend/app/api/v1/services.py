@@ -18,6 +18,7 @@ from ...models import (
     VaccineReminder,
 )
 from ...responses import fail, ok
+from ...timeutil import BJ_TZ
 
 
 def _json() -> dict:
@@ -81,9 +82,11 @@ def _provider_to_dict(provider: ServiceProvider) -> dict:
 
 
 def _offering_to_dict(offering: ServiceOffering) -> dict:
+    today_bj = datetime.now(BJ_TZ).date()
     date_rows = (
         db.session.query(ServiceSlot.service_date)
         .filter_by(offering_id=offering.id, status="active")
+        .filter(ServiceSlot.service_date >= today_bj)
         .distinct()
         .order_by(ServiceSlot.service_date.asc())
         .all()
@@ -226,9 +229,14 @@ def register_routes(bp) -> None:
         if not offering_id:
             return fail(code="BAD_REQUEST", message="offeringId required", status_code=400)
         service_date = _parse_date(request.args.get("date"))
+        today_bj = datetime.now(BJ_TZ).date()
+        if service_date is not None and service_date < today_bj:
+            return ok({"list": [], "total": 0})
         q = ServiceSlot.query.filter_by(offering_id=offering_id, status="active")
         if service_date is not None:
             q = q.filter_by(service_date=service_date)
+        else:
+            q = q.filter(ServiceSlot.service_date >= today_bj)
         items = q.order_by(ServiceSlot.appointment_at.asc()).all()
         return ok({"list": [_slot_to_dict(item) for item in items], "total": len(items)})
 

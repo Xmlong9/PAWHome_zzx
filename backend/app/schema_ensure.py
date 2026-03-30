@@ -9,6 +9,7 @@ from sqlalchemy import text
 from .extensions import db
 from .models import ServiceOffering, ServiceProvider, ServiceSlot, VaccineCatalog
 from .pinyin import to_pinyin_full_and_initials
+from .timeutil import BJ_TZ
 
 
 def _has_table(name: str) -> bool:
@@ -287,7 +288,8 @@ def _seed_service_booking_data() -> None:
     if ServiceProvider.query.count() > 0:
         return
 
-    base_dates = [date.today() + timedelta(days=i) for i in range(3)]
+    base_today = datetime.now(BJ_TZ).date()
+    base_dates = [base_today + timedelta(days=i) for i in range(3)]
     time_points = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"]
 
     for service_idx, service_item in enumerate(_service_seed_data()):

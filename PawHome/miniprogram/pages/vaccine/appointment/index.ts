@@ -107,7 +107,7 @@ Page({
     this.setData({ vaccines, selectedVaccineId, selectedPrice, vaccineCategory });
     if (vaccines[0]) {
       await this.loadVaccineNames(vaccineCategory);
-      await this.loadSlots(vaccines[0], vaccines[0]?.availableDates?.[0] || "");
+      await this.loadSlots(vaccines[0], "");
     } else {
       this.setData({
         days: [],
@@ -170,7 +170,7 @@ Page({
     const vaccineCategory = vaccine ? getVaccineCategory(vaccine.name) : "core";
     this.setData({ selectedVaccineId, selectedPrice: vaccine ? vaccine.price : 0, vaccineCategory });
     await this.loadVaccineNames(vaccineCategory);
-    await this.loadSlots(vaccine, vaccine?.availableDates?.[0] || "");
+    await this.loadSlots(vaccine, "");
   },
 
   selectVaccineName(e: any) {

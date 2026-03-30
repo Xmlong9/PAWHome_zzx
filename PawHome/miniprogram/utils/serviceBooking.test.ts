@@ -16,6 +16,32 @@ test("serviceBooking: buildServiceDateOptions labels today tomorrow after tomorr
   ])
 })
 
+test("serviceBooking: buildServiceDateOptions parses ISO date strings without day shift", () => {
+  const options = buildServiceDateOptions(
+    ["2026-03-31T00:00:00Z", "2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z"],
+    new Date("2026-03-31T12:00:00+08:00")
+  )
+
+  assert.deepEqual(options, [
+    { key: "2026-03-31T00:00:00Z", label: "今天", value: "2026-03-31T00:00:00Z" },
+    { key: "2026-04-01T00:00:00Z", label: "明天", value: "2026-04-01T00:00:00Z" },
+    { key: "2026-04-02T00:00:00Z", label: "后天", value: "2026-04-02T00:00:00Z" }
+  ])
+})
+
+test("serviceBooking: buildServiceDateOptions filters out past dates and sorts", () => {
+  const options = buildServiceDateOptions(
+    ["2026-03-30", "2026-04-02", "2026-03-31", "2026-04-01"],
+    new Date("2026-03-31T08:00:00+08:00")
+  )
+
+  assert.deepEqual(options, [
+    { key: "2026-03-31", label: "今天", value: "2026-03-31" },
+    { key: "2026-04-01", label: "明天", value: "2026-04-01" },
+    { key: "2026-04-02", label: "后天", value: "2026-04-02" }
+  ])
+})
+
 test("serviceBooking: buildSuccessQuery encodes appointment summary", () => {
   const query = buildSuccessQuery({
     type: "beauty",

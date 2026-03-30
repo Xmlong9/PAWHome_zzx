@@ -19,17 +19,27 @@ function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
+function utcDayTs(d: Date): number {
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
 export function buildServiceDateOptions(availableDates: string[], now = new Date()): ServiceDateOption[] {
-  const todayTs = startOfDay(now)
-  return availableDates.map((value) => {
-    const current = parseYmd(value) || new Date(value)
-    const diffDays = Math.round((startOfDay(current) - todayTs) / (24 * 60 * 60 * 1000))
-    let label = `${current.getMonth() + 1}/${current.getDate()}`
-    if (diffDays === 0) label = "今天"
-    if (diffDays === 1) label = "明天"
-    if (diffDays === 2) label = "后天"
-    return { key: value, label, value }
-  })
+  const todayTs = utcDayTs(now)
+  return availableDates
+    .map((value) => {
+      const current = parseYmd(value)
+      if (!current) return null
+      const diffDays = Math.round((utcDayTs(current) - todayTs) / (24 * 60 * 60 * 1000))
+      if (diffDays < 0) return null
+      let label = `${current.getMonth() + 1}/${current.getDate()}`
+      if (diffDays === 0) label = "今天"
+      if (diffDays === 1) label = "明天"
+      if (diffDays === 2) label = "后天"
+      return { key: value, label, value, _sort: utcDayTs(current) }
+    })
+    .filter((x): x is ServiceDateOption & { _sort: number } => Boolean(x))
+    .sort((a, b) => a._sort - b._sort)
+    .map(({ _sort: _ignored, ...rest }) => rest)
 }
 
 export function buildSuccessQuery(input: ServiceSuccessQueryInput): string {
@@ -48,11 +58,12 @@ export function buildSuccessQuery(input: ServiceSuccessQueryInput): string {
 
 function parseYmd(value: string): Date | null {
   if (typeof value !== "string") return null
-  const parts = value.split("-")
-  if (parts.length !== 3) return null
-  const y = Number(parts[0])
-  const m = Number(parts[1])
-  const d = Number(parts[2])
+  const v = value.trim()
+  const match = v.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/)
+  if (!match) return null
+  const y = Number(match[1])
+  const m = Number(match[2])
+  const d = Number(match[3])
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
   if (m < 1 || m > 12 || d < 1 || d > 31) return null
   return new Date(y, m - 1, d)

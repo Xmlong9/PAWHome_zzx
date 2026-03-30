@@ -1,79 +1,194 @@
+import {
+  createServiceAppointment,
+  getServiceOfferings,
+  getServiceProviders,
+  getServiceSlots
+} from "../../services/petServices";
+import { getPetList } from "../../services/user";
+import { buildServiceDateOptions, buildSuccessQuery } from "../../utils/serviceBooking";
+
 Page({
   data: {
-    pets: [
-      { id: "p1", name: "涛涛", avatar: "/assets/images/home/littleface@1x.png" },
-      { id: "p2", name: "宠宠", avatar: "/assets/images/home/littleface@1x.png" }
-    ],
-    selectedPetId: "p1",
-    vaccines: [
-      { id: "v1", name: "核心疫苗（狂犬/多联）", price: 268, age: "适用年龄：2-4个月", cycle: "接种周期：每年一次" },
-      { id: "v2", name: "选择性疫苗", price: 198, age: "适用年龄：3个月以上", cycle: "接种周期：每年一次" }
-    ],
-    selectedVaccineId: "v1",
-    selectedPrice: 268,
-    hospitals: [
-      { id: "h1", name: "XX宠物医院", distance: "0.8km", rating: "4.9", hours: "09:00-21:00" },
-      { id: "h2", name: "XX宠物诊所", distance: "1.2km", rating: "4.8", hours: "08:30-20:30" }
-    ],
-    selectedHospitalId: "h1",
-    days: [
-      { key: "today", label: "今天" },
-      { key: "tomorrow", label: "明天" },
-      { key: "after_tomorrow", label: "后天" }
-    ],
-    selectedDay: "today",
-    timeSlots: ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"],
-    selectedTime: "09:00",
+    pets: [] as any[],
+    selectedPetId: "",
+    vaccines: [] as any[],
+    selectedVaccineId: "",
+    selectedPrice: 0,
+    hospitals: [] as any[],
+    selectedHospitalId: "",
+    days: [] as any[],
+    selectedDay: "",
+    timeSlots: [] as any[],
+    slots: [] as any[],
+    selectedTime: "",
+    selectedSlotId: "",
     remark: ""
+  },
+
+  async onLoad() {
+    await this.loadPageData();
+  },
+
+  async loadPageData() {
+    try {
+      wx.showLoading({ title: "加载中..." });
+      const [petList, providerPayload] = await Promise.all([
+        getPetList(),
+        getServiceProviders("vaccine")
+      ]);
+      const pets = (petList || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        avatar: item.avatarUrl || "/assets/images/home/littleface@1x.png"
+      }));
+      const hospitals = providerPayload.list || [];
+      const selectedPetId = pets[0]?.id || "";
+      const selectedHospitalId = hospitals[0]?.id || "";
+      this.setData({
+        pets,
+        selectedPetId,
+        hospitals,
+        selectedHospitalId
+      });
+      if (selectedHospitalId) {
+        await this.loadVaccines(selectedHospitalId);
+      }
+    } catch (error: any) {
+      wx.showToast({ title: error?.message || "加载失败", icon: "none" });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  async loadVaccines(providerId: string) {
+    const payload = await getServiceOfferings({ serviceType: "vaccine", providerId });
+    const vaccines = (payload.list || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      age: item.descList[0] || item.summary || "",
+      cycle: item.descList[1] || "",
+      availableDates: item.availableDates || [],
+      descList: item.descList || []
+    }));
+    const selectedVaccineId = vaccines[0]?.id || "";
+    const selectedPrice = vaccines[0]?.price || 0;
+    this.setData({ vaccines, selectedVaccineId, selectedPrice });
+    if (vaccines[0]) {
+      await this.loadSlots(vaccines[0], vaccines[0]?.availableDates?.[0] || "");
+    } else {
+      this.setData({
+        days: [],
+        selectedDay: "",
+        timeSlots: [],
+        slots: [],
+        selectedTime: "",
+        selectedSlotId: "",
+        selectedPrice: 0
+      });
+    }
+  },
+
+  async loadSlots(vaccine: any, dateValue?: string) {
+    const days = buildServiceDateOptions(vaccine?.availableDates || []);
+    const selectedDay = dateValue || days[0]?.value || "";
+    if (!vaccine?.id || !selectedDay) {
+      this.setData({
+        days,
+        selectedDay: "",
+        timeSlots: [],
+        slots: [],
+        selectedTime: "",
+        selectedSlotId: ""
+      });
+      return;
+    }
+    const payload = await getServiceSlots({ offeringId: vaccine.id, date: selectedDay });
+    const slots = (payload.list || []).filter((item) => item.remaining > 0);
+    const firstSlot = slots[0] || null;
+    this.setData({
+      days,
+      selectedDay,
+      timeSlots: slots,
+      slots,
+      selectedTime: firstSlot?.timeLabel || "",
+      selectedSlotId: firstSlot?.id || "",
+      selectedPrice: vaccine?.price || 0
+    });
   },
 
   selectPet(e: any) {
     this.setData({ selectedPetId: e.currentTarget.dataset.id });
   },
 
-  selectVaccine(e: any) {
+  async selectVaccine(e: any) {
     const selectedVaccineId = e.currentTarget.dataset.id;
-    const v = this.data.vaccines.find((x: any) => x.id === selectedVaccineId);
-    this.setData({ selectedVaccineId, selectedPrice: v ? v.price : 0 });
+    const vaccine = this.data.vaccines.find((item: any) => item.id === selectedVaccineId);
+    this.setData({ selectedVaccineId, selectedPrice: vaccine ? vaccine.price : 0 });
+    await this.loadSlots(vaccine, vaccine?.availableDates?.[0] || "");
   },
 
-  selectHospital(e: any) {
-    this.setData({ selectedHospitalId: e.currentTarget.dataset.id });
+  async selectHospital(e: any) {
+    const selectedHospitalId = e.currentTarget.dataset.id;
+    this.setData({ selectedHospitalId });
+    await this.loadVaccines(selectedHospitalId);
   },
 
-  selectDay(e: any) {
-    this.setData({ selectedDay: e.currentTarget.dataset.key });
+  async selectDay(e: any) {
+    const selectedDay = e.currentTarget.dataset.key;
+    const vaccine = this.data.vaccines.find((item: any) => item.id === this.data.selectedVaccineId);
+    await this.loadSlots(vaccine, selectedDay);
   },
 
   selectTime(e: any) {
-    this.setData({ selectedTime: e.currentTarget.dataset.time });
+    const slotId = e.currentTarget.dataset.id;
+    const slot = this.data.slots.find((item: any) => item.id === slotId);
+    this.setData({
+      selectedSlotId: slotId,
+      selectedTime: slot?.timeLabel || ""
+    });
   },
 
   onRemarkInput(e: any) {
     this.setData({ remark: e.detail.value });
   },
 
-  getDateStr() {
-    const d = new Date();
-    if (this.data.selectedDay === "tomorrow") d.setDate(d.getDate() + 1);
-    if (this.data.selectedDay === "after_tomorrow") d.setDate(d.getDate() + 2);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  },
+  async submit() {
+    const pet = this.data.pets.find((item: any) => item.id === this.data.selectedPetId);
+    const vaccine = this.data.vaccines.find((item: any) => item.id === this.data.selectedVaccineId);
+    const hospital = this.data.hospitals.find((item: any) => item.id === this.data.selectedHospitalId);
+    const slot = this.data.slots.find((item: any) => item.id === this.data.selectedSlotId);
 
-  submit() {
-    const pet = this.data.pets.find((x: any) => x.id === this.data.selectedPetId);
-    const vaccine = this.data.vaccines.find((x: any) => x.id === this.data.selectedVaccineId);
-    const hospital = this.data.hospitals.find((x: any) => x.id === this.data.selectedHospitalId);
-
-    if (!pet || !vaccine || !hospital) {
+    if (!pet || !vaccine || !hospital || !slot) {
       wx.showToast({ title: "请完善预约信息", icon: "none" });
       return;
     }
 
-    const dateStr = this.getDateStr();
-    const timeStr = this.data.selectedTime;
-
-    const query = `?petName=${encodeURIComponent(pet.name)}&itemName=${encodeURIComponent(vaccine.name)}&storeName=${encodeURIComponent(hospital.name)}&date=${dateStr}&time=${timeStr}`;
-    wx.navigateTo({ url: `/pages/vaccine/success/index${query}` });
+    try {
+      wx.showLoading({ title: "提交中..." });
+      const appointment = await createServiceAppointment({
+        serviceType: "vaccine",
+        petId: pet.id,
+        providerId: hospital.id,
+        offeringId: vaccine.id,
+        slotId: slot.id,
+        appointmentAt: slot.appointmentAt,
+        notes: this.data.remark
+      });
+      wx.navigateTo({
+        url: `/pages/vaccine/success/index${buildSuccessQuery({
+          type: "vaccine",
+          petName: pet.name,
+          itemName: appointment.offering?.name || vaccine.name,
+          storeName: appointment.provider?.name || hospital.name,
+          date: appointment.serviceDate || slot.serviceDate,
+          time: appointment.timeLabel || slot.timeLabel
+        })}`
+      });
+    } catch (error: any) {
+      wx.showToast({ title: error?.message || "预约失败", icon: "none" });
+    } finally {
+      wx.hideLoading();
+    }
   }
 });

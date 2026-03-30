@@ -94,18 +94,84 @@ class Pet(db.Model, TimestampMixin):
     avatar_url = db.Column(db.String(512), nullable=True)
 
 
+class ServiceProvider(db.Model, TimestampMixin):
+    __tablename__ = "service_providers"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    service_type = db.Column(db.String(64), index=True, nullable=False)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(512), nullable=True)
+    distance_text = db.Column(db.String(64), nullable=True)
+    rating_text = db.Column(db.String(32), nullable=True)
+    business_hours = db.Column(db.String(64), nullable=True)
+    address = db.Column(db.String(256), nullable=True)
+    cover_image = db.Column(db.String(512), nullable=True)
+    status = db.Column(db.String(32), default="active", nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        Index("ix_service_providers_type_sort", "service_type", "sort_order"),
+    )
+
+
+class ServiceOffering(db.Model, TimestampMixin):
+    __tablename__ = "service_offerings"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    provider_id = db.Column(db.String(36), db.ForeignKey("service_providers.id"), index=True, nullable=False)
+    service_type = db.Column(db.String(64), index=True, nullable=False)
+    name = db.Column(db.String(128), nullable=False)
+    summary = db.Column(db.String(256), nullable=True)
+    description_json = db.Column(db.Text, nullable=True)
+    price = db.Column(db.Integer, default=0, nullable=False)
+    duration_minutes = db.Column(db.Integer, default=60, nullable=False)
+    status = db.Column(db.String(32), default="active", nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        Index("ix_service_offerings_provider_sort", "provider_id", "sort_order"),
+    )
+
+
+class ServiceSlot(db.Model, TimestampMixin):
+    __tablename__ = "service_slots"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    provider_id = db.Column(db.String(36), db.ForeignKey("service_providers.id"), index=True, nullable=False)
+    offering_id = db.Column(db.String(36), db.ForeignKey("service_offerings.id"), index=True, nullable=False)
+    service_type = db.Column(db.String(64), index=True, nullable=False)
+    service_date = db.Column(db.Date, index=True, nullable=False)
+    time_label = db.Column(db.String(32), nullable=False)
+    appointment_at = db.Column(db.DateTime, index=True, nullable=False)
+    capacity = db.Column(db.Integer, default=1, nullable=False)
+    reserved_count = db.Column(db.Integer, default=0, nullable=False)
+    status = db.Column(db.String(32), default="active", nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("offering_id", "service_date", "time_label", name="uq_service_slots_offering_date_time"),
+        Index("ix_service_slots_offering_date", "offering_id", "service_date"),
+    )
+
+
 class ServiceAppointment(db.Model, TimestampMixin):
     __tablename__ = "service_appointments"
 
     id = db.Column(db.String(36), primary_key=True, default=_uuid)
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
     pet_id = db.Column(db.String(36), db.ForeignKey("pets.id"), index=True, nullable=True)
+    provider_id = db.Column(db.String(36), db.ForeignKey("service_providers.id"), index=True, nullable=True)
+    offering_id = db.Column(db.String(36), db.ForeignKey("service_offerings.id"), index=True, nullable=True)
+    slot_id = db.Column(db.String(36), db.ForeignKey("service_slots.id"), index=True, nullable=True)
 
     service_type = db.Column(db.String(64), nullable=False)
+    service_date = db.Column(db.Date, index=True, nullable=True)
+    time_label = db.Column(db.String(32), nullable=True)
     appointment_at = db.Column(db.DateTime, index=True, nullable=False)
+    price = db.Column(db.Integer, nullable=True)
     contact_phone = db.Column(db.String(32), nullable=True)
     address = db.Column(db.String(256), nullable=True)
     notes = db.Column(db.String(512), nullable=True)
+    snapshot_json = db.Column(db.Text, nullable=True)
 
     status = db.Column(db.String(32), default="scheduled", nullable=False)
 

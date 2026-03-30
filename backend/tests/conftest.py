@@ -17,6 +17,7 @@ def app(tmp_path, monkeypatch):
     from app import create_app
     from app.extensions import db
     from app import models as _models
+    from app.schema_ensure import ensure_service_booking_schema
 
     flask_app = create_app("testing")
     flask_app.config.update({"TESTING": True})
@@ -25,6 +26,7 @@ def app(tmp_path, monkeypatch):
     with flask_app.app_context():
         db.drop_all()
         db.create_all()
+        ensure_service_booking_schema()
 
     yield flask_app
 

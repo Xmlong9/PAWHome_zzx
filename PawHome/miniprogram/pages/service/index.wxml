@@ -55,7 +55,7 @@
   <view class="section">
     <view class="section-title">预约时间</view>
     <view class="time-row" bindtap="openSheet">
-      <view class="time-row-text">{{selectedDate == 'today' ? '今天' : selectedDate == 'tomorrow' ? '明天' : '后天'}} {{selectedTime}}</view>
+      <view class="time-row-text">{{selectedDateLabel || '请选择日期'}} {{selectedTime}}</view>
       <view class="time-row-btn">选择</view>
     </view>
   </view>
@@ -64,31 +64,22 @@
 <!-- Bottom Sheet (Time & Form) -->
 <view class="sheet-mask" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
 <view class="bottom-sheet" wx:if="{{showSheet}}">
-  <!-- Date Selector -->
   <view class="date-selector">
-    <view class="date-item {{selectedDate == 'today' ? 'active' : ''}}" bindtap="selectDate" data-val="today">今天</view>
-    <view class="date-item {{selectedDate == 'tomorrow' ? 'active' : ''}}" bindtap="selectDate" data-val="tomorrow">明天</view>
-    <view class="date-item {{selectedDate == 'after_tomorrow' ? 'active' : ''}}" bindtap="selectDate" data-val="after_tomorrow">后天</view>
+    <view class="date-item {{selectedDate == item.value ? 'active' : ''}}" wx:for="{{days}}" wx:key="key" bindtap="selectDate" data-val="{{item.value}}">{{item.label}}</view>
   </view>
-  
-  <!-- Time Slots -->
   <view class="time-selector">
-    <view class="time-item {{selectedTime == item ? 'active' : ''}}" wx:for="{{timeSlots}}" wx:key="*this" bindtap="selectTimeSlot" data-val="{{item}}">{{item}}</view>
+    <view class="time-item {{selectedSlotId == item.id ? 'active' : ''}}" wx:for="{{timeSlots}}" wx:key="id" bindtap="selectTimeSlot" data-id="{{item.id}}">{{item.timeLabel}}</view>
   </view>
-
-  <!-- Textarea -->
   <view class="remark-wrap">
     <textarea class="remark-input" placeholder="请填写宠物特殊情况或其他需求" bindinput="bindRemarkInput" value="{{remark}}" cursor-spacing="80" show-confirm-bar="false" maxlength="200"></textarea>
   </view>
-
-  <!-- Price Summary -->
   <view class="price-summary">
     <view class="price-row">
       <text class="price-label">{{itemLabel}}费用</text>
       <text class="price-val">¥{{totalPrice}}</text>
     </view>
     <view class="price-row">
-      <text class="price-label">接种服务费</text>
+      <text class="price-label">服务费</text>
       <text class="price-val">¥0</text>
     </view>
     <view class="divider-line"></view>

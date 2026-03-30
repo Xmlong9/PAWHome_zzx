@@ -10,7 +10,7 @@ from .api.v1 import api_v1_bp
 from .config import get_config
 from .errors import register_error_handlers
 from .extensions import db
-from .schema_ensure import ensure_shop_product_pinyin_columns
+from .schema_ensure import ensure_service_booking_schema, ensure_shop_product_pinyin_columns
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -26,7 +26,9 @@ def create_app(config_name: str | None = None) -> Flask:
     register_error_handlers(app)
 
     with app.app_context():
+        db.create_all()
         ensure_shop_product_pinyin_columns()
+        ensure_service_booking_schema()
 
     @app.before_request
     def _attach_request_id():

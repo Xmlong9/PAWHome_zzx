@@ -36,10 +36,10 @@
   <view class="section">
     <view class="section-title">选择时间</view>
     <view class="day-row">
-      <view class="day-item {{selectedDay==item.key?'active':''}}" wx:for="{{days}}" wx:key="key" bindtap="selectDay" data-key="{{item.key}}">{{item.label}}</view>
+      <view class="day-item {{selectedDay==item.value?'active':''}}" wx:for="{{days}}" wx:key="key" bindtap="selectDay" data-key="{{item.value}}">{{item.label}}</view>
     </view>
     <view class="time-grid">
-      <view class="time-item {{selectedTime==item?'active':''}}" wx:for="{{timeSlots}}" wx:key="*this" bindtap="selectTime" data-time="{{item}}">{{item}}</view>
+      <view class="time-item {{selectedSlotId==item.id?'active':''}}" wx:for="{{timeSlots}}" wx:key="id" bindtap="selectTime" data-id="{{item.id}}">{{item.timeLabel}}</view>
     </view>
 
     <view class="section-title section-title-small">备注信息</view>

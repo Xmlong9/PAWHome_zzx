@@ -1,176 +1,234 @@
-import { getBaseUrl } from "../../config/env";
+import {
+  createServiceAppointment,
+  getServiceOfferings,
+  getServiceProviders,
+  getServiceSlots
+} from "../../services/petServices"
+import { getPetList } from "../../services/user"
+import { buildServiceDateOptions, buildSuccessQuery } from "../../utils/serviceBooking"
+
+function getMeta(type: string) {
+  if (type === "beauty") return { pageTitle: "美容预约", itemLabel: "美容项目", storeLabel: "门店" }
+  if (type === "medical") return { pageTitle: "医疗预约", itemLabel: "就诊科室", storeLabel: "医院" }
+  if (type === "foster") return { pageTitle: "寄养预约", itemLabel: "寄养房型", storeLabel: "门店" }
+  return { pageTitle: "疫苗预约", itemLabel: "疫苗", storeLabel: "医院" }
+}
 
 Page({
   data: {
-    type: 'vaccine',
-    pageTitle: '服务预约',
-    itemLabel: '服务',
-    storeLabel: '门店',
+    type: "vaccine",
+    pageTitle: "服务预约",
+    itemLabel: "服务",
+    storeLabel: "门店",
     showSheet: false,
-    
-    pets: [
-      { id: '1', name: '涛涛', avatar: '/assets/images/home/littleface@1x.png' },
-      { id: '2', name: '宠宠', avatar: '/assets/images/home/littleface@1x.png' }
-    ],
-    selectedPetId: '1',
-
+    pets: [] as any[],
+    selectedPetId: "",
     serviceItems: [] as any[],
-    selectedItemId: '',
-
-    stores: [
-      { id: 's1', name: 'XX宠物医院', distance: '0.8km', hours: '09:00-21:00', rating: '4.9' },
-      { id: 's2', name: 'XX宠物诊所', distance: '1.2km', hours: '08:30-20:30', rating: '4.8' }
-    ],
-    selectedStoreId: 's1',
+    selectedItemId: "",
+    stores: [] as any[],
+    selectedStoreId: "",
     selectedStore: null as any,
-
-    selectedDate: 'today',
-    timeSlots: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
-    selectedTime: '09:00',
-    remark: '',
-
+    days: [] as any[],
+    selectedDate: "",
+    selectedDateLabel: "",
+    slots: [] as any[],
+    timeSlots: [] as any[],
+    selectedTime: "",
+    selectedSlotId: "",
+    remark: "",
     totalPrice: 0
   },
 
-  onLoad(options: any) {
-    const type = options.type || 'vaccine';
-    this.setData({ type });
-    this.initServiceData(type);
-    
-    this.updateSelectedStore();
+  async onLoad(options: any) {
+    const type = options.type || "vaccine"
+    const meta = getMeta(type)
+    wx.setNavigationBarTitle({ title: meta.pageTitle })
+    this.setData({ type, ...meta })
+    await this.loadPageData(type)
   },
 
-  initServiceData(type: string) {
-    let pageTitle = '服务预约';
-    let itemLabel = '项目';
-    let storeLabel = '门店';
-    let serviceItems: any[] = [];
-
-    if (type === 'vaccine') {
-      pageTitle = '疫苗预约';
-      itemLabel = '疫苗';
-      storeLabel = '医院';
-      serviceItems = [
-        { id: 'v1', name: '核心疫苗（狂犬/多联）', descList: ['适用年龄: 2-4个月', '接种周期: 每年一次'], price: 268 },
-        { id: 'v2', name: '选择性疫苗', descList: ['适用年龄: 3个月以上', '接种周期: 每年一次'], price: 198 }
-      ];
-    } else if (type === 'beauty') {
-      pageTitle = '美容预约';
-      itemLabel = '美容项目';
-      serviceItems = [
-        { id: 'b1', name: '基础洗护', descList: ['包含洗澡、剪指甲、清耳朵等', '适用: 小型犬/猫'], price: 88 },
-        { id: 'b2', name: '全身造型', descList: ['包含洗护及全身毛发修剪', '适用: 全犬种/猫'], price: 188 }
-      ];
-    } else if (type === 'medical') {
-      pageTitle = '医疗预约';
-      itemLabel = '就诊科室';
-      storeLabel = '医院';
-      serviceItems = [
-        { id: 'm1', name: '常规内科', descList: ['常见疾病诊断与治疗', '包含基础检查'], price: 50 },
-        { id: 'm2', name: '外科手术', descList: ['外科创伤处理、绝育等', '需提前禁食禁水'], price: 200 }
-      ];
-    } else if (type === 'foster') {
-      pageTitle = '寄养预约';
-      itemLabel = '寄养房型';
-      serviceItems = [
-        { id: 'f1', name: '标准舱', descList: ['适合中小型宠物，独立通风', '每日两次遛狗/逗猫'], price: 80 },
-        { id: 'f2', name: '豪华套房', descList: ['超大空间，24小时监控', '专属管家服务'], price: 150 }
-      ];
+  async loadPageData(type: string) {
+    try {
+      wx.showLoading({ title: "加载中..." })
+      const [petList, providerPayload] = await Promise.all([
+        getPetList(),
+        getServiceProviders(type)
+      ])
+      const pets = (petList || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        avatar: item.avatarUrl || "/assets/images/home/littleface@1x.png"
+      }))
+      const stores = providerPayload.list || []
+      const selectedPetId = pets[0]?.id || ""
+      const selectedStoreId = stores[0]?.id || ""
+      this.setData({
+        pets,
+        selectedPetId,
+        stores,
+        selectedStoreId,
+        selectedStore: stores[0] || null
+      })
+      if (selectedStoreId) {
+        await this.loadOfferings(type, selectedStoreId)
+      }
+    } catch (error: any) {
+      wx.showToast({ title: error?.message || "加载失败", icon: "none" })
+    } finally {
+      wx.hideLoading()
     }
-
-    wx.setNavigationBarTitle({ title: pageTitle });
-    
-    this.setData({
-      pageTitle,
-      itemLabel,
-      storeLabel,
-      serviceItems,
-      selectedItemId: serviceItems[0]?.id || ''
-    });
-    this.calcTotal();
   },
 
-  updateSelectedStore() {
-    const store = this.data.stores.find(s => s.id === this.data.selectedStoreId);
-    this.setData({ selectedStore: store });
+  async loadOfferings(type: string, providerId: string) {
+    const payload = await getServiceOfferings({ serviceType: type, providerId })
+    const serviceItems = payload.list || []
+    const selectedItemId = serviceItems[0]?.id || ""
+    this.setData({
+      serviceItems,
+      selectedItemId,
+      totalPrice: serviceItems[0]?.price || 0
+    })
+    if (selectedItemId) {
+      await this.loadSlots(serviceItems[0], serviceItems[0]?.availableDates?.[0] || "")
+    } else {
+      this.setData({
+        days: [],
+        selectedDate: "",
+        selectedDateLabel: "",
+        slots: [],
+        timeSlots: [],
+        selectedTime: "",
+        selectedSlotId: "",
+        totalPrice: 0
+      })
+    }
+  },
+
+  async loadSlots(item: any, selectedDate?: string) {
+    const availableDates = item?.availableDates || []
+    const days = buildServiceDateOptions(availableDates)
+    const dateValue = selectedDate || days[0]?.value || ""
+    if (!item?.id || !dateValue) {
+      this.setData({
+        days,
+        selectedDate: "",
+        selectedDateLabel: "",
+        slots: [],
+        timeSlots: [],
+        selectedTime: "",
+        selectedSlotId: ""
+      })
+      return
+    }
+    const payload = await getServiceSlots({ offeringId: item.id, date: dateValue })
+    const slots = (payload.list || []).filter((slot) => slot.remaining > 0)
+    const selectedSlot = slots[0] || null
+    const activeDay = days.find((day) => day.value === dateValue)
+    this.setData({
+      days,
+      selectedDate: dateValue,
+      selectedDateLabel: activeDay?.label || "",
+      slots,
+      timeSlots: slots,
+      selectedTime: selectedSlot?.timeLabel || "",
+      selectedSlotId: selectedSlot?.id || "",
+      totalPrice: item?.price || 0
+    })
   },
 
   selectPet(e: any) {
-    this.setData({ selectedPetId: e.currentTarget.dataset.id });
+    this.setData({ selectedPetId: e.currentTarget.dataset.id })
   },
 
-  selectItem(e: any) {
-    this.setData({ selectedItemId: e.currentTarget.dataset.id });
-    this.calcTotal();
+  async selectItem(e: any) {
+    const selectedItemId = e.currentTarget.dataset.id
+    const item = this.data.serviceItems.find((current: any) => current.id === selectedItemId)
+    this.setData({ selectedItemId, totalPrice: item?.price || 0 })
+    await this.loadSlots(item, item?.availableDates?.[0] || "")
   },
 
-  chooseStore() {
-    // Optionally implemented bottom sheet store selector, for now just toggle
+  async selectStore(e: any) {
+    const selectedStoreId = e.currentTarget.dataset.id
+    const selectedStore = this.data.stores.find((store: any) => store.id === selectedStoreId) || null
+    this.setData({ selectedStoreId, selectedStore })
+    await this.loadOfferings(this.data.type, selectedStoreId)
   },
 
-  selectStore(e: any) {
-    this.setData({ selectedStoreId: e.currentTarget.dataset.id });
-    this.updateSelectedStore();
-  },
-
-  selectDate(e: any) {
-    this.setData({ selectedDate: e.currentTarget.dataset.val });
+  async selectDate(e: any) {
+    const dateValue = e.currentTarget.dataset.val
+    const item = this.data.serviceItems.find((current: any) => current.id === this.data.selectedItemId)
+    await this.loadSlots(item, dateValue)
   },
 
   selectTimeSlot(e: any) {
-    this.setData({ selectedTime: e.currentTarget.dataset.val });
+    const slotId = e.currentTarget.dataset.id
+    const slot = this.data.slots.find((current: any) => current.id === slotId)
+    this.setData({
+      selectedSlotId: slotId,
+      selectedTime: slot?.timeLabel || ""
+    })
   },
 
   bindRemarkInput(e: any) {
-    this.setData({ remark: e.detail.value });
+    this.setData({ remark: e.detail.value })
   },
 
   openSheet() {
-    this.setData({ showSheet: true });
+    this.setData({ showSheet: true })
   },
 
   closeSheet() {
-    this.setData({ showSheet: false });
+    this.setData({ showSheet: false })
   },
 
-  calcTotal() {
-    const item = this.data.serviceItems.find(i => i.id === this.data.selectedItemId);
-    this.setData({ totalPrice: item ? item.price : 0 });
-  },
+  async submitOrder() {
+    const pet = this.data.pets.find((item: any) => item.id === this.data.selectedPetId)
+    const offering = this.data.serviceItems.find((item: any) => item.id === this.data.selectedItemId)
+    const store = this.data.selectedStore
+    const slot = this.data.slots.find((item: any) => item.id === this.data.selectedSlotId)
 
-  submitOrder() {
-    if (!this.data.selectedPetId) {
-      wx.showToast({ title: '请选择宠物', icon: 'none' });
-      return;
+    if (!pet) {
+      wx.showToast({ title: "请选择宠物", icon: "none" })
+      return
     }
-    if (!this.data.selectedStoreId) {
-      wx.showToast({ title: '请选择门店', icon: 'none' });
-      return;
+    if (!store) {
+      wx.showToast({ title: "请选择门店", icon: "none" })
+      return
     }
-    if (!this.data.selectedTime) {
-      wx.showToast({ title: '请选择预约时间', icon: 'none' });
-      return;
+    if (!offering) {
+      wx.showToast({ title: "请选择项目", icon: "none" })
+      return
     }
-    
-    const pet = this.data.pets.find(p => p.id === this.data.selectedPetId);
-    const item = this.data.serviceItems.find(i => i.id === this.data.selectedItemId);
-    const store = this.data.selectedStore;
+    if (!slot) {
+      wx.showToast({ title: "请选择预约时间", icon: "none" })
+      return
+    }
 
-    // mock date string based on selectedDate
-    const d = new Date();
-    if (this.data.selectedDate === 'tomorrow') d.setDate(d.getDate() + 1);
-    if (this.data.selectedDate === 'after_tomorrow') d.setDate(d.getDate() + 2);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-    wx.showLoading({ title: '提交中...' });
-    setTimeout(() => {
-      wx.hideLoading();
-      
-      const query = `?type=${this.data.type}&petName=${encodeURIComponent(pet?.name || '')}&itemName=${encodeURIComponent(item?.name || '')}&storeName=${encodeURIComponent(store?.name || '')}&date=${dateStr}&time=${this.data.selectedTime}`;
-      
+    try {
+      wx.showLoading({ title: "提交中..." })
+      const appointment = await createServiceAppointment({
+        serviceType: this.data.type,
+        petId: pet.id,
+        providerId: store.id,
+        offeringId: offering.id,
+        slotId: slot.id,
+        appointmentAt: slot.appointmentAt,
+        notes: this.data.remark
+      })
       wx.navigateTo({
-        url: `/pages/service/success/index${query}`
-      });
-    }, 800);
+        url: `/pages/service/success/index${buildSuccessQuery({
+          type: this.data.type,
+          petName: pet.name,
+          itemName: appointment.offering?.name || offering.name,
+          storeName: appointment.provider?.name || store.name,
+          date: appointment.serviceDate || slot.serviceDate,
+          time: appointment.timeLabel || slot.timeLabel
+        })}`
+      })
+    } catch (error: any) {
+      wx.showToast({ title: error?.message || "预约失败", icon: "none" })
+    } finally {
+      wx.hideLoading()
+    }
   }
-});
+})

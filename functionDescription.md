@@ -1440,3 +1440,49 @@
 - `PawHome/miniprogram/pages/vaccine/appointment/index.wxml`
 - `PawHome/miniprogram/pages/vaccine/appointment/index.wxss`
 - `PawHome/miniprogram/utils/vaccineAppointmentLayout.test.ts`
+
+---
+
+## 四类宠物服务后端接通
+
+**目的**
+- 将疫苗、美容、医疗、寄养四类宠物服务从页面内 mock 数据改为真实后端数据驱动，完成服务选项查询、可预约时间查询、预约创建与数据库落库闭环。
+
+**入口**
+- 小程序首页四类服务入口：`PawHome/miniprogram/pages/home/index`
+- 通用服务预约页：`PawHome/miniprogram/pages/service/index`
+- 疫苗预约页：`PawHome/miniprogram/pages/vaccine/appointment/index`
+
+**数据流/状态**
+- 后端新增服务机构、服务项目、服务时段三层业务数据，并扩展预约单表以保存机构、项目、时段、价格和快照信息。
+- 应用启动时会自动建表、补齐旧预约表新字段，并在服务基础数据为空时写入四类服务的默认种子数据。
+- 前端进入预约页后先拉取宠物列表，再按服务类型拉机构列表、机构下服务项目、项目可预约日期与时段。
+- 用户提交预约时，前端携带 `petId / providerId / offeringId / slotId / appointmentAt` 调用后端创建预约；后端校验归属关系、服务类型匹配和时段余量后落库。
+- 预约成功后前端使用后端返回的预约摘要跳转成功页展示。
+
+**关键分支**
+- 通用服务页负责美容、医疗、寄养三类服务；疫苗预约页保留独立布局，但复用同一套后端服务接口。
+- 后端兼容旧版通用预约创建方式，同时支持新版完整业务字段。
+- 取消预约时，如果预约绑定了时段，会同步回退该时段的已预约数量。
+
+**边界条件**
+- 老数据库没有新表时，启动过程会自动 `create_all` 创建服务机构、项目与时段表。
+- 老数据库已有 `service_appointments` 但缺少新字段时，会通过 schema ensure 自动补列与补索引。
+- 某个时段余量用尽时，后端会拒绝创建预约并返回冲突错误。
+- 当前种子数据用于首阶段真实联调，不包含支付、医生级排班和地图真实距离计算。
+
+**相关文件**
+- `backend/app/models.py`
+- `backend/app/schema_ensure.py`
+- `backend/app/__init__.py`
+- `backend/app/api/v1/services.py`
+- `backend/tests/conftest.py`
+- `backend/tests/test_services_appointments.py`
+- `backend/tests/test_service_catalog_flow.py`
+- `PawHome/miniprogram/services/petServices.ts`
+- `PawHome/miniprogram/pages/service/index.ts`
+- `PawHome/miniprogram/pages/service/index.wxml`
+- `PawHome/miniprogram/pages/vaccine/appointment/index.ts`
+- `PawHome/miniprogram/pages/vaccine/appointment/index.wxml`
+- `PawHome/miniprogram/utils/serviceBooking.ts`
+- `PawHome/miniprogram/utils/serviceBooking.test.ts`

@@ -36,9 +36,15 @@
   </view>
 
   <view class="card history-card">
-    <view class="card-title">历史会话</view>
+    <view class="history-header">
+      <view class="card-title">历史会话</view>
+      <view class="history-actions">
+        <view class="history-action danger" wx:if="{{historyAll.length > 0}}" bindtap="cleanupHistory">清理</view>
+        <view class="history-action" wx:if="{{historyAll.length > 5}}" bindtap="toggleHistory">{{showAllHistory ? "收起" : "查看更多"}}</view>
+      </view>
+    </view>
     <block wx:for="{{history}}" wx:key="id">
-      <view class="history-item" data-id="{{item.id}}" data-mode="{{item.mode}}" bindtap="openHistory">
+      <view class="history-item" data-id="{{item.id}}" data-mode="{{item.mode}}" data-started-at="{{item.startedAt}}" bindtap="openHistory">
         <view class="history-left">
           <view class="history-title">{{item.title}}</view>
           <view class="history-status">{{item.status}}</view>

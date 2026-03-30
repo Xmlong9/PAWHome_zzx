@@ -18,6 +18,7 @@
         <text class="header-name">尊贵的会员</text>
       </view>
       <view class="header-desc">专属客服随时为您服务</view>
+      <view class="header-time" wx:if="{{sessionDisplayTime}}">对话时间：{{sessionDisplayTime}}</view>
       <view class="header-actions">
         <view class="btn-action" bindtap="switchToHuman">
           <view class="icon-msg"></view>
@@ -58,6 +59,7 @@
 
     <!-- History Messages -->
     <block wx:for="{{messages}}" wx:key="id">
+      <view class="msg-time" wx:if="{{item.showTime && item.displayTime}}">{{item.displayTime}}</view>
       <view class="msg-row {{item.role==='user' ? 'me' : 'them'}}" id="msg_{{item.id}}">
         <image wx:if="{{item.role!=='user'}}" class="avatar bot-avatar" src="../../../assets/images/shop/问号猫.png" mode="aspectFit" style="transform: scaleX(-1);"></image>
         <view wx:if="{{item.type==='order_card'}}" class="order-card">

@@ -16,13 +16,35 @@ export type SupportMessage = {
   createdAt: number
 }
 
-export const createSupportConversation = async (mode: "smart" | "human"): Promise<SupportConversation> => {
-  return await request<SupportConversation>({ url: "/shop/support/conversations", method: "POST", data: { mode } })
+export const createSupportConversation = async (
+  mode: "smart" | "human",
+  opts?: { forceNew?: boolean }
+): Promise<SupportConversation> => {
+  return await request<SupportConversation>({
+    url: "/shop/support/conversations",
+    method: "POST",
+    data: { mode, forceNew: !!opts?.forceNew }
+  })
 }
 
 export const listSupportConversations = async (): Promise<SupportConversation[]> => {
   const res = await request<{ list: SupportConversation[] }>({ url: "/shop/support/conversations", method: "GET" })
   return res.list || []
+}
+
+export const closeSupportConversation = async (conversationId: string): Promise<SupportConversation> => {
+  return await request<SupportConversation>({
+    url: `/shop/support/conversations/${encodeURIComponent(conversationId)}/close`,
+    method: "POST"
+  })
+}
+
+export const cleanupSupportConversations = async (keep: number): Promise<{ deletedConversations: number; deletedMessages: number; kept: number }> => {
+  return await request<{ deletedConversations: number; deletedMessages: number; kept: number }>({
+    url: "/shop/support/conversations/cleanup",
+    method: "POST",
+    data: { keep }
+  })
 }
 
 export const listSupportMessages = async (conversationId: string): Promise<SupportMessage[]> => {

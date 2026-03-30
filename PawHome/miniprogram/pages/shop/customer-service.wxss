@@ -144,7 +144,29 @@
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
+  margin-bottom: 0;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 24rpx;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.history-action {
+  font-size: 24rpx;
+  color: #ff6d6d;
+}
+
+.history-action.danger {
+  color: #999;
 }
 
 .history-item {

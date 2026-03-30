@@ -733,17 +733,41 @@ def register_routes(bp) -> None:
         mode = data.get("mode")
         if mode not in {"smart", "human"}:
             mode = "smart"
+        force_new = bool(data.get("forceNew"))
 
-        conv = (
-            SupportConversation.query.filter_by(user_id=me.id, channel="shop", mode=mode)
-            .order_by(SupportConversation.updated_at.desc())
-            .first()
-        )
+        conv = None
+        if not force_new:
+            conv = (
+                SupportConversation.query.filter_by(user_id=me.id, channel="shop", mode=mode)
+                .order_by(SupportConversation.updated_at.desc())
+                .first()
+            )
         if conv is None or conv.status != "open":
             conv = SupportConversation(user_id=me.id, channel="shop", mode=mode, status="open")
             db.session.add(conv)
             db.session.commit()
 
+        return ok(
+            {
+                "id": conv.id,
+                "mode": conv.mode,
+                "status": conv.status,
+                "createdAt": _ms(conv.created_at),
+                "lastMessageAt": _ms(conv.last_message_at or conv.updated_at),
+            }
+        )
+
+    @bp.post("/shop/support/conversations/<cid>/close")
+    @require_auth
+    def close_support_conversation(cid: str):
+        _ensure_support_tables()
+        me: User = g.current_user
+        conv = SupportConversation.query.get(cid)
+        if conv is None or conv.user_id != me.id:
+            return fail(code="NOT_FOUND", message="conversation not found", status_code=404)
+        if conv.status != "closed":
+            conv.status = "closed"
+            db.session.commit()
         return ok(
             {
                 "id": conv.id,
@@ -779,6 +803,47 @@ def register_routes(bp) -> None:
                 ]
             }
         )
+
+    @bp.post("/shop/support/conversations/cleanup")
+    @require_auth
+    def cleanup_support_conversations():
+        _ensure_support_tables()
+        me: User = g.current_user
+        data = request.get_json(silent=True) or {}
+        keep = data.get("keep")
+        try:
+            keep_n = int(keep) if keep is not None else 5
+        except Exception:
+            keep_n = 5
+        if keep_n < 0:
+            keep_n = 0
+        if keep_n > 50:
+            keep_n = 50
+
+        keep_rows = (
+            SupportConversation.query.filter_by(user_id=me.id, channel="shop")
+            .order_by(SupportConversation.updated_at.desc())
+            .limit(keep_n)
+            .all()
+        )
+        keep_ids = {c.id for c in keep_rows}
+
+        q = SupportConversation.query.filter_by(user_id=me.id, channel="shop", status="closed")
+        if keep_ids:
+            q = q.filter(~SupportConversation.id.in_(list(keep_ids)))
+        del_ids = [r[0] for r in q.with_entities(SupportConversation.id).all()]
+        if not del_ids:
+            return ok({"deletedConversations": 0, "deletedMessages": 0, "kept": keep_n})
+
+        deleted_messages = (
+            SupportMessage.query.filter(SupportMessage.conversation_id.in_(del_ids)).delete(synchronize_session=False)
+            or 0
+        )
+        deleted_convs = (
+            SupportConversation.query.filter(SupportConversation.id.in_(del_ids)).delete(synchronize_session=False) or 0
+        )
+        db.session.commit()
+        return ok({"deletedConversations": int(deleted_convs), "deletedMessages": int(deleted_messages), "kept": keep_n})
 
     @bp.get("/shop/support/conversations/<cid>/messages")
     @require_auth

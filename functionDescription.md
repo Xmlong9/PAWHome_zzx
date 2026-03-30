@@ -286,14 +286,66 @@
 - 所有客服接口要求登录态（`Authorization: Bearer <token>`）。
 - 会话与消息表使用 `checkfirst=True` 自动建表，避免需要手动迁移。
 
+### 变更 2026-03-30：每次进入新会话 + 离开自动结束 + 展示对话时间
+
+**目的**
+- 每次进入智能客服/人工客服都生成一条新的会话记录，便于历史回溯。
+- 用户离开聊天页即结束该会话，避免历史里长期出现“进行中”的遗留会话。
+- 历史会话与聊天页显示时间一致，并兼容秒/毫秒时间戳差异。
+
+**入口**
+- 创建会话：`POST /api/v1/shop/support/conversations`（新增参数 `forceNew`）
+- 结束会话：`POST /api/v1/shop/support/conversations/<cid>/close`
+- 小程序入口：
+  - 客服中心页进入智能/人工：`/pages/shop/customer-service`
+  - 客服聊天页：`/pages/shop/customer-service-chat/index`
+
+**数据流/状态**
+- 创建会话时：
+  - `forceNew=true`：后端始终创建新会话（不复用 open 会话）。
+- 退出聊天页时：
+  - 小程序在 `onUnload` 调用 close 接口，将 `support_conversations.status` 置为 `closed`。
+- 时间展示：
+  - 小程序对会话/消息时间戳做归一化：若 `< 1e12` 视为秒并转换为毫秒，再进行格式化展示。
+
 **相关文件**
 - 小程序：
   - `PawHome/miniprogram/pages/shop/customer-service.ts`
   - `PawHome/miniprogram/pages/shop/customer-service.wxml`
   - `PawHome/miniprogram/pages/shop/customer-service-chat/index.ts`
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.wxml`
+  - `PawHome/miniprogram/pages/shop/customer-service-chat/index.wxss`
   - `PawHome/miniprogram/services/support.ts`
 - 后端：
-  - `backend/app/models.py`
+  - `backend/app/api/v1/shop.py`
+
+### 变更 2026-03-30：历史会话默认仅展示 5 条 + 清理已结束会话
+
+**目的**
+- 避免“每次进入都新建会话”导致历史列表过长，影响可读性与操作效率。
+- 提供轻量清理能力：只清理已结束会话，且默认保留最近 5 条会话记录。
+
+**入口**
+- 小程序：
+  - 客服中心页“历史会话”区域：默认展示 5 条，支持“查看更多/收起”
+  - 客服中心页“清理”按钮：弹窗确认后执行清理
+- 后端：
+  - 清理接口：`POST /api/v1/shop/support/conversations/cleanup`（参数 `keep`）
+
+**数据流/状态**
+- 展示策略：
+  - `historyAll` 存全量列表，`history` 存当前展示列表（默认 slice(0,5)）。
+- 清理策略：
+  - 仅删除 `status=closed` 的会话；
+  - 最近 `keep` 条会话不删除（无论 open/closed），以保证最近记录可回溯。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/pages/shop/customer-service.ts`
+  - `PawHome/miniprogram/pages/shop/customer-service.wxml`
+  - `PawHome/miniprogram/pages/shop/customer-service.wxss`
+  - `PawHome/miniprogram/services/support.ts`
+- 后端：
   - `backend/app/api/v1/shop.py`
 
 ---

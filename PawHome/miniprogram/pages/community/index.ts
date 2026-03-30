@@ -4,6 +4,7 @@ import { listConversations } from "../../services/im";
 import { getNotificationUnreadSummary } from "../../services/notifications";
 import { formatTimeAgo } from "../../utils/date";
 import { navigateToWithTransition } from "../../utils/transition";
+import { resolveImageSrc } from "../../utils/mediaCache";
 
 const app = getApp<IAppOption>();
 
@@ -74,11 +75,14 @@ Page({
         timeAgo: formatTimeAgo(post.createdAt)
       }));
 
+      const startIndex = reset ? 0 : this.data.posts.length
       this.setData({
         posts: reset ? newPosts : [...this.data.posts, ...newPosts],
         page,
         hasMore: newPosts.length === this.data.pageSize,
         loading: false
+      }, () => {
+        this.hydratePostsMedia(startIndex)
       });
 
       if (reset) {
@@ -88,6 +92,34 @@ Page({
       console.error(err);
       this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
+    }
+  },
+
+  async hydratePostsMedia(startIndex = 0) {
+    const posts = this.data.posts || []
+    const slice = posts.slice(startIndex)
+    const tasks = slice.map((post, i) => this.hydrateOnePostMedia(startIndex + i, post))
+    await Promise.allSettled(tasks)
+  },
+
+  async hydrateOnePostMedia(index: number, post: any) {
+    const updates: Record<string, any> = {}
+    const avatarUrl = post?.user?.avatarUrl
+    if (typeof avatarUrl === "string" && avatarUrl) {
+      const nextAvatar = await resolveImageSrc(avatarUrl)
+      if (nextAvatar && nextAvatar !== avatarUrl) {
+        updates[`posts[${index}].user.avatarUrl`] = nextAvatar
+      }
+    }
+    const firstImage = post?.images?.[0]
+    if (typeof firstImage === "string" && firstImage) {
+      const nextImage = await resolveImageSrc(firstImage)
+      if (nextImage && nextImage !== firstImage) {
+        updates[`posts[${index}].images[0]`] = nextImage
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      this.setData(updates)
     }
   },
 

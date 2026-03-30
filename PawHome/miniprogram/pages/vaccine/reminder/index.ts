@@ -1,4 +1,5 @@
 import { getReminderByAppointment, upsertVaccineReminder } from "../../../services/vaccines";
+import { navigateBackWithTransition } from "../../../utils/transition";
 
 Page({
   data: {
@@ -120,7 +121,7 @@ Page({
       });
       wx.showToast({ title: "已保存", icon: "success" });
       setTimeout(() => {
-        wx.navigateBack();
+        navigateBackWithTransition()
       }, 800);
     } catch (error: any) {
       wx.showToast({ title: error?.message || "保存失败", icon: "none" });

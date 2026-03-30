@@ -1,6 +1,7 @@
 import { createPost } from "../../services/posts"
 import { uploadFile } from "../../services/upload"
 import { getPetList } from "../../services/user"
+import { navigateBackWithTransition } from "../../utils/transition"
 
 Page({
   data: {
@@ -29,7 +30,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack();
+    navigateBackWithTransition()
   },
 
   switchType(e: WechatMiniprogram.TouchEvent) {

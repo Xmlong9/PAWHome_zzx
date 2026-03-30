@@ -1,4 +1,4 @@
-<view class="container" style="padding-top: {{navBarHeight}}px">
+<view class="container paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" style="padding-top: {{navBarHeight}}px">
   <scroll-view scroll-y class="scroll-content" enable-flex>
     <view class="content-wrap">
       <view class="type-tabs">

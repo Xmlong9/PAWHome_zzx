@@ -1,4 +1,4 @@
-<view class="service-page">
+<view class="service-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="top-card">
     <image class="top-bg-image" src="/assets/images/shop/问号猫.png" mode="aspectFill"></image>
     <view class="top-content">

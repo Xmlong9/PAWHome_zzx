@@ -1,4 +1,4 @@
-<view class="order-detail-page" wx:if="{{order}}">
+<view class="order-detail-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" wx:if="{{order}}">
   <view class="status-header {{order.status}}">
     <view class="status-title">{{order.statusText}}</view>
     <view class="status-desc" wx:if="{{order.status === 'pending_pay'}}">请尽快完成支付，超时订单将自动取消</view>

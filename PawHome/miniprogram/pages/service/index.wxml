@@ -1,4 +1,4 @@
-<view class="service-page">
+<view class="service-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <!-- Pet Selector -->
   <view class="pet-selector">
     <scroll-view scroll-x class="pet-scroll" enable-flex="true" show-scrollbar="false">
@@ -87,8 +87,8 @@
 </view>
 
 <!-- Bottom Sheet (Time & Form) -->
-<view class="sheet-mask" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
-<view class="bottom-sheet" wx:if="{{showSheet}}">
+<view class="sheet-mask {{sheetVisible ? 'show' : ''}}" wx:if="{{showSheet}}" bindtap="closeSheet"></view>
+<view class="bottom-sheet {{sheetVisible ? 'show' : ''}}" wx:if="{{showSheet}}">
   <view class="date-selector">
     <view class="date-item {{selectedDate == item.value ? 'active' : ''}}" wx:for="{{days}}" wx:key="key" bindtap="selectDate" data-val="{{item.value}}">{{item.label}}</view>
   </view>

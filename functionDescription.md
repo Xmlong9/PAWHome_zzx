@@ -1797,3 +1797,95 @@
 - `PawHome/miniprogram/pages/service/appointments/index.(ts|wxml|wxss|json)`
 - `PawHome/miniprogram/pages/service/appointments/detail/index.(ts|wxml|wxss|json)`
 - `PawHome/miniprogram/utils/serviceBooking.ts`
+
+---
+
+## 页面路由切换动效（paw-route 统一）
+
+**目的**
+- 让非 Tab 页在进入/返回时具备统一的淡入 + 轻位移动效，减少“硬切”与闪动，整体更丝滑。
+
+**入口**
+- 任何 `navigateTo` 进入的页面（非 tabBar 页面）。
+- 典型：服务预约、疫苗预约、商品详情、购物车、下单页、搜索页、设置页等。
+
+**数据流/状态**
+- 页面三态（注入到每个 Page 实例）：
+  - `pageVisible`：进入动效的可见态
+  - `pageLeaving`：离场态（供“带过渡导航”使用）
+- `app.ts` 在 `Page()` 注册时统一包一层：
+  - `onLoad` 调用 `initPageTransition(this)` 让页面初始不可见
+  - `onReady` 调用 `enterPageTransition(this)` 在下一帧置为可见触发过渡
+  - `onShow` 调用 `reenterPageIfNeeded(this)` 兼容“返回上一页时重放进入”场景
+- WXML 根节点统一绑定：
+  - `class="... paw-route {{pageVisible?'is-visible':''}} {{pageLeaving?'is-leaving':''}}"`
+
+**关键分支**
+- “带过渡导航”场景（页面离场动画）：
+  - 使用 `navigateToWithTransitionOptions` / `navigateBackWithTransition` 等封装，在执行路由前先把当前页置为 `pageLeaving=true` 并延时跳转。
+
+**边界条件**
+- Tab 页（home/community/shop/my）不做离场动效；仅保持现有轻量进入表现，避免影响 tab 切换手感。
+- 个别页面根节点若未绑定 `paw-route` class，只会享受“状态注入”，不会有视觉动效。
+
+**相关文件**
+- `PawHome/miniprogram/app.ts`
+- `PawHome/miniprogram/utils/transition.ts`
+- `PawHome/miniprogram/app.wxss`
+- `PawHome/miniprogram/pages/service/index.wxml`
+- `PawHome/miniprogram/pages/vaccine/appointment/index.wxml`
+- `PawHome/miniprogram/pages/shop/detail.wxml`
+- `PawHome/miniprogram/pages/cart/index.wxml`
+- `PawHome/miniprogram/pages/search/index.wxml`
+
+---
+
+## 底部弹窗 Sheet 动效（挂载/显隐分离）
+
+**目的**
+- 让底部弹窗（Sheet）打开/关闭都有过渡动画：遮罩淡入、面板从底部滑入；关闭时先滑出再卸载，避免“突然消失”。
+
+**入口**
+- 服务预约页“选择时间”弹窗。
+- 客服聊天页“发订单给客服”底部选择订单弹窗。
+
+**数据流/状态**
+- 两个状态控制：
+  - `showXxxSheet`：控制节点是否挂载（`wx:if`）
+  - `xxxSheetVisible`：控制 `.show` class，触发 CSS transition
+- 打开：先 `show=true` 挂载，再短延时 `visible=true` 触发进入动画。
+- 关闭：先 `visible=false` 触发退场动画，再延时 `show=false` 卸载。
+
+**边界条件**
+- 弹窗内容较长时保留 `max-height` 与 `overflow-y: auto`，避免动画期间出现抖动。
+
+**相关文件**
+- `PawHome/miniprogram/pages/service/index.(ts|wxml|wxss)`
+- `PawHome/miniprogram/pages/shop/customer-service-chat/index.(ts|wxml|wxss)`
+
+---
+
+## 社区媒体 URL 归一化（真机可访问）
+
+**目的**
+- 解决真机调试时社区帖子图片/视频封面打不开的问题（常见于历史数据写入了 `127.0.0.1/localhost` 的绝对 URL）。
+
+**入口**
+- 社区列表拉取：`GET /api/v1/posts`
+- 帖子详情拉取：`GET /api/v1/posts/<id>`
+- 发帖上传：`POST /api/v1/uploads`
+
+**数据流/状态**
+- 后端上传接口返回媒体 URL 时，可能基于请求的 `Host` 生成绝对地址；若在电脑本地用 `127.0.0.1` 访问过上传接口，历史帖子可能持久化了 `http://127.0.0.1:5001/media/...`。
+- 小程序端在拉取帖子列表/详情时，对媒体字段做归一化：
+  - 相对路径（如 `/media/...`）会补齐为 `http(s)://<API_HOST>/media/...`
+  - 绝对路径但 host 为 `127.0.0.1/localhost/0.0.0.0` 的，会替换为当前 `getBaseUrl()` 推导出的 `origin`，确保真机可访问。
+
+**关键分支**
+- 为避免改动后端存量数据，采用前端兼容方式：渲染前统一改写 URL。
+- 上传返回的 `data.url` 也做同样归一化，确保新发帖不受本地 host 影响。
+
+**相关文件**
+- `PawHome/miniprogram/services/posts.ts`
+- `PawHome/miniprogram/services/upload.ts`
+- `PawHome/miniprogram/config/env.ts`

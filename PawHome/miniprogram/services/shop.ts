@@ -1,6 +1,7 @@
 import { request } from "./request"
 import { isMockEnabled } from "./mock"
 import { getBaseUrl } from "../config/env"
+import { resolveImageSrc } from "../utils/mediaCache"
 
 export type ShopProduct = {
   id: string
@@ -94,6 +95,20 @@ const normalizeProduct = (p: ShopProduct | null): ShopProduct | null => {
   return { ...p, imageUrl: toAbsoluteUrl(p.imageUrl) }
 }
 const normalizeProducts = (list: ShopProduct[]): ShopProduct[] => list.map((p) => normalizeProduct(p) as ShopProduct)
+
+const hydrateProduct = async (p: ShopProduct | null): Promise<ShopProduct | null> => {
+  const norm = normalizeProduct(p)
+  if (!norm) return norm
+  const nextUrl = await resolveImageSrc(norm.imageUrl)
+  if (nextUrl && nextUrl !== norm.imageUrl) return { ...norm, imageUrl: nextUrl }
+  return norm
+}
+
+const hydrateProducts = async (list: ShopProduct[]): Promise<ShopProduct[]> => {
+  const norm = normalizeProducts(list || [])
+  const hydrated = await Promise.all(norm.map((p) => hydrateProduct(p) as Promise<ShopProduct>))
+  return hydrated
+}
 const PRODUCT_IMAGE_MAP: Record<string, string> = {
   p1: "/assets/images/shop/商品1.jpg",
   p2: "/assets/images/shop/商品2.jpg",
@@ -635,29 +650,29 @@ export const getDefaultAddress = async (): Promise<UserAddress | null> => {
 export const listProducts = async (): Promise<ShopProduct[]> => {
   if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/products", method: "GET" })
-    return normalizeProducts(res.list || [])
+    return hydrateProducts(res.list || [])
   }
   ensureSeed()
-  return normalizeProducts(getProductsSync())
+  return hydrateProducts(getProductsSync())
 }
 
 export const getProductDetail = async (id: string): Promise<ShopProduct | null> => {
   if (!MOCK()) {
     const p = await request<ShopProduct>({ url: `/shop/products/${encodeURIComponent(id)}`, method: "GET" })
-    return normalizeProduct(p)
+    return hydrateProduct(p)
   }
   ensureSeed()
   const product = getProductsSync().find((item) => item.id === id)
-  return normalizeProduct(product || null)
+  return hydrateProduct(product || null)
 }
 
 export const listFavorites = async (): Promise<ShopProduct[]> => {
   if (!MOCK()) {
     const res = await request<{ list: ShopProduct[] }>({ url: "/shop/favorites", method: "GET" })
-    return normalizeProducts(res.list || [])
+    return hydrateProducts(res.list || [])
   }
   ensureSeed()
-  return normalizeProducts(getProductsSync().filter((item) => item.favorite))
+  return hydrateProducts(getProductsSync().filter((item) => item.favorite))
 }
 
 export const toggleFavorite = async (productId: string): Promise<boolean> => {
@@ -675,16 +690,22 @@ export const toggleFavorite = async (productId: string): Promise<boolean> => {
 export const listCartItems = async (): Promise<Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }>> => {
   if (!MOCK()) {
     const res = await request<{ list: Array<{ product: ShopProduct | null; count: number; checked: boolean; invalid?: boolean }> }>({ url: "/shop/cart", method: "GET" })
-    return (res.list || []).map((x) => ({ ...x, product: normalizeProduct(x.product) }))
+    const list = res.list || []
+    const hydrated = await Promise.all(
+      list.map(async (x) => ({ ...x, product: await hydrateProduct(x.product) }))
+    )
+    return hydrated
   }
   ensureSeed()
   const products = getProductsSync()
-  return getCartSync().map((cartItem) => ({
-    product: normalizeProduct(products.find((p) => p.id === cartItem.productId) || null),
+  const base = getCartSync().map((cartItem) => ({
+    product: products.find((p) => p.id === cartItem.productId) || null,
     count: cartItem.count,
     checked: cartItem.checked,
     invalid: cartItem.invalid
   }))
+  const hydrated = await Promise.all(base.map(async (x) => ({ ...x, product: await hydrateProduct(x.product) })))
+  return hydrated
 }
 
 export const addToCart = async (productId: string, count = 1): Promise<void> => {

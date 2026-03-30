@@ -1,4 +1,5 @@
 import { ShopProduct, addToCart, getProductDetail, toggleFavorite } from "../../services/shop"
+import { navigateBackWithTransition, navigateToWithTransitionOptions } from "../../utils/transition"
 
 Page({
   data: {
@@ -220,18 +221,20 @@ Page({
     if (!this.data.product) return
     const id = encodeURIComponent(this.data.product.id)
     const count = this.data.quantity
-    wx.navigateTo({ url: `/pages/shop/order/checkout?from=detail&productId=${id}&count=${count}` })
+    navigateToWithTransitionOptions({
+      url: `/pages/shop/order/checkout?from=detail&productId=${id}&count=${count}`
+    })
   },
   goCart() {
-    wx.navigateTo({ url: "/pages/cart/index" })
+    navigateToWithTransitionOptions({ url: "/pages/cart/index" })
   },
   contactService() {
-    wx.navigateTo({ url: "/pages/shop/customer-service" })
+    navigateToWithTransitionOptions({ url: "/pages/shop/customer-service" })
   },
   goBack() {
     const pages = getCurrentPages()
     if (pages.length > 1) {
-      wx.navigateBack()
+      navigateBackWithTransition()
       return
     }
     wx.switchTab({ url: "/pages/shop/index" })

@@ -1,5 +1,6 @@
 import { listServiceAppointments } from "../../../services/petServices";
 import { getPetList } from "../../../services/user";
+import { navigateToWithTransitionOptions } from "../../../utils/transition";
 
 Page({
   data: {
@@ -95,11 +96,13 @@ Page({
   openDetail(e: any) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
-    wx.navigateTo({ url: `/pages/vaccine/appointments/detail/index?appointmentId=${encodeURIComponent(id)}` });
+    navigateToWithTransitionOptions({
+      url: `/pages/vaccine/appointments/detail/index?appointmentId=${encodeURIComponent(id)}`
+    });
   },
 
   goImport() {
-    wx.navigateTo({ url: "/pages/vaccine/import/index" });
+    navigateToWithTransitionOptions({ url: "/pages/vaccine/import/index" });
   }
 });
 
@@ -138,4 +141,3 @@ function calcAge(birthdayIso: string) {
   if (years > 0) return `${years}岁`;
   return `${remMonths}个月`;
 }
-

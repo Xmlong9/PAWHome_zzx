@@ -1,5 +1,6 @@
 import { followUser, getUserProfile, unfollowUser, UserProfile } from "../../services/user";
 import { Post, getUserFavoritePosts, getUserLikedPosts, getUserPosts } from "../../services/posts";
+import { resolveImageSrc } from "../../utils/mediaCache";
 import {
   enterPageTransition,
   initPageTransition,
@@ -59,7 +60,9 @@ Page({
     }
     getUserProfile(fallbackUserId)
       .then((userInfo) => {
-        this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) })
+        this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) }, () => {
+          this.hydrateUserInfoAvatar()
+        })
       })
       .catch(() => {})
     Promise.all([
@@ -95,7 +98,9 @@ Page({
       // 2. 加载当前 tab 数据
       await this.loadTabData(this.data.currentTab);
       
-      this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) });
+      this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) }, () => {
+        this.hydrateUserInfoAvatar()
+      });
     } catch (error) {
       console.error("Load user profile failed", error);
     } finally {
@@ -107,16 +112,53 @@ Page({
     try {
       if (tabName === '帖子') {
         const res = await getUserPosts(this.data.userId, 1, 10)
-        this.setData({ posts: res.list });
+        this.setData({ posts: res.list }, () => this.hydratePostListMedia("posts"));
       } else if (tabName === '点赞') {
         const res = await getUserLikedPosts(this.data.userId, 1, 10)
-        this.setData({ likes: res.list });
+        this.setData({ likes: res.list }, () => this.hydratePostListMedia("likes"));
       } else if (tabName === '收藏') {
         const res = await getUserFavoritePosts(this.data.userId, 1, 10)
-        this.setData({ favorites: res.list });
+        this.setData({ favorites: res.list }, () => this.hydratePostListMedia("favorites"));
       }
     } catch (e) {
       console.error("Load tab data failed", e);
+    }
+  },
+
+  async hydrateUserInfoAvatar() {
+    const url = this.data.userInfo?.avatarUrl
+    if (typeof url !== "string" || !url) return
+    const next = await resolveImageSrc(url)
+    if (next && next !== url) {
+      this.setData({ "userInfo.avatarUrl": next })
+    }
+  },
+
+  async hydratePostListMedia(field: "posts" | "likes" | "favorites", startIndex = 0) {
+    const list = (this.data as any)[field] || []
+    const slice = Array.isArray(list) ? list.slice(startIndex) : []
+    const tasks = slice.map((post: any, i: number) => this.hydrateOnePostMedia(field, startIndex + i, post))
+    await Promise.allSettled(tasks)
+  },
+
+  async hydrateOnePostMedia(field: "posts" | "likes" | "favorites", index: number, post: any) {
+    const updates: Record<string, any> = {}
+    const avatarUrl = post?.user?.avatarUrl
+    if (typeof avatarUrl === "string" && avatarUrl) {
+      const nextAvatar = await resolveImageSrc(avatarUrl)
+      if (nextAvatar && nextAvatar !== avatarUrl) {
+        updates[`${field}[${index}].user.avatarUrl`] = nextAvatar
+      }
+    }
+    const coverUrl = post?.images?.[0]
+    if (typeof coverUrl === "string" && coverUrl) {
+      const nextCover = await resolveImageSrc(coverUrl)
+      if (nextCover && nextCover !== coverUrl) {
+        updates[`${field}[${index}].images[0]`] = nextCover
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      this.setData(updates)
     }
   },
 

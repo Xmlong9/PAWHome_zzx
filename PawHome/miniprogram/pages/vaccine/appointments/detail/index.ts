@@ -1,6 +1,7 @@
 import { deleteServiceAppointment, getServiceAppointmentDetail } from "../../../../services/petServices";
 import { getPetList } from "../../../../services/user";
 import { buildSuccessQuery } from "../../../../utils/serviceBooking";
+import { navigateBackWithTransition, navigateToWithTransitionOptions } from "../../../../utils/transition";
 
 Page({
   data: {
@@ -65,7 +66,7 @@ Page({
       time: this.data.time
     });
     const extra = query.startsWith("?") ? `&${query.slice(1)}` : query;
-    wx.navigateTo({
+    navigateToWithTransitionOptions({
       url: `/pages/vaccine/reminder/index?appointmentId=${encodeURIComponent(appointmentId)}${extra}`
     });
   },
@@ -84,7 +85,7 @@ Page({
         try {
           await deleteServiceAppointment(appointmentId);
           wx.showToast({ title: "已删除" });
-          setTimeout(() => wx.navigateBack(), 600);
+          setTimeout(() => navigateBackWithTransition(), 600);
         } catch (e: any) {
           wx.showToast({ title: e?.message || "删除失败", icon: "none" });
         } finally {
@@ -113,4 +114,3 @@ function buildStatusText(appointmentAtIso: string, status: string) {
   if (isPast) return "已过期";
   return "已预约";
 }
-

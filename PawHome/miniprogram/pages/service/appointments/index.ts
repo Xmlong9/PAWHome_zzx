@@ -1,5 +1,6 @@
 import { listServiceAppointments } from "../../../services/petServices";
 import { getPetList } from "../../../services/user";
+import { navigateToWithTransitionOptions } from "../../../utils/transition";
 
 function getMeta(type: string) {
   if (type === "beauty") return { title: "美容预约记录" }
@@ -100,7 +101,7 @@ Page({
   openDetail(e: any) {
     const id = e.currentTarget.dataset.id
     if (!id) return
-    wx.navigateTo({
+    navigateToWithTransitionOptions({
       url: `/pages/service/appointments/detail/index?appointmentId=${encodeURIComponent(id)}&type=${encodeURIComponent(this.data.type)}`
     })
   }
@@ -141,4 +142,3 @@ function calcAge(birthdayIso: string) {
   if (years > 0) return `${years}岁`
   return `${remMonths}个月`
 }
-

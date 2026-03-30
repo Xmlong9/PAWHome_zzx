@@ -1,6 +1,7 @@
 import { request } from "./request"
 import { MOCK_USERS } from "./user"
 import { isMockEnabled } from "./mock"
+import { getBaseUrl } from "../config/env"
 
 export type Post = {
   id: string
@@ -30,6 +31,30 @@ const MOCK = () => isMockEnabled()
 
 // 全局缓存已经生成的 mock 帖子，保证内外一致
 let cachedPosts: Post[] = [];
+
+function normalizeBackendUrl(url: string): string {
+  if (!url) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  const base = getBaseUrl()
+  const origin = base.split("/").slice(0, 3).join("/")
+  if (url.startsWith("/")) return origin + url
+  const m = url.match(/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(\/.*)$/i)
+  if (m) return origin + m[1]
+  return url
+}
+
+function normalizePost(post: Post): Post {
+  const images = Array.isArray(post.images) ? post.images.map(normalizeBackendUrl) : []
+  const user = post.user ? { ...post.user, avatarUrl: normalizeBackendUrl(post.user.avatarUrl) } : post.user
+  const videoUrl = post.videoUrl ? normalizeBackendUrl(post.videoUrl) : post.videoUrl
+  return { ...post, images, videoUrl, user }
+}
+
+function normalizePostList(list: Post[] | undefined): Post[] {
+  if (!Array.isArray(list)) return []
+  return list.map(normalizePost)
+}
 
 // Mock data generator
 const generateMockPosts = (page: number, pageSize: number, type?: string): Post[] => {
@@ -118,7 +143,7 @@ export async function getPosts(page = 1, pageSize = 10, tag = '推荐'): Promise
     method: "GET", 
     data: { page, pageSize, type: serverType, tab } 
   })
-  return res
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; page: number; pageSize: number; total: number }>{
@@ -127,7 +152,7 @@ export async function getMyPosts(page = 1, pageSize = 10): Promise<{ list: Post[
     return { list, page, pageSize, total: 20 }
   }
   const res = await request<{ list: Post[]; page: number; pageSize: number; total: number }>({ url: "/users/me/posts", method: "GET", data: { page, pageSize } })
-  return res
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getUserPosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
@@ -135,7 +160,8 @@ export async function getUserPosts(userId: string, page = 1, pageSize = 10): Pro
     const list = generateMockPosts(page, pageSize)
     return { list, total: 20 }
   }
-  return request({ url: `/users/${encodeURIComponent(userId)}/posts`, method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: Post[]; total: number }>({ url: `/users/${encodeURIComponent(userId)}/posts`, method: "GET", data: { page, pageSize } })
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getUserLikedPosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
@@ -143,7 +169,12 @@ export async function getUserLikedPosts(userId: string, page = 1, pageSize = 10)
     const list = generateMockPosts(page, pageSize)
     return { list, total: 20 }
   }
-  return request({ url: `/users/${encodeURIComponent(userId)}/likes/posts`, method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: Post[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/likes/posts`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getUserFavoritePosts(userId: string, page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
@@ -151,7 +182,12 @@ export async function getUserFavoritePosts(userId: string, page = 1, pageSize = 
     const list = generateMockPosts(page, pageSize)
     return { list, total: 20 }
   }
-  return request({ url: `/users/${encodeURIComponent(userId)}/favorites/posts`, method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: Post[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/favorites/posts`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getMyHistoryPosts(page = 1, pageSize = 10): Promise<{ list: Post[]; total: number }>{
@@ -159,7 +195,8 @@ export async function getMyHistoryPosts(page = 1, pageSize = 10): Promise<{ list
     const list = generateMockPosts(page, pageSize)
     return { list, total: 20 }
   }
-  return request({ url: "/users/me/history/posts", method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: Post[]; total: number }>({ url: "/users/me/history/posts", method: "GET", data: { page, pageSize } })
+  return { ...res, list: normalizePostList(res.list) }
 }
 
 export async function getPost(id: string): Promise<Post>{
@@ -208,7 +245,7 @@ export async function getPost(id: string): Promise<Post>{
     return post;
   }
   const res = await request<Post>({ url: `/posts/${encodeURIComponent(id)}`, method: "GET" })
-  return res
+  return normalizePost(res)
 }
 
 export async function likePost(id: string): Promise<{ ok: boolean }>{

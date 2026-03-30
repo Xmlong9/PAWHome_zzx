@@ -4,13 +4,25 @@ type UploadOk = { ok: true; data?: { url?: string } }
 
 function toAbsoluteUrl(url: string): string {
   if (!url) return url
+  const base = getBaseUrl()
+  const origin = base.split("/").slice(0, 3).join("/")
   if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+
+function normalizeBackendUrl(url: string): string {
+  if (!url) return url
   if (/^data:/i.test(url)) return url
   if (/^wxfile:\/\//i.test(url)) return url
   const base = getBaseUrl()
   const origin = base.split("/").slice(0, 3).join("/")
   if (url.startsWith("/")) return origin + url
-  return origin + "/" + url
+  const m = url.match(/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(\/.*)$/i)
+  if (m) return origin + m[1]
+  return url
 }
 
 export function uploadFile(filePath: string): Promise<string> {
@@ -29,7 +41,7 @@ export function uploadFile(filePath: string): Promise<string> {
           const okBody = body as UploadOk
           const url = okBody?.data?.url
           if (okBody?.ok && typeof url === "string" && url) {
-            resolve(toAbsoluteUrl(url))
+            resolve(normalizeBackendUrl(toAbsoluteUrl(url)))
             return
           }
           reject(body)

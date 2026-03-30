@@ -26,6 +26,7 @@ import { followUser, unfollowUser } from "../../services/user";
 import { createConversation, sendMessage } from "../../services/im";
 import { trackEvent } from "../../services/analytics";
 import { formatTimeAgo } from "../../utils/date";
+import { resolveImageSrc, resolveImageSrcList } from "../../utils/mediaCache";
 import {
   enterPageTransition,
   initPageTransition,
@@ -158,15 +159,17 @@ Page({
           timeAgo: formatTimeAgo(post.createdAt)
         }
       }, () => {
+        this.hydratePostMedia()
         const p = this.data.post
         if (!p?.videoUrl) return
         const cover = p.images?.[0] || ""
         if (cover && !cover.includes("/assets/images/")) return
         ensurePostCover(p.id)
-          .then((res) => {
+          .then(async (res) => {
             const coverUrl = String((res as any)?.coverUrl || "")
             if (!coverUrl) return
-            this.setData({ "post.images": [coverUrl] })
+            const resolvedCover = await resolveImageSrc(coverUrl)
+            this.setData({ "post.images": [resolvedCover] })
             wx.setStorageSync("community_need_refresh", true)
           })
           .catch(() => {})
@@ -174,6 +177,43 @@ Page({
     } catch (err) {
       console.error(err);
       wx.showToast({ title: '帖子加载失败', icon: 'none' });
+    }
+  },
+
+  async hydratePostMedia() {
+    const post = this.data.post
+    if (!post) return
+    const updates: Record<string, any> = {}
+
+    const avatarUrl = post.user?.avatarUrl
+    if (typeof avatarUrl === "string" && avatarUrl) {
+      const nextAvatar = await resolveImageSrc(avatarUrl)
+      if (nextAvatar && nextAvatar !== avatarUrl) {
+        updates["post.user.avatarUrl"] = nextAvatar
+      }
+    }
+
+    const images = Array.isArray(post.images) ? post.images : []
+    if (images.length > 0) {
+      const nextImages = await resolveImageSrcList(images)
+      let changed = false
+      if (nextImages.length !== images.length) {
+        changed = true
+      } else {
+        for (let i = 0; i < images.length; i++) {
+          if (nextImages[i] !== images[i]) {
+            changed = true
+            break
+          }
+        }
+      }
+      if (changed) {
+        updates["post.images"] = nextImages
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      this.setData(updates)
     }
   },
 

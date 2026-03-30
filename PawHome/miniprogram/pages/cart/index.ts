@@ -1,4 +1,5 @@
 import { ShopProduct, clearInvalidCartItems, listCartItems, listProducts, setAllCartChecked, updateCartItem } from "../../services/shop"
+import { navigateBackWithTransition, navigateToWithTransitionOptions } from "../../utils/transition"
 
 type CartServiceItem = {
   product: ShopProduct | null
@@ -65,7 +66,7 @@ Page({
   },
   openDetail(e: WechatMiniprogram.TouchEvent) {
     const { id } = e.currentTarget.dataset as { id: string }
-    wx.navigateTo({ url: `/pages/shop/detail?id=${encodeURIComponent(id)}` })
+    navigateToWithTransitionOptions({ url: `/pages/shop/detail?id=${encodeURIComponent(id)}` })
   },
   async toggleAll() {
     await setAllCartChecked(!this.data.allChecked)
@@ -93,12 +94,12 @@ Page({
   goBack() {
     const pages = getCurrentPages()
     if (pages.length > 1) {
-      wx.navigateBack()
+      navigateBackWithTransition()
       return
     }
     wx.switchTab({ url: "/pages/shop/index" })
   },
   goCheckout() {
-    wx.navigateTo({ url: "/pages/shop/order/checkout?from=cart" })
+    navigateToWithTransitionOptions({ url: "/pages/shop/order/checkout?from=cart" })
   }
 })

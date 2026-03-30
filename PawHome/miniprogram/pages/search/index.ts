@@ -1,6 +1,7 @@
 import { searchCommunity, searchShop } from "../../services/search"
 import { debounce } from "../../utils/debounce"
 import { getSearchCache, makeSearchCacheKey, setSearchCache } from "../../utils/searchCache"
+import { navigateBackWithTransition } from "../../utils/transition"
 
 Page({
   data: {
@@ -50,7 +51,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack();
+    navigateBackWithTransition()
   },
 
   historyKey() {

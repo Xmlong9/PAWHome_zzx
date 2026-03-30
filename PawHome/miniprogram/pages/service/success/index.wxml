@@ -1,4 +1,4 @@
-<view class="success-page">
+<view class="success-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="success-header-box">
     <view class="success-icon-wrap">
       <icon type="success" size="48" color="#07C160" />

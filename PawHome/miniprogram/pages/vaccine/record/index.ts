@@ -1,5 +1,6 @@
 import { getPetList } from "../../../services/user";
 import { getDewormingRecords, getUpcomingVaccineReminder, getVaccineStatus } from "../../../services/vaccines";
+import { navigateToWithTransitionOptions } from "../../../utils/transition";
 
 Page({
   data: {
@@ -120,7 +121,7 @@ Page({
   },
 
   goAppointment() {
-    wx.navigateTo({ url: "/pages/vaccine/appointment/index" });
+    navigateToWithTransitionOptions({ url: "/pages/vaccine/appointment/index" });
   },
 
   goReminder() {
@@ -129,19 +130,19 @@ Page({
       wx.showToast({ title: "请先预约接种", icon: "none" });
       return;
     }
-    wx.navigateTo({
+    navigateToWithTransitionOptions({
       url: `/pages/vaccine/reminder/index?appointmentId=${encodeURIComponent(appointmentId)}`
     });
   },
 
   goAppointments() {
-    wx.navigateTo({ url: "/pages/vaccine/appointments/index" });
+    navigateToWithTransitionOptions({ url: "/pages/vaccine/appointments/index" });
   },
 
   openUpcomingDetail() {
     const appointmentId = this.data.upcomingReminder?.appointmentId || "";
     if (!appointmentId) return;
-    wx.navigateTo({
+    navigateToWithTransitionOptions({
       url: `/pages/vaccine/appointments/detail/index?appointmentId=${encodeURIComponent(appointmentId)}`
     });
   }

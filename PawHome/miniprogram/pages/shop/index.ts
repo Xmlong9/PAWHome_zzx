@@ -1,5 +1,6 @@
 import { ShopProduct, listProducts, toggleFavorite } from "../../services/shop"
 import { getBaseUrl } from "../../config/env"
+import { resolveImageSrc } from "../../utils/mediaCache"
 
 type ShopEntry = {
   id: string
@@ -31,9 +32,13 @@ Page({
     const info = wx.getSystemInfoSync()
     const base = getBaseUrl()
     const origin = base.split("/").slice(0, 3).join("/")
+    const banner = `${origin}/media/shop_banner.png`
     this.setData({
       safeTop: (info.statusBarHeight || 0) + 10,
-      banners: [`${origin}/media/shop_banner.png`]
+      banners: [banner]
+    }, async () => {
+      const local = await resolveImageSrc(banner)
+      if (local && local !== banner) this.setData({ banners: [local] })
     })
   },
   onBannerError() {

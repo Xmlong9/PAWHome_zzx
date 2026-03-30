@@ -1,4 +1,4 @@
-<view class="cart-page">
+<view class="cart-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="nav-shell" style="padding-top: {{safeTop}}px;">
     <view class="nav-bar">
       <view class="nav-back" bindtap="goBack">‹</view>

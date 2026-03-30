@@ -7,6 +7,7 @@ import {
 import { getPetList } from "../../services/user"
 import { buildServiceDateOptions, buildSuccessQuery } from "../../utils/serviceBooking"
 import { getBaseUrl } from "../../config/env"
+import { navigateToWithTransitionOptions } from "../../utils/transition"
 
 function toAbsoluteUrl(url: string): string {
   if (!url) return url
@@ -34,6 +35,7 @@ Page({
     itemLabel: "服务",
     storeLabel: "门店",
     showSheet: false,
+    sheetVisible: false,
     pets: [] as any[],
     selectedPetId: "",
     serviceItems: [] as any[],
@@ -219,10 +221,10 @@ Page({
   goAppointmentRecords() {
     const type = this.data.type || "beauty"
     if (type === "vaccine") {
-      wx.navigateTo({ url: "/pages/vaccine/appointments/index" })
+      navigateToWithTransitionOptions({ url: "/pages/vaccine/appointments/index" })
       return
     }
-    wx.navigateTo({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
+    navigateToWithTransitionOptions({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
   },
 
   async selectDate(e: any) {
@@ -245,11 +247,19 @@ Page({
   },
 
   openSheet() {
-    this.setData({ showSheet: true })
+    if (this.data.showSheet) return
+    this.setData({ showSheet: true, sheetVisible: false })
+    setTimeout(() => {
+      this.setData({ sheetVisible: true })
+    }, 20)
   },
 
   closeSheet() {
-    this.setData({ showSheet: false })
+    if (!this.data.showSheet) return
+    this.setData({ sheetVisible: false })
+    setTimeout(() => {
+      this.setData({ showSheet: false })
+    }, 240)
   },
 
   async submitOrder() {
@@ -286,7 +296,7 @@ Page({
         appointmentAt: slot.appointmentAt,
         notes: this.data.remark
       })
-      wx.navigateTo({
+      navigateToWithTransitionOptions({
         url: `/pages/service/success/index${buildSuccessQuery({
           type: this.data.type,
           appointmentId: appointment.id,

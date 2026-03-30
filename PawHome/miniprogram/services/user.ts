@@ -1,7 +1,39 @@
 import { request } from "./request";
 import { isMockEnabled } from "./mock";
+import { getBaseUrl } from "../config/env";
+import { resolveImageSrc } from "../utils/mediaCache";
 
 const MOCK = () => isMockEnabled();
+
+function apiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const origin = apiOrigin()
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+
+async function hydrateUserProfile(p: UserProfile): Promise<UserProfile> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
+
+async function hydratePetProfile(p: PetProfile): Promise<PetProfile> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
 
 export type UserProfile = {
   id: string;
@@ -118,20 +150,22 @@ export const MOCK_USERS: Record<string, UserProfile> = {
 export async function getUserProfile(userId?: string): Promise<UserProfile> {
   if (MOCK()) {
     if (userId && MOCK_USERS[userId]) {
-      return MOCK_USERS[userId];
+      return hydrateUserProfile(MOCK_USERS[userId]);
     }
     // 兼容名字匹配（赵嘉航）
     if (userId === '赵嘉航') {
-       return MOCK_USERS["101"];
+       return hydrateUserProfile(MOCK_USERS["101"]);
     }
     
     // 默认返回自己（淡水鱼）
-    return MOCK_USERS["324666"];
+    return hydrateUserProfile(MOCK_USERS["324666"]);
   }
   if (userId) {
-    return request({ url: `/users/${encodeURIComponent(userId)}`, method: "GET" });
+    const p = await request<UserProfile>({ url: `/users/${encodeURIComponent(userId)}`, method: "GET" });
+    return hydrateUserProfile(p)
   }
-  return request({ url: "/users/me", method: "GET" });
+  const me = await request<UserProfile>({ url: "/users/me", method: "GET" });
+  return hydrateUserProfile(me)
 }
 
 export async function updateUserProfile(data: Partial<UserProfile>): Promise<{ ok: boolean }> {
@@ -155,21 +189,26 @@ let mockPets: PetProfile[] = [
 
 export async function getPetList(): Promise<PetProfile[]> {
   if (MOCK()) {
-    return [...mockPets];
+    const list = [...mockPets]
+    const hydrated = await Promise.all(list.map(hydratePetProfile))
+    return hydrated
   }
-  return request({ url: "/users/me/pets", method: "GET" });
+  const list = await request<PetProfile[]>({ url: "/users/me/pets", method: "GET" });
+  const hydrated = await Promise.all((list || []).map(hydratePetProfile))
+  return hydrated
 }
 
 export async function getPetProfile(id?: string): Promise<PetProfile> {
   if (MOCK()) {
     if (id) {
-      return mockPets.find(p => p.id === id) || mockPets[0];
+      return hydratePetProfile(mockPets.find(p => p.id === id) || mockPets[0]);
     }
-    return mockPets[0];
+    return hydratePetProfile(mockPets[0]);
   }
   const safeId = typeof id === "string" ? id.trim() : ""
   const data = safeId && safeId !== "undefined" && safeId !== "null" ? { id: safeId } : {}
-  return request({ url: "/users/me/pet", method: "GET", data });
+  const pet = await request<PetProfile>({ url: "/users/me/pet", method: "GET", data });
+  return hydratePetProfile(pet)
 }
 
 export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok: boolean; data: PetProfile }> {

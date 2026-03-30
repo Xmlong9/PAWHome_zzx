@@ -1,5 +1,6 @@
 import { getCommunityCards } from "../../services/banners";
 import { getBaseUrl } from "../../config/env";
+import { resolveImageSrc } from "../../utils/mediaCache";
 
 const HOME_PUSH_FALLBACK_MEDIA = ["推送1.jpg", "推送2.jpg", "推送3.jpg", "推送4.jpg", "推送5.jpg"]
 
@@ -107,13 +108,21 @@ Page({
       safeTop,
       promo: { imageUrl: shopBanner },
       promoFallbackUrl: shopBanner
+    }, async () => {
+      const banner = await resolveImageSrc(shopBanner)
+      if (banner && banner !== shopBanner) {
+        this.setData({ promo: { imageUrl: banner }, promoFallbackUrl: banner })
+      }
     })
     getCommunityCards(1, 4).then(list => {
-      const items = (list || []).map(item => ({
-        ...item,
-        coverUrl: item.imageUrl ? item.imageUrl : pickHomePushFallbackImageUrl(String(item.id || ""))
-      }))
-      if (items.length) this.setData({ hotPosts: items })
+      Promise.resolve().then(async () => {
+        const items = await Promise.all((list || []).map(async (item) => {
+          const raw = item.imageUrl ? item.imageUrl : pickHomePushFallbackImageUrl(String(item.id || ""))
+          const coverUrl = await resolveImageSrc(toAbsoluteUrl(raw))
+          return { ...item, coverUrl }
+        }))
+        if (items.length) this.setData({ hotPosts: items })
+      })
     }).catch(() => {})
   }
   ,

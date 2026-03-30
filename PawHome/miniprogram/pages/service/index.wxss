@@ -310,6 +310,12 @@ page {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.45);
   z-index: 9998;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.sheet-mask.show {
+  opacity: 1;
 }
 
 .bottom-sheet {
@@ -326,6 +332,17 @@ page {
   padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
   max-height: 70vh;
   overflow-y: auto;
+  transform: translate3d(0, 100%, 0);
+  opacity: 0;
+  transition-property: transform, opacity;
+  transition-duration: 260ms;
+  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.bottom-sheet.show {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
 }
 
 .date-selector {

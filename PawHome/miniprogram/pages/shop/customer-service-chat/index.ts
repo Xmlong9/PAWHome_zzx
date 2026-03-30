@@ -7,6 +7,7 @@ import {
   sendSupportOrderCard,
   SupportMessage
 } from "../../../services/support"
+import { navigateBackWithTransition } from "../../../utils/transition"
 
 type Faq = { id: string; q: string; a: string }
 
@@ -36,6 +37,7 @@ Page({
     statusBarHeight: 20,
     navBarHeight: 44,
     showOrderSheet: false,
+    orderSheetVisible: false,
     recentOrders: [] as Array<ShopOrder & { displayTime: string; titleText: string }>,
     loadingOrders: false
   },
@@ -143,9 +145,12 @@ Page({
     this.setData({ text: e.detail.value })
   },
   goBack() {
-    wx.navigateBack({ delta: 1 }).catch(() => {
-      wx.switchTab({ url: '/pages/shop/index' })
-    })
+    const pages = getCurrentPages()
+    if (pages.length > 1) {
+      navigateBackWithTransition()
+      return
+    }
+    wx.switchTab({ url: "/pages/shop/index" })
   },
   switchToHuman() {
     wx.redirectTo({ url: "/pages/shop/customer-service-chat/index?mode=human&forceNew=1" })
@@ -183,7 +188,10 @@ Page({
   },
   async openOrderSheet() {
     if (this.data.loadingOrders) return
-    this.setData({ showOrderSheet: true, loadingOrders: true })
+    this.setData({ showOrderSheet: true, orderSheetVisible: false, loadingOrders: true })
+    setTimeout(() => {
+      this.setData({ orderSheetVisible: true })
+    }, 20)
     try {
       const list = await listOrders("all")
       const recent = (list || [])
@@ -203,7 +211,11 @@ Page({
     }
   },
   closeOrderSheet() {
-    this.setData({ showOrderSheet: false })
+    if (!this.data.showOrderSheet) return
+    this.setData({ orderSheetVisible: false })
+    setTimeout(() => {
+      this.setData({ showOrderSheet: false })
+    }, 240)
   },
   async chooseOrder(e: WechatMiniprogram.TouchEvent) {
     const conversationId = this.data.conversationId
@@ -227,9 +239,9 @@ Page({
       createdAt: Date.now(),
       orderCard: snapshot
     }
+    this.closeOrderSheet()
     this.setData({
       messages: [...this.data.messages, optimistic],
-      showOrderSheet: false,
       scrollTo: `msg_${optimistic.id}`
     })
     try {

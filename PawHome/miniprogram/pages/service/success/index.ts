@@ -1,5 +1,6 @@
 import { getBaseUrl } from "../../../config/env"
 import { getPetList } from "../../../services/user"
+import { navigateToWithTransitionOptions } from "../../../utils/transition"
 
 function toAbsoluteUrl(url: string): string {
   if (!url) return url
@@ -115,10 +116,10 @@ Page({
   goAppointmentRecords() {
     const type = this.data.type || "vaccine"
     if (type === "vaccine") {
-      wx.navigateTo({ url: "/pages/vaccine/appointments/index" })
+      navigateToWithTransitionOptions({ url: "/pages/vaccine/appointments/index" })
       return
     }
-    wx.navigateTo({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
+    navigateToWithTransitionOptions({ url: `/pages/service/appointments/index?type=${encodeURIComponent(type)}` })
   },
 
   async tryLoadPetAvatar(petId: string, petName: string) {

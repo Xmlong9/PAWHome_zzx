@@ -1,4 +1,4 @@
-<view class="checkout-page" wx:if="{{preview}}">
+<view class="checkout-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" wx:if="{{preview}}">
   <!-- Address Section -->
   <view class="address-section" bindtap="goChooseAddress">
     <view class="address-empty" wx:if="{{!address}}">

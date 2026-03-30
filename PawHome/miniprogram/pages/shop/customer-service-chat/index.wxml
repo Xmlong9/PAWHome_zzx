@@ -1,4 +1,4 @@
-<view class="cs-chat-page" style="padding-top: {{statusBarHeight + navBarHeight}}px;">
+<view class="cs-chat-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" style="padding-top: {{statusBarHeight + navBarHeight}}px;">
   <!-- Custom Navigation Bar -->
   <view class="custom-nav-bar" style="height: {{statusBarHeight + navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
     <view class="nav-back" bindtap="goBack">
@@ -116,8 +116,8 @@
     </view>
   </view>
 
-  <view wx:if="{{showOrderSheet}}" class="sheet-mask" bindtap="closeOrderSheet"></view>
-  <view wx:if="{{showOrderSheet}}" class="sheet-panel">
+  <view wx:if="{{showOrderSheet}}" class="sheet-mask {{orderSheetVisible ? 'show' : ''}}" bindtap="closeOrderSheet"></view>
+  <view wx:if="{{showOrderSheet}}" class="sheet-panel {{orderSheetVisible ? 'show' : ''}}">
     <view class="sheet-title">选择订单</view>
     <view class="sheet-subtitle">最近 5 笔</view>
     <scroll-view class="sheet-list" scroll-y>

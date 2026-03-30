@@ -1,4 +1,4 @@
-<view class="recharge-page">
+<view class="recharge-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="balance-card">
     <text class="label">当前余额</text>
     <text class="balance">¥{{balance}}</text>

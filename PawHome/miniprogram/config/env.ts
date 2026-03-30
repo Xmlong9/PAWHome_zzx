@@ -1,4 +1,4 @@
-export const DEFAULT_BASE_URL = "http://127.0.0.1:5001/api/v1";
+export const DEFAULT_BASE_URL = "http://172.20.10.4:5001/api/v1";
 
 export function getBaseUrl(): string {
   try {

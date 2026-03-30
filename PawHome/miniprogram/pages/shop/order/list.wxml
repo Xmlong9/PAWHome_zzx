@@ -1,4 +1,4 @@
-<view class="order-page">
+<view class="order-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <scroll-view class="tabs" scroll-x="true" enable-flex>
     <block wx:for="{{tabs}}" wx:key="key">
       <view class="tab {{currentStatus===item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="switchStatus">

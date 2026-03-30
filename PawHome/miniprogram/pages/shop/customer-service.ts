@@ -1,5 +1,6 @@
 import { listFaqs } from "../../services/shop"
 import { cleanupSupportConversations, listSupportConversations } from "../../services/support"
+import { navigateToWithTransitionOptions } from "../../utils/transition"
 
 Page({
   data: {
@@ -86,20 +87,22 @@ Page({
     wx.makePhoneCall({ phoneNumber: "4008888888" })
   },
   async toSmart() {
-    wx.navigateTo({ url: "/pages/shop/customer-service-chat/index?mode=smart&forceNew=1" })
+    navigateToWithTransitionOptions({ url: "/pages/shop/customer-service-chat/index?mode=smart&forceNew=1" })
   },
   async toHuman() {
-    wx.navigateTo({ url: "/pages/shop/customer-service-chat/index?mode=human&forceNew=1" })
+    navigateToWithTransitionOptions({ url: "/pages/shop/customer-service-chat/index?mode=human&forceNew=1" })
   },
   tapFaq(e: WechatMiniprogram.TouchEvent) {
     const q = (e.currentTarget.dataset as any)?.q as string
     if (!q) return
-    wx.navigateTo({ url: `/pages/shop/customer-service-chat/index?mode=smart&forceNew=1&prefill=${encodeURIComponent(q)}` })
+    navigateToWithTransitionOptions({
+      url: `/pages/shop/customer-service-chat/index?mode=smart&forceNew=1&prefill=${encodeURIComponent(q)}`
+    })
   },
   openHistory(e: WechatMiniprogram.TouchEvent) {
     const { id, mode, startedAt } = e.currentTarget.dataset as { id: string; mode: "smart" | "human"; startedAt?: number }
     if (!id) return
-    wx.navigateTo({
+    navigateToWithTransitionOptions({
       url: `/pages/shop/customer-service-chat/index?mode=${mode}&conversationId=${encodeURIComponent(id)}${
         startedAt ? `&startedAt=${encodeURIComponent(String(startedAt))}` : ""
       }`

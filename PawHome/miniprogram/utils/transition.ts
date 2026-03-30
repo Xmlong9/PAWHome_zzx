@@ -54,6 +54,34 @@ export function navigateToWithTransition(url: string) {
   })
 }
 
+export function navigateToWithTransitionOptions(options: WechatMiniprogram.NavigateToOption) {
+  const url = options?.url
+  if (!url) return
+  if (routingLocked) return
+  routingLocked = true
+  const page = getTopPage()
+  const originalComplete = options.complete
+  const next = () =>
+    wx.navigateTo({
+      ...options,
+      complete: (res) => {
+        routingLocked = false
+        originalComplete?.(res)
+      }
+    })
+
+  if (!page || typeof page.setData !== "function") {
+    next()
+    return
+  }
+
+  safeSetData(page, { pageLeaving: true, pageVisible: false }, () => {
+    setTimeout(() => {
+      next()
+    }, LEAVE_DURATION_MS)
+  })
+}
+
 export function navigateBackWithTransition(delta = 1) {
   if (routingLocked) return
   routingLocked = true
@@ -71,8 +99,36 @@ export function navigateBackWithTransition(delta = 1) {
   })
 }
 
+export function navigateBackWithTransitionOptions(options: WechatMiniprogram.NavigateBackOption) {
+  const delta = options?.delta ?? 1
+  if (routingLocked) return
+  routingLocked = true
+  const page = getTopPage()
+  const originalComplete = options.complete
+  const next = () =>
+    wx.navigateBack({
+      ...options,
+      delta,
+      complete: (res) => {
+        routingLocked = false
+        originalComplete?.(res)
+      }
+    })
+
+  if (!page || typeof page.setData !== "function") {
+    next()
+    return
+  }
+
+  safeSetData(page, { pageLeaving: true, pageVisible: false }, () => {
+    wx.setStorageSync(REENTER_KEY, Date.now())
+    setTimeout(() => {
+      next()
+    }, LEAVE_DURATION_MS)
+  })
+}
+
 export const TRANSITION_MS = {
   enter: ENTER_DURATION_MS,
   leave: LEAVE_DURATION_MS
 }
-

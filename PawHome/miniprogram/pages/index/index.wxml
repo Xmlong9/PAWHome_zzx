@@ -1,4 +1,4 @@
-<view class="login-container">
+<view class="login-container paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <!-- Top Section -->
   <view class="top-section {{isRegister ? 'register-top' : ''}}">
     <view class="gooey-container">

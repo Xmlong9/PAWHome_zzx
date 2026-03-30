@@ -8,6 +8,7 @@ import { getPetList } from "../../../services/user";
 import { getVaccineCatalog } from "../../../services/vaccines";
 import { buildServiceDateOptions, buildSuccessQuery } from "../../../utils/serviceBooking";
 import { getBaseUrl } from "../../../config/env";
+import { navigateToWithTransitionOptions } from "../../../utils/transition";
 
 function getVaccineCategory(offeringName: string): "core" | "optional" {
   if (offeringName.includes("选择")) return "optional";
@@ -285,7 +286,7 @@ Page({
         time: appointment.timeLabel || slot.timeLabel
       });
       const extra = query.startsWith("?") ? `&${query.slice(1)}` : query;
-      wx.navigateTo({
+      navigateToWithTransitionOptions({
         url: `/pages/vaccine/reminder/index?appointmentId=${appointment.id}${extra}`
       });
     } catch (error: any) {

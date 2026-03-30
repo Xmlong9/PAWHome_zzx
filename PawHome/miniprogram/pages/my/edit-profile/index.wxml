@@ -1,4 +1,4 @@
-<view class="edit-page">
+<view class="edit-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="avatar-section" bindtap="changeAvatar">
     <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
     <view class="avatar-text">更换头像</view>

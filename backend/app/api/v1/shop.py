@@ -87,6 +87,10 @@ def _call_doubao_text(text: str, *, conversation_id: str, user_id: str) -> str:
         if not content:
             continue
         messages.append({"role": role, "content": content})
+    latest_text = (text or "").strip()
+    if latest_text:
+        if not messages or messages[-1].get("role") != "user" or messages[-1].get("content") != latest_text:
+            messages.append({"role": "user", "content": latest_text})
     resp = client.chat.completions.create(
         model=model_id,
         messages=messages,
@@ -1020,6 +1024,57 @@ def register_routes(bp) -> None:
             t = t.replace(ch, "")
         return t
 
+    def _extract_order_id(text: str) -> str:
+        t = (text or "").strip()
+        if not t:
+            return ""
+        m = re.search(r"(?i)so\d{6,}", t)
+        return m.group(0).upper() if m else ""
+
+    def _recent_support_order_id(conversation_id: str, user_id: str) -> str:
+        rows = (
+            SupportMessage.query.filter_by(conversation_id=conversation_id)
+            .order_by(SupportMessage.created_at.desc())
+            .limit(20)
+            .all()
+        )
+        for row in rows:
+            oid = _extract_order_id(row.content or "")
+            if not oid:
+                continue
+            order = ShopOrder.query.filter_by(id=oid, user_id=user_id).first()
+            if order is not None:
+                return oid
+        return ""
+
+    def _support_followup_intent(text: str) -> bool:
+        t = _normalize_support_text(text)
+        if not t:
+            return False
+        keywords = [
+            "这单",
+            "这一单",
+            "这笔订单",
+            "这个订单",
+            "该订单",
+            "买了什么",
+            "什么商品",
+            "啥商品",
+            "花了多少",
+            "多少钱",
+            "物流",
+            "快递",
+            "发货",
+            "收货",
+            "售后",
+            "退款",
+            "退货",
+            "换货",
+            "到哪",
+            "进度",
+        ]
+        return any(k in t for k in keywords)
+
     def _support_in_scope(text: str) -> bool:
         t = _normalize_support_text(text)
         if not t:
@@ -1074,20 +1129,19 @@ def register_routes(bp) -> None:
             return "请描述下你的问题，我来帮你看看。"
         faqs = CustomerServiceFaq.query.order_by(CustomerServiceFaq.sort.asc()).all()
         tn = _normalize_support_text(t)
+        recent_order_id = _recent_support_order_id(conversation_id, user_id)
+        followup_with_recent_order = bool(recent_order_id and _support_followup_intent(t))
         for f in faqs:
             if _normalize_support_text(f.question or "") == tn:
                 return f.answer
-        if not _support_in_scope(t):
+        if not _support_in_scope(t) and not followup_with_recent_order:
             return "我只能回答订单、商店相关的问题。你可以描述下订单号/商品名/遇到的情况，我来帮你处理。"
         try:
             allow_fn = getattr(sys.modules[__name__], "_support_ai_allow")
             if not allow_fn(user_id=user_id, conversation_id=conversation_id):
                 return "提问太频繁，请稍后再试。"
             fn = getattr(sys.modules[__name__], "_call_doubao_text")
-            order_id = ""
-            m = re.search(r"(?i)so\d{6,}", t)
-            if m:
-                order_id = m.group(0).upper()
+            order_id = _extract_order_id(t) or (recent_order_id if followup_with_recent_order or _support_in_scope(t) else "")
             if order_id:
                 order = ShopOrder.query.filter_by(id=order_id, user_id=user_id).first()
                 if order is not None:

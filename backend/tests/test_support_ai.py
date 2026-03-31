@@ -248,3 +248,102 @@ def test_smart_support_order_card_payload_triggers_ai(client, app, user1_token, 
     assert msgs[-1]["content"] == "AI_REPLY"
     assert order_id in (captured["text"] or "")
     assert "猫砂" in (captured["text"] or "")
+
+
+def test_call_doubao_text_includes_augmented_text_as_latest_user_message(client, app, user1_token, monkeypatch):
+    import app.api.v1.shop as shop_mod
+
+    cid = _create_conv(client, user1_token, "smart")
+    _send_msg(client, user1_token, cid, "我想查看物流")
+
+    captured = {"messages": None}
+
+    class _FakeCompletions:
+        def create(self, *, model, messages, temperature):
+            captured["messages"] = messages
+
+            class _Msg:
+                content = "AI_REPLY"
+
+            class _Choice:
+                message = _Msg()
+
+            class _Resp:
+                choices = [_Choice()]
+
+            return _Resp()
+
+    class _FakeChat:
+        completions = _FakeCompletions()
+
+    class _FakeClient:
+        chat = _FakeChat()
+
+    monkeypatch.setattr(shop_mod, "_get_ark_client", lambda: _FakeClient(), raising=False)
+
+    reply = shop_mod._call_doubao_text(
+        "我想查看物流\n\n【订单信息】\n订单号：SO1774958039\n物流最新：运输中",
+        conversation_id=cid,
+        user_id="u1",
+    )
+
+    assert reply == "AI_REPLY"
+    assert captured["messages"] is not None
+    assert captured["messages"][-1]["role"] == "user"
+    assert "【订单信息】" in captured["messages"][-1]["content"]
+    assert "SO1774958039" in captured["messages"][-1]["content"]
+
+
+def test_smart_support_followup_question_reuses_recent_order_context(client, app, user1_token, monkeypatch):
+    import json
+
+    from app.extensions import db
+    from app.models import ShopProduct
+
+    with app.app_context():
+        if ShopProduct.query.get("p-test-followup") is None:
+            db.session.add(
+                ShopProduct(
+                    id="p-test-followup",
+                    title="罐头",
+                    description="d",
+                    price_cents=1290,
+                    images_json=json.dumps(["/p.jpg"]),
+                    stock=999,
+                    is_active=True,
+                )
+            )
+            db.session.commit()
+
+    r = client.post("/api/v1/shop/cart", headers=_auth(user1_token), json={"productId": "p-test-followup", "count": 1})
+    assert r.status_code == 200
+    r = client.post("/api/v1/shop/recharge", headers=_auth(user1_token), json={"amount": 50})
+    assert r.status_code == 200
+    r = client.post(
+        "/api/v1/shop/order",
+        headers=_auth(user1_token),
+        json={"from": "cart", "address": "x", "payType": "balance"},
+    )
+    assert r.status_code == 200
+    order_id = r.get_json()["data"]["id"]
+
+    import app.api.v1.shop as shop_mod
+
+    captured = {"texts": []}
+
+    def _fake_ai(text: str, *, conversation_id: str, user_id: str):
+        captured["texts"].append(text)
+        return "AI_REPLY"
+
+    monkeypatch.setattr(shop_mod, "_call_doubao_text", _fake_ai, raising=False)
+
+    cid = _create_conv(client, user1_token, "smart")
+    _send_msg(client, user1_token, cid, f"{order_id} 物流到哪了")
+    _send_msg(client, user1_token, cid, "这单买了什么")
+
+    msgs = _list_msgs(client, user1_token, cid)
+    assert msgs[-1]["role"] == "bot"
+    assert msgs[-1]["content"] == "AI_REPLY"
+    assert len(captured["texts"]) >= 2
+    assert order_id in captured["texts"][-1]
+    assert "罐头" in captured["texts"][-1]

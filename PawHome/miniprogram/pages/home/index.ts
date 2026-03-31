@@ -37,6 +37,15 @@ function getShopBannerUrl(): string {
   return `${getApiOrigin()}/media/shop_banner.png`
 }
 
+function cacheBustIfNotRelease(url: string): string {
+  try {
+    const v = wx.getAccountInfoSync().miniProgram.envVersion
+    if (v === "release") return url
+  } catch {}
+  const sep = url.includes("?") ? "&" : "?"
+  return `${url}${sep}t=${Date.now()}`
+}
+
 Page({
   data: {
     swiperList: [
@@ -55,6 +64,11 @@ Page({
   },
   onShow() {
     this.setData({ showBlob: true });
+    const need = wx.getStorageSync("community_need_refresh")
+    if (need) {
+      wx.removeStorageSync("community_need_refresh")
+      this.loadHotPosts()
+    }
   },
   onHide() {
     this.setData({ showBlob: false });
@@ -102,7 +116,7 @@ Page({
     const bars = Array.from({ length: this.data.swiperList.length }, (_, i) => i)
     const info = wx.getSystemInfoSync()
     const safeTop = (info.statusBarHeight || 0) + 8
-    const shopBanner = getShopBannerUrl()
+    const shopBanner = cacheBustIfNotRelease(getShopBannerUrl())
     this.setData({
       indicatorBars: bars,
       safeTop,
@@ -114,6 +128,14 @@ Page({
         this.setData({ promo: { imageUrl: banner }, promoFallbackUrl: banner })
       }
     })
+    this.loadHotPosts()
+  }
+  ,
+  onPromoError() {
+    this.setData({ promo: null, promoFallbackUrl: this.data.promoLocalFallbackUrl })
+  }
+  ,
+  loadHotPosts() {
     getCommunityCards(1, 4).then(list => {
       Promise.resolve().then(async () => {
         const items = await Promise.all((list || []).map(async (item) => {
@@ -121,12 +143,8 @@ Page({
           const coverUrl = await resolveImageSrc(toAbsoluteUrl(raw))
           return { ...item, coverUrl }
         }))
-        if (items.length) this.setData({ hotPosts: items })
+        this.setData({ hotPosts: items })
       })
     }).catch(() => {})
-  }
-  ,
-  onPromoError() {
-    this.setData({ promo: null, promoFallbackUrl: this.data.promoLocalFallbackUrl })
   }
 });

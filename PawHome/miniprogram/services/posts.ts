@@ -36,6 +36,7 @@ function normalizeBackendUrl(url: string): string {
   if (!url) return url
   if (/^data:/i.test(url)) return url
   if (/^wxfile:\/\//i.test(url)) return url
+  if (url.includes("__tmp__") && (url.includes("127.0.0.1") || url.includes("localhost"))) return url
   const base = getBaseUrl()
   const origin = base.split("/").slice(0, 3).join("/")
   if (url.startsWith("/")) return origin + url

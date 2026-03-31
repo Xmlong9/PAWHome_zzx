@@ -9,6 +9,15 @@ type ShopEntry = {
   url: string
 }
 
+function cacheBustIfNotRelease(url: string): string {
+  try {
+    const v = wx.getAccountInfoSync().miniProgram.envVersion
+    if (v === "release") return url
+  } catch {}
+  const sep = url.includes("?") ? "&" : "?"
+  return `${url}${sep}t=${Date.now()}`
+}
+
 Page({
   data: {
     safeTop: 0,
@@ -32,7 +41,7 @@ Page({
     const info = wx.getSystemInfoSync()
     const base = getBaseUrl()
     const origin = base.split("/").slice(0, 3).join("/")
-    const banner = `${origin}/media/shop_banner.png`
+    const banner = cacheBustIfNotRelease(`${origin}/media/shop_banner.png`)
     this.setData({
       safeTop: (info.statusBarHeight || 0) + 10,
       banners: [banner]

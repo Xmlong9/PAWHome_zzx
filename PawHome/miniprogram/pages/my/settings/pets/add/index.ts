@@ -1,10 +1,14 @@
-import { addPetProfile, getPetProfile, updatePetProfile } from "../../../../../services/user";
+import { addPetProfile, updatePetProfile } from "../../../../../services/user";
+import { uploadFile } from "../../../../../services/upload";
+import { request } from "../../../../../services/request";
+import { resolveImageSrc } from "../../../../../utils/mediaCache";
 
 Page({
   data: {
     petId: '',
     isEditMode: false,
     submitText: '确认添加',
+    avatarUrlRaw: "",
     formData: {
       avatarUrl: '',
       name: '',
@@ -46,16 +50,19 @@ Page({
   async loadPetDetail(id: string) {
     wx.showLoading({ title: '加载中...' });
     try {
-      const petInfo = await getPetProfile(id);
+      const petInfo = await request<any>({ url: "/users/me/pet", method: "GET", data: { id } });
+      const avatarUrlRaw = String(petInfo?.avatarUrl || "")
+      const avatarDisplay = avatarUrlRaw ? await resolveImageSrc(avatarUrlRaw) : ""
       const typeIndex = petInfo.type ? this.data.types.findIndex(item => item === petInfo.type) : -1;
       const currentBreeds = typeIndex > -1 ? this.data.breedsMap[this.data.types[typeIndex]] || [] : [];
       const breedIndex = petInfo.breed ? currentBreeds.findIndex(item => item === petInfo.breed) : -1;
       this.setData({
+        avatarUrlRaw,
         typeIndex,
         currentBreeds,
         breedIndex,
         formData: {
-          avatarUrl: petInfo.avatarUrl || '',
+          avatarUrl: avatarDisplay || '',
           name: petInfo.name || '',
           type: petInfo.type || '',
           breed: petInfo.breed || '',
@@ -80,6 +87,7 @@ Page({
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath;
         this.setData({
+          avatarUrlRaw: tempFilePath,
           'formData.avatarUrl': tempFilePath
         });
       }
@@ -148,7 +156,16 @@ Page({
     if (!formData.weight) return wx.showToast({ title: '请输入体重', icon: 'none' });
     if (!formData.isSterilized) return wx.showToast({ title: '请选择是否绝育', icon: 'none' });
 
-    const finalAvatar = formData.avatarUrl || '/assets/images/mine/宠物.png';
+    const rawAvatar = String((this.data as any).avatarUrlRaw || "").trim()
+    const fallbackAvatar = '/assets/images/mine/宠物.png'
+    const isLocal =
+      !!rawAvatar &&
+      (/^wxfile:\/\//i.test(rawAvatar) ||
+        /^[a-zA-Z]:\\/.test(rawAvatar) ||
+        rawAvatar.startsWith("file://") ||
+        (rawAvatar.includes("__tmp__") && (rawAvatar.includes("127.0.0.1") || rawAvatar.includes("localhost"))) ||
+        (!/^https?:\/\//i.test(rawAvatar) && !rawAvatar.startsWith("/")))
+    const finalAvatar = isLocal ? await uploadFile(rawAvatar) : (rawAvatar || fallbackAvatar)
     const payload = {
       name: formData.name,
       avatarUrl: finalAvatar,

@@ -1918,6 +1918,30 @@
 - `PawHome/miniprogram/services/comments.ts`
 - `PawHome/miniprogram/services/user.ts`
 
+### 变更 2026-03-31：宠物头像入库与首页视频封面展示修复
+
+**问题现象**
+- 宠物头像在真机下不稳定显示，且编辑宠物资料后头像可能彻底丢失。
+- 首页热门推送中，视频帖封面长期显示为默认兜底图，而图片帖正常。
+- 商城/首页广告位在真机可能显示旧图或不更新。
+
+**根因**
+- 宠物新增/编辑页把 `wx.chooseMedia` 的本地临时路径直接写入数据库，跨设备/清缓存后必然失效；且“详情读取”已将头像 hydrate 为 `wxfile://` 本地缓存路径，继续提交会把缓存路径反写入库。
+- 后端 `/feeds/community` 只解析 `media_json` 为数组首图，不识别视频对象的 `coverUrl`，导致 `imageUrl` 为空，从而触发首页兜底图。
+- `resolveImageSrc` 的本地缓存以 URL 为 key；当后端资源文件替换但 URL 不变时，真机会一直使用旧缓存。
+
+**修复方案**
+- 宠物新增/编辑页提交前若头像为本地路径（`wxfile://`/磁盘路径），先调用上传接口换取后端可访问 URL 再入库；编辑页读取宠物信息改为拿“原始数据”并单独生成展示用头像，避免把 hydrate 后的 `wxfile://` 反写入库。
+- 后端 `/feeds/community` 支持解析 `media_json` 为对象时的 `coverUrl`（无 cover 时再尝试 `images[0]`），使视频帖封面能被首页正确取到。
+- 商城页与首页广告图在非 release 环境拼接时间戳参数，避免本地缓存旧图影响联调。
+
+**相关文件**
+- `PawHome/miniprogram/pages/my/settings/pets/add/index.ts`
+- `PawHome/miniprogram/utils/mediaCache.ts`
+- `backend/app/api/v1/feeds.py`
+- `PawHome/miniprogram/pages/home/index.ts`
+- `PawHome/miniprogram/pages/shop/index.ts`
+
 ---
 
 ## 小程序请求 HTTPS 协议降级（开发环境兜底）

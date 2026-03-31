@@ -20,6 +20,7 @@ function normalizeBackendUrl(url: string): string {
   if (/^data:/i.test(url)) return url
   if (/^wxfile:\/\//i.test(url)) return url
   if (url.startsWith("/assets/")) return url
+  if (url.includes("__tmp__") && (url.includes("127.0.0.1") || url.includes("localhost"))) return url
   const origin = apiOrigin()
   if (url.startsWith("/")) return origin + url
   const m = url.match(/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(\/.*)$/i)
@@ -37,6 +38,7 @@ function isBypassUrl(url: string): boolean {
   if (/^data:/i.test(url)) return true
   if (/^wxfile:\/\//i.test(url)) return true
   if (url.startsWith("/assets/")) return true
+  if (url.includes("__tmp__") && (url.includes("127.0.0.1") || url.includes("localhost"))) return true
   return false
 }
 
@@ -93,7 +95,12 @@ function downloadToTemp(url: string): Promise<{ ok: boolean; tempFilePath: strin
 
 export async function resolveImageSrc(src: string): Promise<string> {
   if (typeof src !== "string" || !src.trim()) return src
-  const url = normalizeBackendUrl(src.trim())
+  const raw = src.trim()
+  if (/^wxfile:\/\//i.test(raw)) {
+    const ok = await accessPath(raw)
+    return ok ? raw : ""
+  }
+  const url = normalizeBackendUrl(raw)
   if (isBypassUrl(url)) return url
   if (!isNetworkUrl(url)) return url
 

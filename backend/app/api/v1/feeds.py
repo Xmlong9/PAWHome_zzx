@@ -73,6 +73,13 @@ def register_routes(bp) -> None:
                     v = json.loads(p.media_json)
                     if isinstance(v, list) and v:
                         image_url = str(v[0])
+                    elif isinstance(v, dict):
+                        cover = v.get("coverUrl") or v.get("cover_url")
+                        images = v.get("images")
+                        if cover:
+                            image_url = str(cover)
+                        elif isinstance(images, list) and images:
+                            image_url = str(images[0])
                 except json.JSONDecodeError:
                     image_url = ""
             cards.append(

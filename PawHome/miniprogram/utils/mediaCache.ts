@@ -1,3 +1,5 @@
+import { getBaseUrl } from "../config/env"
+
 type CacheRecord = {
   url: string
   path: string
@@ -8,15 +10,33 @@ const MEM = new Map<string, string>()
 const INFLIGHT = new Map<string, Promise<string>>()
 const STORAGE_PREFIX = "paw_media_cache_v1_"
 
-function isHttpUrl(url: string): boolean {
-  return /^http:\/\//i.test(url)
+function apiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
+function normalizeBackendUrl(url: string): string {
+  if (!url) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const origin = apiOrigin()
+  if (url.startsWith("/")) return origin + url
+  const m = url.match(/^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(\/.*)$/i)
+  if (m) return origin + m[1]
+  if (/^https?:\/\//i.test(url)) return url
+  return origin + "/" + url
+}
+
+function isNetworkUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url)
 }
 
 function isBypassUrl(url: string): boolean {
   if (!url) return true
   if (/^data:/i.test(url)) return true
   if (/^wxfile:\/\//i.test(url)) return true
-  if (url.startsWith("/")) return true
+  if (url.startsWith("/assets/")) return true
   return false
 }
 
@@ -57,8 +77,12 @@ function saveTempFile(tempFilePath: string): Promise<string> {
 
 function downloadToTemp(url: string): Promise<{ ok: boolean; tempFilePath: string }> {
   return new Promise((resolve) => {
+    const token = wx.getStorageSync("token")
+    const origin = apiOrigin()
+    const shouldAuth = typeof url === "string" && url.startsWith(origin)
     wx.downloadFile({
       url,
+      header: shouldAuth && token ? { Authorization: `Bearer ${token}` } : undefined,
       success: (res) => {
         resolve({ ok: res.statusCode === 200, tempFilePath: res.tempFilePath || "" })
       },
@@ -69,9 +93,9 @@ function downloadToTemp(url: string): Promise<{ ok: boolean; tempFilePath: strin
 
 export async function resolveImageSrc(src: string): Promise<string> {
   if (typeof src !== "string" || !src.trim()) return src
-  const url = src.trim()
+  const url = normalizeBackendUrl(src.trim())
   if (isBypassUrl(url)) return url
-  if (!isHttpUrl(url)) return url
+  if (!isNetworkUrl(url)) return url
 
   const hit = MEM.get(url)
   if (hit) return hit

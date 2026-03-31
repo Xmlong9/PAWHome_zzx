@@ -1889,3 +1889,62 @@
 - `PawHome/miniprogram/services/posts.ts`
 - `PawHome/miniprogram/services/upload.ts`
 - `PawHome/miniprogram/config/env.ts`
+
+### 变更 2026-03-31：归一化与缓存下沉到 resolveImageSrc，并覆盖全模块头像/缩略图
+
+**问题现象**
+- 真机调试下，部分页面仍存在图片不显示：如服务门店封面、订单商品图、消息页头像/缩略图、关注粉丝头像、部分帖子视频封面等。
+
+**根因**
+- 归一化逻辑仅在少数模块（如 posts/upload）局部实现；其它模块的图片字段未统一处理，可能直接使用：
+  - 相对路径（`/media/...` 或 `media/...`）
+  - 旧数据写入的 `localhost/127.0.0.1/0.0.0.0` 绝对地址
+- `resolveImageSrc` 原本仅作为 “http 下载缓存” 使用，且对 `/media/...` 这类相对路径会旁路返回，导致 poster/头像字段渲染时仍可能保留不可访问 URL。
+
+**修复方案**
+- 在 `resolveImageSrc` 内统一做“先归一化、再缓存下载”：
+  - `/media/...`、`media/...` → 自动补全为当前 `getBaseUrl()` 推导的 `origin`
+  - `localhost/127.0.0.1/0.0.0.0` → 自动改写为 `origin`
+  - 同源下载时自动携带 `Authorization: Bearer <token>`（兼容受保护媒体）
+- 在服务层对关键列表接口返回的头像/缩略图字段补齐 hydrate：
+  - 服务门店封面、订单商品图、私信会话头像、通知头像/缩略图、“我评论的”头像/缩略图、关注粉丝头像等。
+
+**相关文件**
+- `PawHome/miniprogram/utils/mediaCache.ts`
+- `PawHome/miniprogram/services/petServices.ts`
+- `PawHome/miniprogram/services/shop.ts`
+- `PawHome/miniprogram/services/im.ts`
+- `PawHome/miniprogram/services/notifications.ts`
+- `PawHome/miniprogram/services/comments.ts`
+- `PawHome/miniprogram/services/user.ts`
+
+---
+
+## 小程序请求 HTTPS 协议降级（开发环境兜底）
+
+**目的**
+- 修复小程序端请求出现 `net::ERR_SSL_PROTOCOL_ERROR` 的问题（典型场景：把仅支持 HTTP 的本地/内网服务地址误写成 HTTPS）。
+- 让网络错误日志携带请求 URL，便于直接定位到底请求到了哪个地址。
+
+**入口**
+- 所有通过 `services/request.ts` 的 `request()` 发起的接口请求（包括登录、拉取列表、上传等）。
+
+**数据流/状态**
+- `request()` 统一拼出最终 URL（`getBaseUrl() + path` 或直接使用绝对 URL）。
+- 网络失败时把 `url` 透传进归一化错误对象 `RequestError.url`，并随 `NETWORK_ERROR/HTTP_ERROR/API_ERROR` 输出。
+
+**关键分支**
+- 当首次请求满足以下条件时触发一次性重试：
+  - URL 为 `https://...`
+  - 错误信息包含 `ERR_SSL_PROTOCOL_ERROR` 或 `ssl`
+  - 当前不是 `release` 环境
+  - hostname 属于私有网段或 `localhost`
+- 重试逻辑：将 `https://` 替换为 `http://` 后重发一次相同请求；若仍失败则按网络错误返回。
+
+**边界条件**
+- `release` 环境永不自动降级，避免把线上 HTTPS 请求误降级为 HTTP。
+- 非私有域名不自动降级，避免对公网服务产生意外行为。
+
+**相关文件**
+- `PawHome/miniprogram/services/request.ts`
+- `PawHome/miniprogram/config/env.ts`

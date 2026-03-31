@@ -1,6 +1,7 @@
 import { request } from "./request"
 import { MOCK_USERS } from "./user"
 import { isMockEnabled } from "./mock"
+import { resolveImageSrc } from "../utils/mediaCache"
 
 export type IMConversation = {
   id: string
@@ -214,11 +215,18 @@ export const formatChatTime = (ts: number | string) => {
 export const listConversations = async (): Promise<IMConversation[]> => {
   if (!MOCK()) {
     const res = await request<{ list: IMConversation[] }>({ url: "/im/conversations", method: "GET" })
-    return res.list || []
+    const list = res.list || []
+    const hydrated = await Promise.all(
+      list.map(async (x) => ({ ...x, peerAvatarUrl: await resolveImageSrc(String(x.peerAvatarUrl || "")) }))
+    )
+    return hydrated
   }
   ensureSeed()
-  const list = readConversations()
-  return list.sort((a, b) => toMs(b.lastMessageAt) - toMs(a.lastMessageAt))
+  const list = readConversations().sort((a, b) => toMs(b.lastMessageAt) - toMs(a.lastMessageAt))
+  const hydrated = await Promise.all(
+    list.map(async (x) => ({ ...x, peerAvatarUrl: await resolveImageSrc(String(x.peerAvatarUrl || "")) }))
+  )
+  return hydrated
 }
 
 export const createConversation = async (peerId: string): Promise<{ id: string }> => {

@@ -905,7 +905,20 @@ export const getOrderLogistics = async (orderId: string): Promise<OrderLogistics
 export const listOrders = async (status: ShopOrderStatus): Promise<ShopOrder[]> => {
   if (!MOCK()) {
     const res = await request<{ list: ShopOrder[] }>({ url: "/shop/orders", method: "GET", data: { status } })
-    return res.list || []
+    const list = res.list || []
+    const hydrated = await Promise.all(
+      list.map(async (o) => {
+        const items = Array.isArray(o.items) ? o.items : []
+        const nextItems = await Promise.all(
+          items.map(async (it) => ({
+            ...it,
+            imageUrl: await resolveImageSrc(toAbsoluteUrl(String(it.imageUrl || "")))
+          }))
+        )
+        return { ...o, items: nextItems }
+      })
+    )
+    return hydrated
   }
   ensureSeed()
   const list = getOrdersSync()

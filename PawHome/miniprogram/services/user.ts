@@ -74,6 +74,13 @@ export type UserRelation = {
   isFollowing?: boolean;
 }
 
+async function hydrateUserRelation(p: UserRelation): Promise<UserRelation> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
+
 export const MOCK_USERS: Record<string, UserProfile> = {
   "324666": {
     id: "324666",
@@ -288,9 +295,16 @@ export async function getUserFollowing(userId: string, page = 1, pageSize = 20):
       signature: u.signature,
       isFollowing: i % 2 === 0
     }))
-    return { list, total: list.length }
+    const hydrated = await Promise.all(list.map(hydrateUserRelation))
+    return { list: hydrated, total: list.length }
   }
-  return request({ url: `/users/${encodeURIComponent(userId)}/following`, method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: UserRelation[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/following`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  const hydrated = await Promise.all((res.list || []).map(hydrateUserRelation))
+  return { ...res, list: hydrated }
 }
 
 export async function getUserFollowers(userId: string, page = 1, pageSize = 20): Promise<{ list: UserRelation[]; total: number }> {
@@ -304,9 +318,16 @@ export async function getUserFollowers(userId: string, page = 1, pageSize = 20):
       signature: u.signature,
       isFollowing: i % 3 === 0
     }))
-    return { list, total: list.length }
+    const hydrated = await Promise.all(list.map(hydrateUserRelation))
+    return { list: hydrated, total: list.length }
   }
-  return request({ url: `/users/${encodeURIComponent(userId)}/followers`, method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: UserRelation[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/followers`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  const hydrated = await Promise.all((res.list || []).map(hydrateUserRelation))
+  return { ...res, list: hydrated }
 }
 
 export async function changePassword(oldPassword: string, newPassword: string): Promise<{ ok: boolean }> {

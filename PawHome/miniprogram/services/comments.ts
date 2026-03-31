@@ -1,6 +1,7 @@
 import { request } from "./request";
 import { MOCK_USERS } from "./user";
 import { isMockEnabled } from "./mock";
+import { resolveImageSrc } from "../utils/mediaCache";
 
 export type Comment = {
   id: string;
@@ -138,5 +139,18 @@ export type MyCommentMsg = {
 }
 
 export async function listMyComments(page = 1, pageSize = 20): Promise<{ list: MyCommentMsg[]; total: number }> {
-  return request({ url: "/users/me/comments", method: "GET", data: { page, pageSize } })
+  const res = await request<{ list: MyCommentMsg[]; total: number }>({
+    url: "/users/me/comments",
+    method: "GET",
+    data: { page, pageSize }
+  });
+  const list = res.list || [];
+  const hydrated = await Promise.all(
+    list.map(async (x) => ({
+      ...x,
+      avatarUrl: await resolveImageSrc(String(x.avatarUrl || "")),
+      thumbUrl: x.thumbUrl ? await resolveImageSrc(String(x.thumbUrl || "")) : x.thumbUrl
+    }))
+  );
+  return { ...res, list: hydrated };
 }

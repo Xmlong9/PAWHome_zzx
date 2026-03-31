@@ -1,4 +1,5 @@
 import { request } from "./request"
+import { resolveImageSrc } from "../utils/mediaCache"
 
 export type NotificationMsg = {
   id: string
@@ -21,7 +22,20 @@ export async function listNotifications(
   page = 1,
   pageSize = 20
 ): Promise<{ list: NotificationMsg[]; total: number }> {
-  return request({ url: "/notifications", method: "GET", data: { type, page, pageSize } })
+  const res = await request<{ list: NotificationMsg[]; total: number }>({
+    url: "/notifications",
+    method: "GET",
+    data: { type, page, pageSize }
+  })
+  const list = res.list || []
+  const hydrated = await Promise.all(
+    list.map(async (x) => ({
+      ...x,
+      avatarUrl: await resolveImageSrc(String(x.avatarUrl || "")),
+      thumbUrl: x.thumbUrl ? await resolveImageSrc(String(x.thumbUrl || "")) : x.thumbUrl
+    }))
+  )
+  return { ...res, list: hydrated }
 }
 
 export async function getNotificationUnreadSummary(): Promise<{

@@ -1,4 +1,5 @@
 import { request } from "./request"
+import { resolveImageSrc } from "../utils/mediaCache"
 
 export type PetServiceProvider = {
   id: string
@@ -59,12 +60,17 @@ export type PetServiceAppointment = {
   slot?: { id: string; serviceDate: string; timeLabel: string; appointmentAt: string }
 }
 
-export function getServiceProviders(serviceType: string): Promise<{ list: PetServiceProvider[]; total: number }> {
-  return request({
+export async function getServiceProviders(serviceType: string): Promise<{ list: PetServiceProvider[]; total: number }> {
+  const res = await request<{ list: PetServiceProvider[]; total: number }>({
     url: "/services/providers",
     method: "GET",
     data: { serviceType }
   })
+  const list = res.list || []
+  const hydrated = await Promise.all(
+    list.map(async (x) => ({ ...x, coverImage: await resolveImageSrc(String(x.coverImage || "")) }))
+  )
+  return { ...res, list: hydrated }
 }
 
 export function getServiceOfferings(params: {

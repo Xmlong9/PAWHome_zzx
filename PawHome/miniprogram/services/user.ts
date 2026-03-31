@@ -1,9 +1,43 @@
 import { request } from "./request";
+import { isMockEnabled } from "./mock";
+import { getBaseUrl } from "../config/env";
+import { resolveImageSrc } from "../utils/mediaCache";
 
-const MOCK = true;
+const MOCK = () => isMockEnabled();
+
+function apiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const origin = apiOrigin()
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+
+async function hydrateUserProfile(p: UserProfile): Promise<UserProfile> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
+
+async function hydratePetProfile(p: PetProfile): Promise<PetProfile> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
 
 export type UserProfile = {
   id: string;
+  publicId: string;
   nickname: string;
   avatarUrl: string;
   location: string;
@@ -14,6 +48,8 @@ export type UserProfile = {
   followingCount: number;
   followerCount: number;
   likeCount: number;
+  isFollowing?: boolean;
+  isFollowed?: boolean;
 }
 
 export type PetProfile = {
@@ -28,9 +64,27 @@ export type PetProfile = {
   birthday: string;
 }
 
+export type UserRelation = {
+  id: string;
+  publicId?: string;
+  nickname: string;
+  avatarUrl: string;
+  location?: string;
+  signature?: string;
+  isFollowing?: boolean;
+}
+
+async function hydrateUserRelation(p: UserRelation): Promise<UserRelation> {
+  if (!p) return p
+  const abs = toAbsoluteUrl(p.avatarUrl)
+  const resolved = await resolveImageSrc(abs)
+  return { ...p, avatarUrl: resolved }
+}
+
 export const MOCK_USERS: Record<string, UserProfile> = {
   "324666": {
     id: "324666",
+    publicId: "32466600",
     nickname: "淡水鱼",
     avatarUrl: "/assets/images/mine/头像.jpg",
     location: "浙江杭州",
@@ -44,6 +98,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "101": {
     id: "101",
+    publicId: "00000101",
     nickname: "赵嘉航",
     avatarUrl: "https://picsum.photos/seed/user2/100",
     location: "北京",
@@ -57,6 +112,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "102": {
     id: "102",
+    publicId: "00000102",
     nickname: "李华",
     avatarUrl: "https://picsum.photos/seed/user3/100",
     location: "上海",
@@ -70,6 +126,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "103": {
     id: "103",
+    publicId: "00000103",
     nickname: "王小明",
     avatarUrl: "https://picsum.photos/seed/user4/100",
     location: "广州",
@@ -83,6 +140,7 @@ export const MOCK_USERS: Record<string, UserProfile> = {
   },
   "104": {
     id: "104",
+    publicId: "00000104",
     nickname: "张伟",
     avatarUrl: "https://picsum.photos/seed/user5/100",
     location: "深圳",
@@ -97,23 +155,28 @@ export const MOCK_USERS: Record<string, UserProfile> = {
 };
 
 export async function getUserProfile(userId?: string): Promise<UserProfile> {
-  if (MOCK) {
+  if (MOCK()) {
     if (userId && MOCK_USERS[userId]) {
-      return MOCK_USERS[userId];
+      return hydrateUserProfile(MOCK_USERS[userId]);
     }
     // 兼容名字匹配（赵嘉航）
     if (userId === '赵嘉航') {
-       return MOCK_USERS["101"];
+       return hydrateUserProfile(MOCK_USERS["101"]);
     }
     
     // 默认返回自己（淡水鱼）
-    return MOCK_USERS["324666"];
+    return hydrateUserProfile(MOCK_USERS["324666"]);
   }
-  return request({ url: "/users/me", method: "GET" });
+  if (userId) {
+    const p = await request<UserProfile>({ url: `/users/${encodeURIComponent(userId)}`, method: "GET" });
+    return hydrateUserProfile(p)
+  }
+  const me = await request<UserProfile>({ url: "/users/me", method: "GET" });
+  return hydrateUserProfile(me)
 }
 
 export async function updateUserProfile(data: Partial<UserProfile>): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
+  if (MOCK()) return { ok: true };
   return request({ url: "/users/me", method: "PUT", data });
 }
 
@@ -132,24 +195,31 @@ let mockPets: PetProfile[] = [
 ];
 
 export async function getPetList(): Promise<PetProfile[]> {
-  if (MOCK) {
-    return [...mockPets];
+  if (MOCK()) {
+    const list = [...mockPets]
+    const hydrated = await Promise.all(list.map(hydratePetProfile))
+    return hydrated
   }
-  return request({ url: "/users/me/pets", method: "GET" });
+  const list = await request<PetProfile[]>({ url: "/users/me/pets", method: "GET" });
+  const hydrated = await Promise.all((list || []).map(hydratePetProfile))
+  return hydrated
 }
 
 export async function getPetProfile(id?: string): Promise<PetProfile> {
-  if (MOCK) {
+  if (MOCK()) {
     if (id) {
-      return mockPets.find(p => p.id === id) || mockPets[0];
+      return hydratePetProfile(mockPets.find(p => p.id === id) || mockPets[0]);
     }
-    return mockPets[0];
+    return hydratePetProfile(mockPets[0]);
   }
-  return request({ url: "/users/me/pet", method: "GET", data: { id } });
+  const safeId = typeof id === "string" ? id.trim() : ""
+  const data = safeId && safeId !== "undefined" && safeId !== "null" ? { id: safeId } : {}
+  const pet = await request<PetProfile>({ url: "/users/me/pet", method: "GET", data });
+  return hydratePetProfile(pet)
 }
 
 export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok: boolean; data: PetProfile }> {
-  if (MOCK) {
+  if (MOCK()) {
     const newPet: PetProfile = {
       ...data,
       id: `pet_${Date.now()}`
@@ -161,7 +231,7 @@ export async function addPetProfile(data: Omit<PetProfile, 'id'>): Promise<{ ok:
 }
 
 export async function updatePetProfile(id: string, data: Partial<Omit<PetProfile, "id">>): Promise<{ ok: boolean; data: PetProfile | null }> {
-  if (MOCK) {
+  if (MOCK()) {
     const index = mockPets.findIndex(p => p.id === id);
     if (index === -1) {
       return { ok: false, data: null };
@@ -190,26 +260,82 @@ let mockSettings: UserSettings = {
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
-  if (MOCK) {
+  if (MOCK()) {
     return mockSettings;
   }
   return request({ url: "/users/me/settings", method: "GET" });
 }
 
 export async function updateUserSettings(data: Partial<UserSettings>): Promise<{ ok: boolean }> {
-  if (MOCK) {
+  if (MOCK()) {
     mockSettings = { ...mockSettings, ...data };
     return { ok: true };
   }
   return request({ url: "/users/me/settings", method: "PUT", data });
 }
 
-export async function followUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "POST" });
+export async function followUser(userId: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true };
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "POST" });
 }
 
-export async function unfollowUser(userId: number): Promise<{ ok: boolean }> {
-  if (MOCK) return { ok: true };
-  return request({ url: `/users/${userId}/follow`, method: "DELETE" });
+export async function unfollowUser(userId: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true };
+  return request({ url: `/users/${encodeURIComponent(userId)}/follow`, method: "DELETE" });
+}
+
+export async function getUserFollowing(userId: string, page = 1, pageSize = 20): Promise<{ list: UserRelation[]; total: number }> {
+  if (MOCK()) {
+    const list = Object.values(MOCK_USERS).filter((u) => u.id !== userId).slice(0, 5).map((u, i) => ({
+      id: u.id,
+      publicId: u.publicId,
+      nickname: u.nickname,
+      avatarUrl: u.avatarUrl,
+      location: u.location,
+      signature: u.signature,
+      isFollowing: i % 2 === 0
+    }))
+    const hydrated = await Promise.all(list.map(hydrateUserRelation))
+    return { list: hydrated, total: list.length }
+  }
+  const res = await request<{ list: UserRelation[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/following`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  const hydrated = await Promise.all((res.list || []).map(hydrateUserRelation))
+  return { ...res, list: hydrated }
+}
+
+export async function getUserFollowers(userId: string, page = 1, pageSize = 20): Promise<{ list: UserRelation[]; total: number }> {
+  if (MOCK()) {
+    const list = Object.values(MOCK_USERS).filter((u) => u.id !== userId).slice(0, 5).map((u, i) => ({
+      id: u.id,
+      publicId: u.publicId,
+      nickname: u.nickname,
+      avatarUrl: u.avatarUrl,
+      location: u.location,
+      signature: u.signature,
+      isFollowing: i % 3 === 0
+    }))
+    const hydrated = await Promise.all(list.map(hydrateUserRelation))
+    return { list: hydrated, total: list.length }
+  }
+  const res = await request<{ list: UserRelation[]; total: number }>({
+    url: `/users/${encodeURIComponent(userId)}/followers`,
+    method: "GET",
+    data: { page, pageSize }
+  })
+  const hydrated = await Promise.all((res.list || []).map(hydrateUserRelation))
+  return { ...res, list: hydrated }
+}
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true }
+  return request({ url: "/users/me/password", method: "PUT", data: { oldPassword, newPassword } })
+}
+
+export async function changePhone(phone: string, code: string): Promise<{ ok: boolean }> {
+  if (MOCK()) return { ok: true }
+  return request({ url: "/users/me/phone", method: "PUT", data: { phone, code } })
 }

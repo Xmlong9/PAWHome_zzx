@@ -15,14 +15,23 @@ Page({
     ] as OrderTab[],
     list: [] as OrderViewItem[],
     highlight: "",
+    showPaidBanner: false,
     showConfirmModal: false,
     confirmingOrder: null as OrderViewItem | null
   },
   onLoad(options: Record<string, string | undefined>) {
-    this.setData({ highlight: options.highlight || "" })
+    const highlight = options.highlight || ""
+    const showPaidBanner = options.paid === "1"
+    this.setData({ highlight, showPaidBanner })
   },
   onShow() {
     this.loadOrders()
+  },
+  dismissPaidBanner() {
+    this.setData({ showPaidBanner: false })
+  },
+  goShopHome() {
+    wx.switchTab({ url: "/pages/shop/index" })
   },
   async loadOrders() {
     try {
@@ -88,9 +97,16 @@ Page({
       await payOrderMock(id)
       wx.hideLoading()
       wx.showToast({ title: '支付成功', icon: 'success' })
+      this.setData({ showPaidBanner: true, highlight: id })
       this.loadOrders()
     } catch (error) {
       wx.hideLoading()
+      const msg = (error as any)?.message as string | undefined
+      if (msg === "INSUFFICIENT_BALANCE") {
+        wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+        wx.navigateTo({ url: "/pages/shop/recharge" })
+        return
+      }
       wx.showToast({ title: '支付失败', icon: 'none' })
     }
   },

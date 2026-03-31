@@ -1,4 +1,6 @@
 import { ShopProduct, listProducts, toggleFavorite } from "../../services/shop"
+import { getBaseUrl } from "../../config/env"
+import { resolveImageSrc } from "../../utils/mediaCache"
 
 type ShopEntry = {
   id: string
@@ -7,11 +9,21 @@ type ShopEntry = {
   url: string
 }
 
+function cacheBustIfNotRelease(url: string): string {
+  try {
+    const v = wx.getAccountInfoSync().miniProgram.envVersion
+    if (v === "release") return url
+  } catch {}
+  const sep = url.includes("?") ? "&" : "?"
+  return `${url}${sep}t=${Date.now()}`
+}
+
 Page({
   data: {
     safeTop: 0,
     searchText: "",
-    banners: ["/assets/images/shop/广告.png"],
+    banners: [] as string[],
+    bannerLocalFallbackUrl: "/assets/images/home/advertise@1x.png",
     entries: [
       { id: "order", title: "订单", icon: "/assets/icons/shop/订单.png", url: "/pages/shop/order/list" },
       { id: "recharge", title: "充值", icon: "/assets/icons/shop/充值.png", url: "/pages/shop/recharge" },
@@ -27,9 +39,19 @@ Page({
   },
   onLoad() {
     const info = wx.getSystemInfoSync()
+    const base = getBaseUrl()
+    const origin = base.split("/").slice(0, 3).join("/")
+    const banner = cacheBustIfNotRelease(`${origin}/media/shop_banner.png`)
     this.setData({
-      safeTop: (info.statusBarHeight || 0) + 10
+      safeTop: (info.statusBarHeight || 0) + 10,
+      banners: [banner]
+    }, async () => {
+      const local = await resolveImageSrc(banner)
+      if (local && local !== banner) this.setData({ banners: [local] })
     })
+  },
+  onBannerError() {
+    this.setData({ banners: [this.data.bannerLocalFallbackUrl] })
   },
   onShow() {
     this.setData({ showBlob: true });

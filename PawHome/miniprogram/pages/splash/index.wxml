@@ -1,5 +1,5 @@
-<view class="splash-container">
-  <image class="splash-bg" src="/assets/images/login/splash-bg.png" mode="aspectFill"></image>
+<view class="splash-container paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
+  <image class="splash-bg" src="{{bgUrl}}" mode="aspectFill" binderror="onBgError"></image>
 
   <view class="skip-btn" hover-class="skip-btn-hover" bindtap="onSkip">
     跳过 {{countdown}}s

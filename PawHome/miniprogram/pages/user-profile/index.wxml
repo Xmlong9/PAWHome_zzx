@@ -1,4 +1,4 @@
-<view class="user-profile-page">
+<view class="user-profile-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <!-- 自定义导航栏 -->
   <view class="nav-bar" style="padding-top: {{safeTop}}px;">
     <view class="nav-back" bindtap="goBack">
@@ -16,7 +16,7 @@
         <view class="name-row">
           <text class="nickname">{{userInfo.nickname}}</text>
         </view>
-        <view class="id-row">ID: {{userInfo.id || '未知'}}</view>
+        <view class="id-row">ID: {{userInfo.publicId || userInfo.id || '未知'}}</view>
         <view class="location-row">
           <text class="location-icon">📍</text>
           <text class="location-text">{{userInfo.location || '未知'}}</text>
@@ -32,11 +32,11 @@
 
     <!-- 第二行：数据统计与签名 -->
     <view class="stats-section">
-      <view class="stat-item">
+      <view class="stat-item" data-type="following" bindtap="openRelations">
         <text class="stat-num">{{userInfo.followingCount || 0}}</text>
         <text class="stat-label">关注</text>
       </view>
-      <view class="stat-item">
+      <view class="stat-item" data-type="followers" bindtap="openRelations">
         <text class="stat-num">{{userInfo.followerCount || 0}}</text>
         <text class="stat-label">粉丝</text>
       </view>
@@ -72,8 +72,12 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
+            </view>
+            <view class="post-views" wx:if="{{item.viewCount !== undefined}}">
+              <image class="views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+              <text class="views-text">{{item.viewCount}}</text>
             </view>
           </view>
         </view>
@@ -86,7 +90,7 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
             </view>
           </view>
@@ -100,7 +104,7 @@
           <view class="post-title">{{item.content}}</view>
           <view class="post-footer">
             <view class="post-like">
-              <text class="like-icon">♡</text>
+              <image class="like-icon-img" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
               <text class="like-count">{{item.likeCount}}</text>
             </view>
           </view>

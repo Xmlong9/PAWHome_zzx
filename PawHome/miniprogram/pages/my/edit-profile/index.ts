@@ -1,4 +1,5 @@
 import { getUserProfile, updateUserProfile, UserProfile } from "../../../services/user"
+import { uploadFile } from "../../../services/upload"
 
 Page({
   data: {
@@ -37,14 +38,19 @@ Page({
   async onSave() {
     wx.showLoading({ title: '保存中...' })
     try {
-      await updateUserProfile({
-        nickname: this.data.nickname,
-        gender: this.data.gender as "男" | "女",
-        birthday: this.data.birthday,
-        location: this.data.location,
-        signature: this.data.signature
-      })
+      const avatarUrl = this.data.userInfo?.avatarUrl
+      const payload: Partial<UserProfile> = {}
+      if (this.data.nickname) payload.nickname = this.data.nickname
+      if (this.data.gender) payload.gender = this.data.gender as "男" | "女"
+      if (this.data.birthday) payload.birthday = this.data.birthday
+      if (this.data.location) payload.location = this.data.location
+      if (this.data.signature) payload.signature = this.data.signature
+      if (typeof avatarUrl === "string" && avatarUrl) {
+        payload.avatarUrl = avatarUrl
+      }
+      await updateUserProfile(payload)
       wx.hideLoading()
+      wx.setStorageSync("userProfileNeedRefresh", true)
       wx.showToast({ title: '保存成功' })
       setTimeout(() => wx.navigateBack(), 1500)
     } catch (e) {
@@ -58,8 +64,17 @@ Page({
       mediaType: ['image'],
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath
-        this.setData({ 'userInfo.avatarUrl': tempFilePath })
-        // 实际开发中需要先上传图片获取真实URL
+        wx.showLoading({ title: "上传中..." })
+        uploadFile(tempFilePath)
+          .then((url) => {
+            this.setData({ 'userInfo.avatarUrl': url })
+            wx.hideLoading()
+            wx.showToast({ title: "上传成功" })
+          })
+          .catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: "上传失败", icon: "none" })
+          })
       }
     })
   }

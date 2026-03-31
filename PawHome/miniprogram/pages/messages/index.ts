@@ -1,23 +1,41 @@
 import { formatTime, listConversations } from "../../services/im"
+import {
+  getNotificationUnreadSummary,
+  listNotifications,
+  markNotificationsRead
+} from "../../services/notifications"
+import { listMyComments } from "../../services/comments"
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition"
 
 type LikeMsg = {
   id: string
+  userId?: string
   avatarUrl: string
   nickname: string
   time: string
   text: string
-  postId?: number
+  postId?: string
+  content?: string
   thumbUrl?: string
 }
 
 type CommentMsg = {
   id: string
+  userId?: string
   avatarUrl: string
   nickname: string
   time: string
   text: string
+  commentText?: string
   content?: string
-  postId?: number
+  postId?: string
+  commentId?: string
   thumbUrl?: string
 }
 
@@ -38,7 +56,17 @@ Page({
     currentTab: 'like' as 'like' | 'comment' | 'dm',
     likeList: [] as LikeMsg[],
     commentList: [] as CommentMsg[],
-    dmList: [] as DMMsg[]
+    myCommentList: [] as CommentMsg[],
+    commentSubTab: "toMe" as "toMe" | "byMe",
+    loadingMyComments: false,
+    dmList: [] as DMMsg[],
+    hasUnreadLike: false,
+    hasUnreadComment: false,
+    hasUnreadDm: false,
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   async onLoad() {
@@ -51,10 +79,130 @@ Page({
     this.setData({
       statusBarHeight,
       navHeight,
-      likeList: this.getMockLikeList(),
-      commentList: this.getMockCommentList()
+      likeList: [],
+      commentList: []
     })
+
+    initPageTransition(this)
+    await this.refreshAll()
+  },
+
+  onReady() {
+    enterPageTransition(this)
+  },
+
+  async onShow() {
+    reenterPageIfNeeded(this)
+    await this.refreshAll()
+  },
+
+  async refreshAll() {
+    await this.loadNotifications()
     await this.loadDMConversations()
+    await this.markCurrentTabRead(this.data.currentTab)
+    this.syncIconBadge()
+  },
+
+  async loadNotifications() {
+    try {
+      const [summary, likeRes, favRes, followRes, commentRes] = await Promise.all([
+        getNotificationUnreadSummary(),
+        listNotifications("like", 1, 20),
+        listNotifications("favorite", 1, 20),
+        listNotifications("follow", 1, 20),
+        listNotifications("comment", 1, 20)
+      ])
+
+      const likeList: LikeMsg[] = [...likeRes.list, ...favRes.list, ...followRes.list]
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+        .map((n) => ({
+          id: n.id,
+          userId: n.actorId || undefined,
+          avatarUrl: n.avatarUrl,
+          nickname: n.nickname,
+          time: formatTime(n.createdAt),
+          text: n.text || (n.type === "like" ? "赞了你" : n.type === "favorite" ? "收藏了你" : "关注了你"),
+          postId: n.postId || undefined,
+          content: (n as any).content || undefined,
+          thumbUrl: n.thumbUrl || undefined
+        }))
+
+      const commentList: CommentMsg[] = commentRes.list.map((n) => ({
+        id: n.id,
+        userId: n.actorId || undefined,
+        avatarUrl: n.avatarUrl,
+        nickname: n.nickname,
+        time: formatTime(n.createdAt),
+        text: n.text,
+        commentText: n.commentText || "",
+        content: n.content || "",
+        postId: n.postId || undefined,
+        commentId: n.commentId || undefined,
+        thumbUrl: n.thumbUrl || undefined
+      }))
+
+      this.setData({
+        likeList,
+        commentList,
+        hasUnreadLike: summary.like + summary.favorite + summary.follow > 0,
+        hasUnreadComment: summary.comment > 0
+      })
+    } catch (e) {
+      console.error(e)
+      this.setData({ likeList: [], commentList: [], hasUnreadLike: false, hasUnreadComment: false })
+    }
+  },
+
+  async loadMyComments() {
+    if (this.data.loadingMyComments) return
+    this.setData({ loadingMyComments: true })
+    try {
+      const res = await listMyComments(1, 20)
+      const list: CommentMsg[] = (res.list || []).map((x) => ({
+        id: x.id,
+        userId: (x as any).userId || undefined,
+        avatarUrl: x.avatarUrl,
+        nickname: x.nickname,
+        time: formatTime(x.createdAt),
+        text: x.text,
+        commentText: (x as any).commentText || "",
+        content: (x as any).content || "",
+        postId: (x as any).postId || undefined,
+        commentId: (x as any).commentId || undefined,
+        thumbUrl: (x as any).thumbUrl || undefined
+      }))
+      this.setData({ myCommentList: list })
+    } catch (e) {
+      console.error(e)
+      this.setData({ myCommentList: [] })
+    } finally {
+      this.setData({ loadingMyComments: false })
+    }
+  },
+
+  async markCurrentTabRead(tab: 'like' | 'comment' | 'dm') {
+    try {
+      if (tab === "like") {
+        await Promise.all([
+          markNotificationsRead({ type: "like" }),
+          markNotificationsRead({ type: "favorite" }),
+          markNotificationsRead({ type: "follow" })
+        ])
+        this.setData({ hasUnreadLike: false })
+        return
+      }
+      if (tab === "comment") {
+        await markNotificationsRead({ type: "comment" })
+        this.setData({ hasUnreadComment: false })
+      }
+    } catch {
+    }
+  },
+
+  syncIconBadge() {
+    const totalUnreadDm = this.data.dmList.reduce((sum, item) => sum + item.unreadCount, 0)
+    const total = (this.data.hasUnreadLike ? 1 : 0) + (this.data.hasUnreadComment ? 1 : 0) + totalUnreadDm
+    wx.setStorageSync("community_message_unread_total", total)
   },
 
   async loadDMConversations() {
@@ -69,26 +217,39 @@ Page({
         lastMessage: c.lastMessage,
         unreadCount: c.unreadCount
       }))
-      
-      // 就算捕获到错误，我们也尽量合并本地真实缓存的对话列表和写死的 mock 列表
-      this.setData({ dmList })
+      this.setData({ dmList, hasUnreadDm: dmList.some((item) => item.unreadCount > 0) })
     } catch {
-      this.setData({ dmList: this.getMockDMList() })
+      const dmList = this.getMockDMList()
+      this.setData({ dmList, hasUnreadDm: dmList.some((item) => item.unreadCount > 0) })
     }
   },
 
   goBack() {
     const pages = getCurrentPages()
-    if (pages.length > 1) {
-      wx.navigateBack()
-      return
-    }
     wx.switchTab({ url: '/pages/community/index' })
   },
 
-  switchTab(e: WechatMiniprogram.TouchEvent) {
+  async switchTab(e: WechatMiniprogram.TouchEvent) {
     const tab = e.currentTarget.dataset.tab as 'like' | 'comment' | 'dm'
     this.setData({ currentTab: tab })
+    await this.markCurrentTabRead(tab)
+    this.syncIconBadge()
+  },
+
+  switchCommentSubTab(e: WechatMiniprogram.TouchEvent) {
+    const sub = e.currentTarget.dataset.sub as "toMe" | "byMe"
+    if (sub !== "toMe" && sub !== "byMe") return
+    if (sub === this.data.commentSubTab) return
+    this.setData({ commentSubTab: sub })
+    if (sub === "byMe" && this.data.myCommentList.length === 0) {
+      this.loadMyComments()
+    }
+  },
+
+  goUserProfile(e: WechatMiniprogram.TouchEvent) {
+    const userId = (e.currentTarget as any)?.dataset?.userid
+    if (!userId) return
+    navigateToWithTransition(`/pages/user-profile/index?id=${encodeURIComponent(String(userId))}`)
   },
 
   openItem(e: WechatMiniprogram.TouchEvent) {
@@ -97,65 +258,21 @@ Page({
     if (type === 'dm') {
       const dm = item as DMMsg
       // 跳转时一定要带上 id (conversationId)，peerId，nickname 和 avatarUrl，保证两边一致
-      wx.navigateTo({
-        url: `/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`
-      })
+      navigateToWithTransition(`/pages/chat/index?id=${dm.id}&peerId=${dm.peerId}&nickname=${encodeURIComponent(dm.nickname)}&avatarUrl=${encodeURIComponent(dm.avatarUrl)}`)
     } else {
-      if (item.postId) {
-        wx.navigateTo({
-          url: `/pages/post-detail/index?id=${item.postId}`
-        })
+      if (!item.postId) return
+      if (type === "comment") {
+        const commentId = item.commentId || item.id
+        const url = commentId
+          ? `/pages/post-detail/index?id=${item.postId}&commentId=${encodeURIComponent(String(commentId))}`
+          : `/pages/post-detail/index?id=${item.postId}`
+        navigateToWithTransition(url)
+        return
       }
+      navigateToWithTransition(`/pages/post-detail/index?id=${item.postId}`)
     }
   },
 
-  getMockLikeList(): LikeMsg[] {
-    return [
-      {
-        id: 'l1',
-        avatarUrl: 'https://picsum.photos/seed/u101/100',
-        nickname: '淡水鱼鱼鱼鱼鱼鱼鱼',
-        time: '10分钟前',
-        text: '赞了你的帖子',
-        postId: 1,
-        thumbUrl: 'https://picsum.photos/seed/p1/120/120'
-      },
-      {
-        id: 'l2',
-        avatarUrl: 'https://picsum.photos/seed/u102/100',
-        nickname: '赵嘉航',
-        time: '2小时前',
-        text: '收藏了你的帖子',
-        postId: 2,
-        thumbUrl: 'https://picsum.photos/seed/p2/120/120'
-      }
-    ]
-  },
-
-  getMockCommentList(): CommentMsg[] {
-    return [
-      {
-        id: 'c1',
-        avatarUrl: 'https://picsum.photos/seed/u201/100',
-        nickname: '赵嘉航',
-        time: '1小时前',
-        text: '评论了你的帖子',
-        content: '哈哈哈哈哈哈哈我家那只也经常这样！',
-        postId: 1,
-        thumbUrl: 'https://picsum.photos/seed/p1/120/120'
-      },
-      {
-        id: 'c2',
-        avatarUrl: 'https://picsum.photos/seed/u202/100',
-        nickname: '用户202',
-        time: '昨天',
-        text: '@了你',
-        content: '快来看这个！',
-        postId: 2,
-        thumbUrl: 'https://picsum.photos/seed/p2/120/120'
-      }
-    ]
-  },
 
   getMockDMList(): DMMsg[] {
     return [

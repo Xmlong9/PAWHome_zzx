@@ -1,4 +1,4 @@
-<view class="page" style="padding-top: {{navHeight}}px">
+<view class="page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" style="padding-top: {{navHeight}}px">
   <view class="custom-nav" style="padding-top: {{statusBarHeight}}px">
     <view class="nav-content">
       <view class="back-btn" bindtap="goBack">
@@ -13,18 +13,25 @@
     scroll-y
     class="scroll"
     scroll-with-animation
-    scroll-into-view="{{scrollIntoView}}"
+    scroll-top="{{scrollTop}}"
     style="padding-bottom: calc({{inputBarHeight}}px + {{keyboardHeight}}px + env(safe-area-inset-bottom));"
   >
-    <block wx:for="{{messages}}" wx:key="id">
+    <view class="empty" wx:if="{{!messages || messages.length === 0}}">
+      <view class="empty-title">开始聊天吧</view>
+      <view class="empty-desc">发一条消息打个招呼</view>
+    </view>
+    <block wx:for="{{messages}}" wx:key="renderKey">
       <view class="row {{item.from === 'me' ? 'me' : 'them'}}">
-        <image class="avatar" src="{{item.from === 'me' ? myAvatar : peerAvatar}}" mode="aspectFill"></image>
+        <image wx:if="{{item.from === 'me' && myAvatar}}" class="avatar" src="{{myAvatar}}" mode="aspectFill"></image>
+        <view wx:elif="{{item.from === 'me'}}" class="avatar avatar-empty"></view>
+        <image wx:elif="{{peerAvatar}}" class="avatar" src="{{peerAvatar}}" mode="aspectFill"></image>
+        <view wx:else class="avatar avatar-empty"></view>
         <view class="bubble">
           <text user-select>{{item.text}}</text>
         </view>
+        <view class="msg-time">{{item.timeText}}</view>
       </view>
     </block>
-    <view id="bottom-anchor"></view>
   </scroll-view>
 
   <view

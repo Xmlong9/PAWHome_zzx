@@ -1,4 +1,4 @@
-import { ShopOrder, listOrders, getDefaultAddress, UserAddress } from "../../../../services/shop"
+import { ShopOrder, listOrders, getDefaultAddress, payOrderMock, confirmOrderReceipt, UserAddress } from "../../../../services/shop"
 
 Page({
   data: {
@@ -12,6 +12,51 @@ Page({
     }
     this.loadAddress()
   },
+  goCustomerService() {
+    wx.navigateTo({ url: "/pages/shop/customer-service" })
+  },
+  async onPayOrder(e: WechatMiniprogram.TouchEvent) {
+    const id = (e.currentTarget.dataset as any)?.id as string
+    if (!id) return
+    wx.showLoading({ title: "支付中..." })
+    try {
+      await payOrderMock(id)
+      wx.showToast({ title: "支付成功", icon: "success" })
+      wx.redirectTo({ url: `/pages/shop/order/list?highlight=${encodeURIComponent(id)}&paid=1` })
+    } catch (error) {
+      const msg = (error as any)?.message as string | undefined
+      if (msg === "INSUFFICIENT_BALANCE") {
+        wx.showToast({ title: "余额不足，请先充值", icon: "none" })
+        wx.navigateTo({ url: "/pages/shop/recharge" })
+      } else {
+        wx.showToast({ title: "支付失败", icon: "none" })
+      }
+    } finally {
+      wx.hideLoading()
+    }
+  },
+  onConfirmReceipt(e: WechatMiniprogram.TouchEvent) {
+    const id = (e.currentTarget.dataset as any)?.id as string
+    if (!id) return
+    wx.showModal({
+      title: "确认收货",
+      content: "请确认已收到商品后再确认收货",
+      confirmText: "确认收货",
+      success: async (r) => {
+        if (!r.confirm) return
+        wx.showLoading({ title: "确认中..." })
+        try {
+          await confirmOrderReceipt(id)
+          wx.showToast({ title: "收货成功", icon: "success" })
+          await this.loadOrderDetail(id)
+        } catch {
+          wx.showToast({ title: "操作失败", icon: "none" })
+        } finally {
+          wx.hideLoading()
+        }
+      }
+    })
+  },
   async loadAddress() {
     try {
       const address = await getDefaultAddress()
@@ -22,7 +67,6 @@ Page({
   },
   async loadOrderDetail(id: string) {
     try {
-      // 模拟通过 list 过滤获取详情
       const rawList = await listOrders("all")
       const raw = rawList.find((item) => item.id === id)
       if (raw) {

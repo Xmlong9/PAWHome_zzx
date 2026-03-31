@@ -17,20 +17,33 @@
     "pages/shop/order/logistics/index",
     "pages/shop/recharge",
     "pages/shop/customer-service",
+    "pages/shop/customer-service-chat/index",
     "pages/shop/favorites",
     "pages/service/index",
+    "pages/service/success/index",
+    "pages/service/appointments/index",
+    "pages/service/appointments/detail/index",
+    "pages/vaccine/record/index",
+    "pages/vaccine/import/index",
+    "pages/vaccine/appointment/index",
+    "pages/vaccine/reminder/index",
+    "pages/vaccine/appointments/index",
+    "pages/vaccine/appointments/detail/index",
+    "pages/vaccine/success/index",
     "pages/my/index",
     "pages/my/edit-profile/index",
     "pages/my/settings/index",
     "pages/my/settings/password/index",
     "pages/my/settings/phone/index",
     "pages/my/settings/address/index",
+    "pages/my/settings/address/edit/index",
     "pages/my/settings/pets/index",
     "pages/my/settings/pets/add/index",
     "pages/my/settings/pets/detail/index",
     "pages/my/favorites/index",
     "pages/my/history/index",
     "pages/user-profile/index",
+    "pages/user-relations/index",
     "pages/search/index",
     "pages/logs/logs"
   ],
@@ -73,5 +86,10 @@
         "selectedIconPath": "assets/icons/tab/pets@1x.png"
       }
     ]
+  },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "用于将帖子图片保存到你的相册"
+    }
   }
 }

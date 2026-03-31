@@ -5,6 +5,7 @@
     <view class="header-content">
       <view class="mail-icon" bindtap="onMailTap">
         <image class="mail-svg" src="/assets/icons/community/mail.svg" mode="aspectFit"></image>
+        <view class="mail-dot" wx:if="{{hasUnreadMessage}}"></view>
       </view>
       <view class="search" bindtap="goSearch">
         <image class="search-bg" src="/assets/images/home/search@1x.png" mode="widthFix"></image>
@@ -33,7 +34,14 @@
           <image class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
           <view class="user-info">
             <view class="nickname" catchtap="goUserProfile" data-userid="{{item.userId}}">{{item.user.nickname}}</view>
-            <view class="time">{{item.timeAgo}}</view>
+            <view class="meta-row">
+              <view class="time">{{item.timeAgo}}</view>
+              <view class="views" wx:if="{{item.viewCount !== undefined}}">
+                <image class="views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+                <text class="views-text">{{item.viewCount}}</text>
+              </view>
+            </view>
+            <view class="time" wx:if="{{item.location}}">📍 {{item.location}}</view>
           </view>
         </view>
 
@@ -44,8 +52,9 @@
             {{item.content}}
           </view>
           
-          <view class="media-content" wx:if="{{item.images.length > 0}}">
-            <image class="post-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+          <view class="media-content" wx:if="{{(item.images && item.images.length > 0) || item.videoUrl}}">
+            <image class="post-image" src="{{(item.images && item.images.length > 0 && item.images[0]) ? item.images[0] : '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
+            <view class="video-badge" wx:if="{{item.videoUrl}}">▶</view>
           </view>
         </view>
 

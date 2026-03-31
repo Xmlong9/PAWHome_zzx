@@ -1,3 +1,5 @@
+import { changePassword } from "../../../../services/user"
+
 Page({
   data: {
     oldPassword: '',
@@ -19,12 +21,22 @@ Page({
       return wx.showToast({ title: '两次新密码不一致', icon: 'none' });
     }
     wx.showLoading({ title: '修改中...' });
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({ title: '修改成功', icon: 'success' });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
-    }, 1000);
+    Promise.resolve()
+      .then(async () => {
+        await changePassword(oldPassword, newPassword)
+      })
+      .then(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '修改成功', icon: 'success' });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 800);
+      })
+      .catch((e: any) => {
+        console.error(e)
+        wx.hideLoading();
+        const msg = e?.message || e?.data?.error?.message || '修改失败'
+        wx.showToast({ title: msg, icon: 'none' });
+      })
   }
 });

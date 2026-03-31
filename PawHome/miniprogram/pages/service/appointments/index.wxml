@@ -1,0 +1,33 @@
+<view class="page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
+  <view class="pet-card">
+    <image class="pet-avatar" src="{{currentPet.avatar}}" mode="aspectFill"></image>
+    <view class="pet-info">
+      <view class="pet-name">{{currentPet.name}}</view>
+      <view class="pet-meta">{{currentPet.meta}}</view>
+    </view>
+    <view class="pet-switch" bindtap="switchPet">
+      <view class="switch-icon"></view>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{activeTab==='upcoming'?'active':''}}" bindtap="setTab" data-tab="upcoming">未过期</view>
+    <view class="tab {{activeTab==='history'?'active':''}}" bindtap="setTab" data-tab="history">历史</view>
+  </view>
+
+  <view class="list">
+    <view class="record-card" wx:for="{{appointments}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}">
+      <view class="record-head">
+        <view class="record-title">{{item.title}}</view>
+        <view class="record-status {{item.statusClass}}">{{item.statusText}}</view>
+      </view>
+      <view class="record-line">{{item.line1}}</view>
+      <view class="record-line">{{item.line2}}</view>
+    </view>
+
+    <view class="empty" wx:if="{{!appointments.length}}">
+      <view class="empty-title">暂无预约记录</view>
+      <view class="empty-sub">预约后会在这里显示</view>
+    </view>
+  </view>
+</view>

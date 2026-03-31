@@ -1,5 +1,13 @@
-import { getUserProfile, UserProfile } from "../../services/user";
-import { Post, getPosts } from "../../services/posts";
+import { followUser, getUserProfile, unfollowUser, UserProfile } from "../../services/user";
+import { Post, getUserFavoritePosts, getUserLikedPosts, getUserPosts } from "../../services/posts";
+import { resolveImageSrc } from "../../utils/mediaCache";
+import {
+  enterPageTransition,
+  initPageTransition,
+  navigateBackWithTransition,
+  navigateToWithTransition,
+  reenterPageIfNeeded
+} from "../../utils/transition";
 
 Page({
   data: {
@@ -18,7 +26,11 @@ Page({
     likes: [] as Post[], // 假设复用 Post 类型
     favorites: [] as Post[],
     
-    loading: false
+    loading: false,
+
+    pageMounted: false,
+    pageVisible: false,
+    pageLeaving: false
   },
 
   onLoad(options: any) {
@@ -29,6 +41,37 @@ Page({
     });
     
     this.initPage();
+    initPageTransition(this)
+  },
+
+  onReady() {
+    enterPageTransition(this)
+  },
+
+  onShow() {
+    reenterPageIfNeeded(this)
+    const needRefresh = wx.getStorageSync("user_profile_need_refresh")
+    if (!needRefresh) return
+    wx.setStorageSync("user_profile_need_refresh", false)
+    const fallbackUserId = this.data.userId || this.data.userInfo?.id || wx.getStorageSync("userId") || ""
+    if (!fallbackUserId) return
+    if (fallbackUserId !== this.data.userId) {
+      this.setData({ userId: fallbackUserId })
+    }
+    getUserProfile(fallbackUserId)
+      .then((userInfo) => {
+        this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) }, () => {
+          this.hydrateUserInfoAvatar()
+        })
+      })
+      .catch(() => {})
+    Promise.all([
+      this.loadTabData("帖子"),
+      this.loadTabData("点赞"),
+      this.loadTabData("收藏")
+    ]).catch((e) => {
+      console.error("refresh profile tabs failed", e)
+    })
   },
 
   async initPage() {
@@ -43,6 +86,7 @@ Page({
       
       // 如果没传 userId，就默认查自己
       const queryId = this.data.userId || myId;
+      this.setData({ userId: queryId })
       const userInfo = await getUserProfile(queryId); 
       
       if (isSelf && userInfo) {
@@ -54,7 +98,9 @@ Page({
       // 2. 加载当前 tab 数据
       await this.loadTabData(this.data.currentTab);
       
-      this.setData({ userInfo });
+      this.setData({ userInfo, isFollowing: Boolean((userInfo as any)?.isFollowing) }, () => {
+        this.hydrateUserInfoAvatar()
+      });
     } catch (error) {
       console.error("Load user profile failed", error);
     } finally {
@@ -63,37 +109,83 @@ Page({
   },
 
   async loadTabData(tabName: string) {
-    // 模拟加载对应的数据
     try {
-      const res = await getPosts(1, 10);
       if (tabName === '帖子') {
-        this.setData({ posts: res.list });
+        const res = await getUserPosts(this.data.userId, 1, 10)
+        this.setData({ posts: res.list }, () => this.hydratePostListMedia("posts"));
       } else if (tabName === '点赞') {
-        this.setData({ likes: res.list });
+        const res = await getUserLikedPosts(this.data.userId, 1, 10)
+        this.setData({ likes: res.list }, () => this.hydratePostListMedia("likes"));
       } else if (tabName === '收藏') {
-        this.setData({ favorites: res.list });
+        const res = await getUserFavoritePosts(this.data.userId, 1, 10)
+        this.setData({ favorites: res.list }, () => this.hydratePostListMedia("favorites"));
       }
     } catch (e) {
       console.error("Load tab data failed", e);
     }
   },
 
+  async hydrateUserInfoAvatar() {
+    const url = this.data.userInfo?.avatarUrl
+    if (typeof url !== "string" || !url) return
+    const next = await resolveImageSrc(url)
+    if (next && next !== url) {
+      this.setData({ "userInfo.avatarUrl": next })
+    }
+  },
+
+  async hydratePostListMedia(field: "posts" | "likes" | "favorites", startIndex = 0) {
+    const list = (this.data as any)[field] || []
+    const slice = Array.isArray(list) ? list.slice(startIndex) : []
+    const tasks = slice.map((post: any, i: number) => this.hydrateOnePostMedia(field, startIndex + i, post))
+    await Promise.allSettled(tasks)
+  },
+
+  async hydrateOnePostMedia(field: "posts" | "likes" | "favorites", index: number, post: any) {
+    const updates: Record<string, any> = {}
+    const avatarUrl = post?.user?.avatarUrl
+    if (typeof avatarUrl === "string" && avatarUrl) {
+      const nextAvatar = await resolveImageSrc(avatarUrl)
+      if (nextAvatar && nextAvatar !== avatarUrl) {
+        updates[`${field}[${index}].user.avatarUrl`] = nextAvatar
+      }
+    }
+    const coverUrl = post?.images?.[0]
+    if (typeof coverUrl === "string" && coverUrl) {
+      const nextCover = await resolveImageSrc(coverUrl)
+      if (nextCover && nextCover !== coverUrl) {
+        updates[`${field}[${index}].images[0]`] = nextCover
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      this.setData(updates)
+    }
+  },
+
   goBack() {
     const pages = getCurrentPages();
     if (pages.length > 1) {
-      wx.navigateBack();
+      navigateBackWithTransition();
     } else {
       wx.switchTab({ url: '/pages/home/index' });
     }
   },
 
   onFollow() {
-    // 关注/取消关注逻辑
-    this.setData({ isFollowing: !this.data.isFollowing });
-    wx.showToast({
-      title: this.data.isFollowing ? '已关注' : '已取消关注',
-      icon: 'none'
-    });
+    if (this.data.isSelf) return
+    const next = !this.data.isFollowing
+    this.setData({ isFollowing: next })
+    const userId = this.data.userId
+    Promise.resolve()
+      .then(() => (next ? followUser(userId) : unfollowUser(userId)))
+      .then(() => {
+        wx.showToast({ title: next ? '已关注' : '已取消关注', icon: 'none' })
+      })
+      .catch((e) => {
+        console.error(e)
+        this.setData({ isFollowing: !next })
+        wx.showToast({ title: '操作失败', icon: 'none' })
+      })
   },
 
   onMessage() {
@@ -103,9 +195,7 @@ Page({
     const avatarUrl = encodeURIComponent(this.data.userInfo.avatarUrl);
     
     // 跳转到聊天页面，带上对方的关键信息以便正确展示
-    wx.navigateTo({
-      url: `/pages/chat/index?peerId=${peerId}&nickname=${nickname}&avatarUrl=${avatarUrl}`
-    });
+    navigateToWithTransition(`/pages/chat/index?peerId=${peerId}&nickname=${nickname}&avatarUrl=${avatarUrl}`);
   },
 
   switchTab(e: any) {
@@ -122,6 +212,14 @@ Page({
 
   goPostDetail(e: any) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/post-detail/index?id=${id}` });
+    navigateToWithTransition(`/pages/post-detail/index?id=${id}`);
+  },
+
+  openRelations(e: any) {
+    const type = e.currentTarget.dataset.type
+    if (type !== "following" && type !== "followers") return
+    const userId = this.data.userId || this.data.userInfo?.id
+    if (!userId) return
+    navigateToWithTransition(`/pages/user-relations/index?userId=${encodeURIComponent(userId)}&type=${type}`)
   }
 });

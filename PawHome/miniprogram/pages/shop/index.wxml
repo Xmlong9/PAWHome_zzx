@@ -18,7 +18,7 @@
       </block>
     </view>
 
-    <image class="hero-banner" src="{{banners[0]}}" mode="widthFix" bindtap="openBannerDetail"></image>
+    <image class="hero-banner" src="{{banners[0]}}" mode="widthFix" bindtap="openBannerDetail" binderror="onBannerError"></image>
   </view>
 
   <view class="section-title">推荐好物</view>

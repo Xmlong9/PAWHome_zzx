@@ -1,3 +1,6 @@
+import { sendSms } from "../../../../services/auth"
+import { changePhone } from "../../../../services/user"
+
 Page({
   data: {
     phone: '',
@@ -18,7 +21,16 @@ Page({
     if (this.data.counting) return;
     
     this.setData({ counting: true, countdown: 60 });
-    wx.showToast({ title: '验证码已发送', icon: 'none' });
+    Promise.resolve()
+      .then(async () => {
+        await sendSms(this.data.phone)
+        wx.showToast({ title: '验证码已发送', icon: 'none' });
+      })
+      .catch((e) => {
+        console.error(e)
+        this.setData({ counting: false })
+        wx.showToast({ title: '发送失败', icon: 'none' })
+      })
     
     const timer = setInterval(() => {
       if (this.data.countdown <= 1) {
@@ -35,12 +47,22 @@ Page({
       return wx.showToast({ title: '请填写完整', icon: 'none' });
     }
     wx.showLoading({ title: '验证中...' });
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({ title: '验证成功', icon: 'success' });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
-    }, 1000);
+    Promise.resolve()
+      .then(async () => {
+        await changePhone(phone, code)
+      })
+      .then(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '修改成功', icon: 'success' });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 800);
+      })
+      .catch((e: any) => {
+        console.error(e)
+        wx.hideLoading();
+        const msg = e?.message || e?.data?.error?.message || '修改失败'
+        wx.showToast({ title: msg, icon: 'none' });
+      })
   }
 });

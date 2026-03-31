@@ -1,0 +1,39 @@
+<view class="page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
+  <view class="card">
+    <view class="card-title">预约信息</view>
+    <view class="row">
+      <view class="label">宠物名称</view>
+      <view class="val">{{petName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">疫苗名称</view>
+      <view class="val">{{vaccineName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">接种医院</view>
+      <view class="val">{{hospitalName}}</view>
+    </view>
+    <view class="row">
+      <view class="label">预约时间</view>
+      <view class="val">{{date}} {{time}}</view>
+    </view>
+    <view class="row" wx:if="{{statusText}}">
+      <view class="label">状态</view>
+      <view class="val">{{statusText}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="action-row" bindtap="goReminder">
+      <view class="action-left">
+        <view class="action-title">接种提醒</view>
+        <view class="action-sub">设置提前提醒时间与方式</view>
+      </view>
+      <view class="action-right">{{reminderText}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="danger-btn" bindtap="onDelete">删除记录</view>
+  </view>
+</view>

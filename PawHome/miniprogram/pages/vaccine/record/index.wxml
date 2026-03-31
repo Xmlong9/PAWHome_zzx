@@ -1,0 +1,56 @@
+<view class="page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
+  <view class="pet-card">
+    <image class="pet-avatar" src="{{currentPet.avatar}}" mode="aspectFill"></image>
+    <view class="pet-info">
+      <view class="pet-name">{{currentPet.name}}</view>
+      <view class="pet-meta">{{currentPet.meta}}</view>
+    </view>
+    <view class="pet-switch" bindtap="switchPet">
+      <view class="switch-icon"></view>
+    </view>
+  </view>
+
+  <view class="remind-card" wx:if="{{upcomingReminder}}" bindtap="openUpcomingDetail">
+    <view class="remind-left">
+      <view class="remind-title">待接种提醒</view>
+      <view class="remind-sub">{{upcomingSub}}</view>
+    </view>
+    <view class="remind-right">{{upcomingLabel}}</view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{activeTab==='core'?'active':''}}" bindtap="setTab" data-tab="core">核心疫苗</view>
+    <view class="tab {{activeTab==='optional'?'active':''}}" bindtap="setTab" data-tab="optional">选择性疫苗</view>
+    <view class="tab {{activeTab==='deworm'?'active':''}}" bindtap="setTab" data-tab="deworm">驱虫记录</view>
+  </view>
+
+  <view class="list">
+    <view class="record-card" wx:for="{{records}}" wx:key="id">
+      <view class="record-head">
+        <view class="record-title">{{item.title}}</view>
+        <view class="record-status">{{item.status}}</view>
+      </view>
+      <view class="record-line">{{item.line1}}</view>
+      <view class="record-line">{{item.line2}}</view>
+      <view class="record-footer" wx:if="{{item.footerText}}">
+        <view class="clock-icon"></view>
+        <view class="record-next">{{item.footerText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="goAppointment">
+      <view class="nav-icon icon-book"></view>
+      <view class="nav-text">预约接种</view>
+    </view>
+    <view class="nav-item" bindtap="goReminder">
+      <view class="nav-icon icon-bell"></view>
+      <view class="nav-text">设置提醒</view>
+    </view>
+    <view class="nav-item" bindtap="goAppointments">
+      <view class="nav-icon icon-list"></view>
+      <view class="nav-text">查看记录</view>
+    </view>
+  </view>
+</view>

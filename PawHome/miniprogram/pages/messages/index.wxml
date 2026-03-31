@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="custom-nav" style="padding-top: {{statusBarHeight}}px">
     <view class="nav-content">
       <view class="back-btn" bindtap="goBack">
@@ -8,9 +8,18 @@
       <view class="nav-right"></view>
     </view>
     <view class="tabs">
-      <view class="tab {{currentTab === 'like' ? 'active' : ''}}" bindtap="switchTab" data-tab="like">点赞</view>
-      <view class="tab {{currentTab === 'comment' ? 'active' : ''}}" bindtap="switchTab" data-tab="comment">评论</view>
-      <view class="tab {{currentTab === 'dm' ? 'active' : ''}}" bindtap="switchTab" data-tab="dm">私信</view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="like">
+        <view class="tab {{currentTab === 'like' ? 'active' : ''}}">点赞</view>
+        <view class="tab-dot" wx:if="{{hasUnreadLike}}"></view>
+      </view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="comment">
+        <view class="tab {{currentTab === 'comment' ? 'active' : ''}}">评论</view>
+        <view class="tab-dot" wx:if="{{hasUnreadComment}}"></view>
+      </view>
+      <view class="tab-wrap" bindtap="switchTab" data-tab="dm">
+        <view class="tab {{currentTab === 'dm' ? 'active' : ''}}">私信</view>
+        <view class="tab-dot" wx:if="{{hasUnreadDm}}"></view>
+      </view>
     </view>
   </view>
 
@@ -18,36 +27,85 @@
     <view class="list" wx:if="{{currentTab === 'like'}}">
       <block wx:for="{{likeList}}" wx:key="id">
         <view class="item" bindtap="openItem" data-type="like" data-item="{{item}}">
-          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
           <view class="mid">
-            <view class="row1">
+            <view class="name-row" catchtap="goUserProfile" data-userid="{{item.userId}}">
               <text class="name">{{item.nickname}}</text>
+            </view>
+            <view class="action-row">
+              <text class="action-text">{{item.text}}</text>
               <text class="time">{{item.time}}</text>
             </view>
-            <view class="row2">{{item.text}}</view>
+            <view class="quote-row" wx:if="{{item.content}}">
+              <view class="quote-line"></view>
+              <text class="quote-text">{{item.content}}</text>
+            </view>
           </view>
-          <image class="thumb" src="{{item.thumbUrl}}" mode="aspectFill" wx:if="{{item.thumbUrl}}"></image>
+          <view class="right-thumb">
+            <image class="thumb" src="{{item.thumbUrl || '/assets/images/shop/问号猫.png'}}" mode="aspectFill"></image>
+          </view>
         </view>
       </block>
       <view class="empty" wx:if="{{likeList.length === 0}}">暂无点赞消息</view>
     </view>
 
     <view class="list" wx:elif="{{currentTab === 'comment'}}">
-      <block wx:for="{{commentList}}" wx:key="id">
-        <view class="item" bindtap="openItem" data-type="comment" data-item="{{item}}">
-          <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
-          <view class="mid">
-            <view class="row1">
-              <text class="name">{{item.nickname}}</text>
-              <text class="time">{{item.time}}</text>
+      <view class="comment-subtabs">
+        <view class="subtab {{commentSubTab === 'toMe' ? 'active' : ''}}" bindtap="switchCommentSubTab" data-sub="toMe">评论我的</view>
+        <view class="subtab {{commentSubTab === 'byMe' ? 'active' : ''}}" bindtap="switchCommentSubTab" data-sub="byMe">我评论的</view>
+      </view>
+
+      <block wx:if="{{commentSubTab === 'toMe'}}">
+        <block wx:for="{{commentList}}" wx:key="id">
+          <view class="item" bindtap="openItem" data-type="comment" data-item="{{item}}">
+            <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
+            <view class="mid">
+              <view class="name-row" catchtap="goUserProfile" data-userid="{{item.userId}}">
+                <text class="name">{{item.nickname}}</text>
+              </view>
+              <view class="action-row">
+                <text class="action-text">{{item.text}}</text>
+                <text class="time">{{item.time}}</text>
+              </view>
+              <view class="comment-text" wx:if="{{item.commentText}}">{{item.commentText}}</view>
+              <view class="quote-row" wx:if="{{item.content}}">
+                <view class="quote-line"></view>
+                <text class="quote-text">{{item.content}}</text>
+              </view>
             </view>
-            <view class="row2">{{item.text}}</view>
-            <view class="row3" wx:if="{{item.content}}">“{{item.content}}”</view>
+            <view class="right-thumb">
+              <image class="thumb" src="{{item.thumbUrl || '/assets/images/shop/问号猫.png'}}" mode="aspectFill"></image>
+            </view>
           </view>
-          <image class="thumb" src="{{item.thumbUrl}}" mode="aspectFill" wx:if="{{item.thumbUrl}}"></image>
-        </view>
+        </block>
+        <view class="empty" wx:if="{{commentList.length === 0}}">暂无评论消息</view>
       </block>
-      <view class="empty" wx:if="{{commentList.length === 0}}">暂无评论消息</view>
+
+      <block wx:else>
+        <block wx:for="{{myCommentList}}" wx:key="id">
+          <view class="item" bindtap="openItem" data-type="comment" data-item="{{item}}">
+            <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
+            <view class="mid">
+              <view class="name-row" catchtap="goUserProfile" data-userid="{{item.userId}}">
+                <text class="name">{{item.nickname}}</text>
+              </view>
+              <view class="action-row">
+                <text class="action-text">{{item.text}}</text>
+                <text class="time">{{item.time}}</text>
+              </view>
+              <view class="comment-text" wx:if="{{item.commentText}}">{{item.commentText}}</view>
+              <view class="quote-row" wx:if="{{item.content}}">
+                <view class="quote-line"></view>
+                <text class="quote-text">{{item.content}}</text>
+              </view>
+            </view>
+            <view class="right-thumb">
+              <image class="thumb" src="{{item.thumbUrl || '/assets/images/shop/问号猫.png'}}" mode="aspectFill"></image>
+            </view>
+          </view>
+        </block>
+        <view class="empty" wx:if="{{!loadingMyComments && myCommentList.length === 0}}">暂无我评论的</view>
+      </block>
     </view>
 
     <view class="list" wx:else>

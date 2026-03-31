@@ -1,4 +1,4 @@
-<view class="settings-page">
+<view class="settings-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="group-title">账号与安全</view>
   <view class="list-group">
     <view class="list-item" bindtap="goPassword">

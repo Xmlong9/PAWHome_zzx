@@ -9,7 +9,7 @@
     <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
     <view class="user-info">
       <view class="nickname">{{userInfo.nickname}}</view>
-      <view class="uid">ID: {{userInfo.id}}</view>
+      <view class="uid">ID: {{userInfo.publicId || userInfo.id}}</view>
       <view class="location">📍 {{userInfo.location}}</view>
     </view>
     <view class="edit-btn" catchtap="goEditProfile">编辑资料</view>
@@ -18,11 +18,11 @@
   <view class="divider"></view>
 
   <!-- Pet Card Section -->
-  <view class="pet-card-wrap" wx:if="{{petInfo}}">
-    <image class="cat-head-decor" src="/assets/images/mine/猫头.png" mode="aspectFit"></image>
+  <view class="pet-card-wrap">
+    <image class="cat-head-decor" src="/assets/images/login/cat.png" mode="aspectFit"></image>
     <view class="pet-card">
       <view class="pet-card-title">宠家卡</view>
-      <view class="pet-content" bindtap="goPetDetail">
+      <view class="pet-content" wx:if="{{petInfo}}" bindtap="goPetDetail">
         <view class="pet-avatar-wrap">
           <image class="pet-avatar" src="{{petInfo.avatarUrl}}" mode="aspectFill"></image>
         </view>
@@ -41,6 +41,18 @@
             <view class="detail-item"><text class="label">体重：</text><text class="value">{{petInfo.weight}}</text></view>
             <view class="detail-item full-width"><text class="label">是否绝育：</text><text class="value">{{petInfo.isSterilized}}</text></view>
             <view class="detail-item full-width"><text class="label">出生年月：</text><text class="value">{{petInfo.birthday}}</text></view>
+          </view>
+        </view>
+      </view>
+      <view class="pet-content" wx:else bindtap="goAddPet">
+        <view class="pet-info">
+          <view class="pet-header">
+            <view class="pet-name-wrap">
+              <text class="pet-name">还没有宠物档案</text>
+            </view>
+            <view class="pet-actions">
+              <view class="pet-action-text" catchtap="goAddPet">添加宠物 +</view>
+            </view>
           </view>
         </view>
       </view>

@@ -4,24 +4,43 @@
     <text class="ui-subtitle">用于订单配送与售后服务</text>
   </view>
 
+  <view class="map-card ui-card">
+    <map
+      class="addr-map"
+      latitude="{{mapLatitude}}"
+      longitude="{{mapLongitude}}"
+      scale="14"
+      markers="{{mapMarkers}}"
+      show-location
+    ></map>
+    <view class="map-mask" wx:if="{{!mapMarkers.length}}">
+      <view class="map-empty-title">还没选定定位</view>
+      <view class="map-empty-desc">新增地址时可在地图选点</view>
+    </view>
+  </view>
+
   <scroll-view scroll-y class="ui-list" wx:if="{{addresses.length > 0}}">
-    <view class="ui-item addr-item" wx:for="{{addresses}}" wx:key="id" data-id="{{item.id}}" bindtap="onEdit">
+    <view class="ui-item addr-item {{mode==='select' && selectedId===item.id ? 'addr-item--selected' : ''}}" wx:for="{{addresses}}" wx:key="id" data-id="{{item.id}}" bindtap="onTapItem">
       <view class="addr-main">
         <view class="addr-top">
           <view class="addr-left">
             <text class="addr-name">{{item.name}}</text>
             <text class="ui-chip" wx:if="{{item.isDefault}}">默认</text>
           </view>
-          <view class="addr-edit" data-id="{{item.id}}" catchtap="onEdit">编辑</view>
+          <view class="addr-edit" data-id="{{item.id}}" catchtap="onEdit" wx:if="{{mode!=='select'}}">编辑</view>
         </view>
         <view class="addr-meta">{{item.phone}}</view>
         <view class="addr-desc">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</view>
+        <view class="addr-actions" wx:if="{{mode!=='select'}}">
+          <view class="ui-btn-ghost" data-id="{{item.id}}" catchtap="onSetDefault" wx:if="{{!item.isDefault}}">设为默认</view>
+          <view class="ui-btn-ghost danger" data-id="{{item.id}}" catchtap="onDelete">删除</view>
+        </view>
       </view>
     </view>
   </scroll-view>
 
   <view class="ui-empty" wx:else>
-    <view class="ui-empty-illus"></view>
+    <image class="addr-empty-illus" src="/assets/images/login/cat.png" mode="aspectFit"></image>
     <text class="ui-empty-title">暂无收货地址</text>
     <text class="ui-empty-desc">添加一个地址，下单更快捷</text>
   </view>

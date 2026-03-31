@@ -1,4 +1,4 @@
-<view class="detail-page" wx:if="{{product}}">
+<view class="detail-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" wx:if="{{product}}">
   <view class="nav-shell" style="padding-top: {{safeTop}}px;">
     <view class="nav-bar">
       <view class="nav-back" bindtap="goBack">‹</view>

@@ -1,23 +1,26 @@
-<view class="service-page">
+<view class="service-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="top-card">
     <image class="top-bg-image" src="/assets/images/shop/问号猫.png" mode="aspectFill"></image>
     <view class="top-content">
       <view class="title">喵！遇到什么问题了吗？让小宠来帮你吧！</view>
       <view class="quick-actions">
-        <view class="quick-btn">如何查询订单状态？</view>
-        <view class="quick-btn">退货流程说明</view>
-        <view class="quick-btn">修改收货地址</view>
+        <block wx:for="{{faqs}}" wx:key="id">
+          <view class="quick-btn" data-q="{{item.q}}" bindtap="tapFaq">{{item.q}}</view>
+        </block>
       </view>
     </view>
   </view>
 
   <view class="card human-card">
     <view class="human-info">
-      <view class="human-title">人工客服</view>
-      <view class="human-sub">工作时间：09:00-21:00</view>
-      <view class="human-sub wait-count">当前等待：3 人</view>
+      <view class="human-title">客服会话</view>
+      <view class="human-sub">智能客服：常见问题秒回</view>
+      <view class="human-sub">人工客服：稍后由管理端回复</view>
     </view>
-    <view class="action human-btn" bindtap="toHuman">转人工客服</view>
+    <view class="actions">
+      <view class="action smart-btn" bindtap="toSmart">进入智能客服</view>
+      <view class="action human-btn" bindtap="toHuman">转人工客服</view>
+    </view>
   </view>
 
   <view class="card contact-card">
@@ -33,9 +36,15 @@
   </view>
 
   <view class="card history-card">
-    <view class="card-title">历史会话</view>
+    <view class="history-header">
+      <view class="card-title">历史会话</view>
+      <view class="history-actions">
+        <view class="history-action danger" wx:if="{{historyAll.length > 0}}" bindtap="cleanupHistory">清理</view>
+        <view class="history-action" wx:if="{{historyAll.length > 5}}" bindtap="toggleHistory">{{showAllHistory ? "收起" : "查看更多"}}</view>
+      </view>
+    </view>
     <block wx:for="{{history}}" wx:key="id">
-      <view class="history-item">
+      <view class="history-item" data-id="{{item.id}}" data-mode="{{item.mode}}" data-started-at="{{item.startedAt}}" bindtap="openHistory">
         <view class="history-left">
           <view class="history-title">{{item.title}}</view>
           <view class="history-status">{{item.status}}</view>
@@ -43,5 +52,6 @@
         <view class="history-time">{{item.time}}</view>
       </view>
     </block>
+    <view class="history-empty" wx:if="{{!history.length}}">暂无历史会话</view>
   </view>
 </view>

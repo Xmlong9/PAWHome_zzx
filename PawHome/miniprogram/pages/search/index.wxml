@@ -1,4 +1,4 @@
-<view class="search-page">
+<view class="search-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <!-- 导航栏 & 搜索框 -->
   <view class="nav-bar" style="padding-top: {{safeTop}}px;">
     <view class="nav-back" bindtap="goBack">
@@ -13,9 +13,17 @@
         focus="{{isFocused}}"
         bindinput="onInput"
         bindconfirm="onSearchConfirm"
+        bindfocus="onFocus"
+        bindblur="onBlur"
         confirm-type="search"
       />
       <view class="clear-icon" wx:if="{{keyword}}" bindtap="onClear">×</view>
+    </view>
+  </view>
+
+  <view class="suggest-dropdown" wx:if="{{showSuggestions && keyword && suggestions.length > 0}}">
+    <view class="suggest-item" wx:for="{{suggestions}}" wx:key="*this" bindtap="onTapSuggestion" data-kw="{{item}}">
+      <text class="suggest-text">{{item}}</text>
     </view>
   </view>
 
@@ -81,13 +89,21 @@
     </block>
 
     <!-- 结果列表 -->
-    <scroll-view scroll-y class="result-list">
+    <scroll-view scroll-y class="result-list" bindscrolltolower="onScrollToLower" lower-threshold="120">
       <block wx:if="{{searchType === 'community'}}">
-        <view class="post-item" wx:for="{{results}}" wx:key="id">
-          <image class="post-img" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="post-item" wx:for="{{results}}" wx:key="id" bindtap="openCommunityItem" data-id="{{item.id}}">
+          <image class="post-img" src="{{item.image || '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
           <view class="post-info">
-            <view class="post-title">{{item.title}}</view>
-            <view class="post-summary">{{item.summary}}</view>
+            <view class="post-title">
+              <block wx:for="{{item.titleSegs}}" wx:key="si" wx:for-item="seg" wx:for-index="si">
+                <text class="{{seg.match ? 'hl' : ''}}">{{seg.text}}</text>
+              </block>
+            </view>
+            <view class="post-summary">
+              <block wx:for="{{item.summarySegs}}" wx:key="si2" wx:for-item="seg" wx:for-index="si2">
+                <text class="{{seg.match ? 'hl' : ''}}">{{seg.text}}</text>
+              </block>
+            </view>
             <view class="post-meta">
               <text>{{item.likes}} 点赞</text>
               <text class="dot">·</text>
@@ -99,17 +115,27 @@
       
       <block wx:if="{{searchType === 'shop'}}">
         <!-- 简单的商店结果 mock -->
-        <view class="shop-item" wx:for="{{results}}" wx:key="id">
-          <image class="shop-img" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="shop-item" wx:for="{{results}}" wx:key="id" bindtap="openShopItem" data-id="{{item.id}}">
+          <image class="shop-img" src="{{item.image || '/assets/images/home/slideshow1@1x.png'}}" mode="aspectFill"></image>
           <view class="shop-info">
-            <view class="shop-title">{{item.title}}</view>
-            <view class="shop-summary">{{item.summary}}</view>
+            <view class="shop-title">
+              <block wx:for="{{item.titleSegs}}" wx:key="si3" wx:for-item="seg" wx:for-index="si3">
+                <text class="{{seg.match ? 'hl' : ''}}">{{seg.text}}</text>
+              </block>
+            </view>
+            <view class="shop-summary">
+              <block wx:for="{{item.summarySegs}}" wx:key="si4" wx:for-item="seg" wx:for-index="si4">
+                <text class="{{seg.match ? 'hl' : ''}}">{{seg.text}}</text>
+              </block>
+            </view>
             <view class="shop-price">{{item.price}}</view>
           </view>
         </view>
       </block>
 
-      <view class="empty-state" wx:if="{{results.length === 0}}">没有找到相关内容</view>
+      <view class="empty-state" wx:if="{{!loading && results.length === 0}}">没有找到相关内容</view>
+      <view class="list-loading" wx:if="{{loading}}">加载中...</view>
+      <view class="list-no-more" wx:if="{{!loading && hasSearched && results.length > 0 && !hasMore}}">没有更多了</view>
     </scroll-view>
   </view>
 

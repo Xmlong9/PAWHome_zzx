@@ -1,6 +1,10 @@
 // community page
 import { getPosts, favoritePost, unfavoritePost, Post } from "../../services/posts";
+import { listConversations } from "../../services/im";
+import { getNotificationUnreadSummary } from "../../services/notifications";
 import { formatTimeAgo } from "../../utils/date";
+import { navigateToWithTransition } from "../../utils/transition";
+import { resolveImageSrc } from "../../utils/mediaCache";
 
 const app = getApp<IAppOption>();
 
@@ -14,7 +18,8 @@ Page({
     pageSize: 10,
     loading: false,
     hasMore: true,
-    showBlob: false
+    showBlob: false,
+    hasUnreadMessage: false
   },
 
   onLoad() {
@@ -27,12 +32,23 @@ Page({
     this.loadPosts(true);
   },
 
-  onShow() {
+  async onShow() {
     this.setData({ showBlob: true });
+    this.startMessageBadgePolling()
+    const needRefresh = wx.getStorageSync("community_need_refresh")
+    if (needRefresh) {
+      wx.setStorageSync("community_need_refresh", false)
+      this.loadPosts(true)
+    }
   },
 
   onHide() {
     this.setData({ showBlob: false });
+    this.stopMessageBadgePolling()
+  },
+
+  onUnload() {
+    this.stopMessageBadgePolling()
   },
 
   onPullDownRefresh() {
@@ -59,11 +75,14 @@ Page({
         timeAgo: formatTimeAgo(post.createdAt)
       }));
 
+      const startIndex = reset ? 0 : this.data.posts.length
       this.setData({
         posts: reset ? newPosts : [...this.data.posts, ...newPosts],
         page,
         hasMore: newPosts.length === this.data.pageSize,
         loading: false
+      }, () => {
+        this.hydratePostsMedia(startIndex)
       });
 
       if (reset) {
@@ -73,6 +92,34 @@ Page({
       console.error(err);
       this.setData({ loading: false });
       wx.showToast({ title: '加载失败', icon: 'none' });
+    }
+  },
+
+  async hydratePostsMedia(startIndex = 0) {
+    const posts = this.data.posts || []
+    const slice = posts.slice(startIndex)
+    const tasks = slice.map((post, i) => this.hydrateOnePostMedia(startIndex + i, post))
+    await Promise.allSettled(tasks)
+  },
+
+  async hydrateOnePostMedia(index: number, post: any) {
+    const updates: Record<string, any> = {}
+    const avatarUrl = post?.user?.avatarUrl
+    if (typeof avatarUrl === "string" && avatarUrl) {
+      const nextAvatar = await resolveImageSrc(avatarUrl)
+      if (nextAvatar && nextAvatar !== avatarUrl) {
+        updates[`posts[${index}].user.avatarUrl`] = nextAvatar
+      }
+    }
+    const firstImage = post?.images?.[0]
+    if (typeof firstImage === "string" && firstImage) {
+      const nextImage = await resolveImageSrc(firstImage)
+      if (nextImage && nextImage !== firstImage) {
+        updates[`posts[${index}].images[0]`] = nextImage
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      this.setData(updates)
     }
   },
 
@@ -96,8 +143,7 @@ Page({
     const isFavorited = !post.isFavorited;
     const favoriteCount = post.favoriteCount || 0;
 
-    // Optimistic update, prevent negative
-    const newCount = isFavorited ? Math.max(0, favoriteCount - 1) : favoriteCount + 1;
+    const newCount = isFavorited ? favoriteCount + 1 : Math.max(0, favoriteCount - 1);
     
     const upFavorited = `posts[${index}].isFavorited`;
     const upCount = `posts[${index}].favoriteCount`;
@@ -124,33 +170,62 @@ Page({
 
   goPostDetail(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({
-      url: `/pages/post-detail/index?id=${id}`
-    });
+    navigateToWithTransition(`/pages/post-detail/index?id=${id}`);
   },
 
   goUserProfile(e: WechatMiniprogram.TouchEvent) {
     const userId = e.currentTarget.dataset.userid;
     if (userId) {
-      wx.navigateTo({
-        url: `/pages/user-profile/index?id=${userId}`
-      });
+      navigateToWithTransition(`/pages/user-profile/index?id=${userId}`);
     }
   },
 
   goCreatePost() {
-    wx.navigateTo({
-      url: '/pages/post-create/index'
-    });
+    navigateToWithTransition('/pages/post-create/index');
   },
 
   onMailTap() {
-    wx.navigateTo({
-      url: '/pages/messages/index'
-    });
+    navigateToWithTransition('/pages/messages/index');
+  },
+
+  startMessageBadgePolling() {
+    const self = this as any
+    if (self._badgeTimer) clearInterval(self._badgeTimer)
+    this.refreshMessageBadge()
+    self._badgeTimer = setInterval(() => {
+      this.refreshMessageBadge()
+    }, 15000)
+  },
+
+  stopMessageBadgePolling() {
+    const self = this as any
+    if (!self._badgeTimer) return
+    clearInterval(self._badgeTimer)
+    self._badgeTimer = null
+  },
+
+  async refreshMessageBadge() {
+    const self = this as any
+    if (self._refreshingBadge) return
+    self._refreshingBadge = true
+    try {
+      const [summary, conversations] = await Promise.all([
+        getNotificationUnreadSummary(),
+        listConversations()
+      ])
+      const dmUnread = conversations.reduce((sum, item) => sum + (item.unreadCount || 0), 0)
+      const total = summary.total + dmUnread
+      this.setData({ hasUnreadMessage: total > 0 })
+      wx.setStorageSync("community_message_unread_total", total)
+    } catch {
+      const cached = Number(wx.getStorageSync("community_message_unread_total") || 0)
+      this.setData({ hasUnreadMessage: cached > 0 })
+    } finally {
+      self._refreshingBadge = false
+    }
   },
 
   goSearch() {
-    wx.navigateTo({ url: "/pages/search/index?type=community" });
+    navigateToWithTransition("/pages/search/index?type=community");
   }
 });

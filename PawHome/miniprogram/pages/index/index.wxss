@@ -40,8 +40,6 @@ page {
   position: absolute;
   top: 0;
   left: 0;
-  /* Reduced gooey filter strength for a more subtle, bubbly merge */
-  filter: url('#goo');
 }
 
 .bg-circle-orange-wrap, .bg-circle-grey-wrap {

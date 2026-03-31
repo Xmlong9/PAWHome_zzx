@@ -31,6 +31,31 @@
   margin-bottom: 24rpx;
 }
 
+.address-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.address-empty-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.address-empty-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.address-empty-desc {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
 .address-left {
   flex: 1;
 }
@@ -189,9 +214,37 @@
   height: 44rpx;
 }
 
+.pay-icon-text {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+}
+
+.pay-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
 .pay-name {
   font-size: 28rpx;
   color: #333;
+}
+
+.pay-desc {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.pay-desc-warn {
+  color: #ff4d4f;
+}
+
+.pay-item-disabled {
+  opacity: 0.6;
 }
 
 .radio-icon {

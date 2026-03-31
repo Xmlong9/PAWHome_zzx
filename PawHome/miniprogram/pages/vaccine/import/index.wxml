@@ -1,0 +1,30 @@
+<view class="page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
+  <view class="section">
+    <view class="section-title">选择导入历史档案</view>
+    <view class="action-row">
+      <view class="action-card" bindtap="pickFromAlbum">
+        <view class="action-title">从相册选择</view>
+        <view class="action-sub">支持从相册选择截图导入</view>
+      </view>
+      <view class="action-card" bindtap="takePhoto">
+        <view class="action-title">拍照扫描</view>
+        <view class="action-sub">对准疫苗本拍照识别</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">最近导入记录</view>
+    <view class="import-card" wx:for="{{imports}}" wx:key="id">
+      <view class="import-left">
+        <view class="import-name">{{item.name}}</view>
+        <view class="import-sub">{{item.time}}</view>
+      </view>
+      <view class="import-status">{{item.status}}</view>
+    </view>
+  </view>
+
+  <view class="bottom-btn" bindtap="startImport">
+    <view class="bottom-btn-text">开始导入</view>
+  </view>
+</view>

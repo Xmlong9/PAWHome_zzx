@@ -1,9 +1,8 @@
 import { request } from "./request";
-
-const MOCK = true;
+import { isAuthMockEnabled } from "./mock";
 
 export function code2Session(code: string) {
-  if (MOCK) {
+  if (isAuthMockEnabled()) {
     return Promise.resolve({
       token: "mock-token-123456",
       openid: "mock-openid-123456"
@@ -17,7 +16,7 @@ export function code2Session(code: string) {
 }
 
 export function sendSms(phone: string) {
-  if (MOCK) {
+  if (isAuthMockEnabled()) {
     return Promise.resolve({ ok: true });
   }
   return request<{ ok: boolean }>({
@@ -28,13 +27,35 @@ export function sendSms(phone: string) {
 }
 
 export function loginSms(phone: string, code: string) {
-  if (MOCK) {
+  if (isAuthMockEnabled()) {
     return Promise.resolve({ token: "mock-token-123456" });
   }
   return request<{ token: string }>({
     url: "/auth/login/sms",
     method: "POST",
     data: { phone, code }
+  });
+}
+
+export function loginPassword(account: string, password: string) {
+  if (isAuthMockEnabled()) {
+    return Promise.resolve({ token: "mock-token-password" });
+  }
+  return request<{ token: string }>({
+    url: "/auth/login/password",
+    method: "POST",
+    data: { account, password }
+  });
+}
+
+export function registerUser(phone: string, password: string, nickname?: string) {
+  if (isAuthMockEnabled()) {
+    return Promise.resolve({ token: "mock-token-register" });
+  }
+  return request<{ token: string }>({
+    url: "/auth/register",
+    method: "POST",
+    data: { phone, password, nickname }
   });
 }
 

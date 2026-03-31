@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <view class="nav-bar" style="padding-top: {{safeAreaTop}}px">
     <view class="nav-inner">
       <view class="nav-left" catchtap="goBack">
@@ -20,15 +20,19 @@
 
   <!-- Scroll Area -->
   <!-- 使用绝对定位和 padding-top 来避免 margin 塌陷或计算误差 -->
-  <scroll-view scroll-y class="scroll-area" enable-flex style="padding-top: {{safeAreaTop + 44}}px;">
+  <scroll-view scroll-y class="scroll-area" enable-flex scroll-into-view="{{scrollIntoView}}" style="padding-top: {{safeAreaTop + 44}}px;">
     
     <view class="tab-content" hidden="{{currentTab !== 'content'}}">
       <view class="post-detail" wx:if="{{post}}">
-        <view class="media-carousel" wx:if="{{post.images && post.images.length > 0}}" style="margin-top: 0;">
-          <swiper class="swiper" bindchange="onSwiperChange">
+        <view class="media-carousel" wx:if="{{post.videoUrl}}" style="margin-top: 0; height: {{mediaHeight}}px; background-color: {{mediaBgColor}};">
+          <video class="swiper-img" src="{{post.videoUrl}}" poster="{{post.images[0]}}" controls show-mute-btn object-fit="contain" style="height: {{mediaHeight}}px; background-color: {{mediaBgColor}};" bindloadedmetadata="onVideoMeta" binderror="onVideoError"></video>
+        </view>
+
+        <view class="media-carousel" wx:if="{{!post.videoUrl && post.images && post.images.length > 0}}" style="margin-top: 0;background-color: {{mediaBgColor}};">
+          <swiper class="swiper" bindchange="onSwiperChange" style="height: {{mediaHeight}}px;">
             <block wx:for="{{post.images}}" wx:key="*this">
               <swiper-item>
-                <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-current="{{item}}"></image>
+                <image class="swiper-img" src="{{item}}" mode="aspectFit" bindtap="previewImage" data-current="{{item}}" data-index="{{index}}" bindload="onImageLoad"></image>
               </swiper-item>
             </block>
           </swiper>
@@ -41,15 +45,25 @@
             <view class="author-info" catchtap="goUserProfile" data-userid="{{post.userId}}">
               <view class="nickname">{{post.user.nickname}}</view>
             </view>
-            <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap">
+            <view class="follow-btn {{post.isFollowed ? 'followed' : ''}}" bindtap="onFollowTap" wx:if="{{!isSelfPost}}">
               {{post.isFollowed ? '已关注' : '+ 关注'}}
+            </view>
+            <view class="manage-btn" bindtap="onPostActionTap">
+              <image class="a-icon" src="/assets/icons/community/ellipsis.svg" mode="aspectFit" style="width: 32rpx; height: 32rpx;"></image>
             </view>
           </view>
 
           <view class="content-text">
             <view class="post-title" wx:if="{{post.title}}">{{post.title}}</view>
             <text class="text" user-select>{{post.content}}</text>
-            <view class="post-time">{{post.timeAgo}}</view>
+            <view class="post-time" wx:if="{{post.location}}">📍 {{post.location}}</view>
+            <view class="post-meta-row">
+              <view class="post-time">{{post.timeAgo}}</view>
+              <view class="post-views" wx:if="{{post.viewCount !== undefined}}">
+                <image class="post-views-icon" src="/assets/icons/community/eye.svg" mode="aspectFit"></image>
+                <text class="post-views-text">{{post.viewCount}}</text>
+              </view>
+            </view>
           </view>
         </view>
         
@@ -98,18 +112,120 @@
       </view>
     </view>
   </view>
+
+  <view class="sheet-mask" wx:if="{{showActionPanel}}" bindtap="closeActionPanel"></view>
+  <view class="sheet-panel {{actionPanelVisible ? 'show' : ''}}" wx:if="{{showActionPanel}}" catchtap="stopPanelTap">
+    <view class="sheet-head">
+      <text class="sheet-title">分享至</text>
+      <text class="sheet-close" bindtap="closeActionPanel">✕</text>
+    </view>
+
+    <view class="sheet-block">
+      <scroll-view class="share-user-scroll" scroll-x enable-flex>
+        <view class="share-users">
+          <block wx:for="{{shareTargets}}" wx:key="id">
+            <view
+              class="share-user {{item.selected?'selected':''}}"
+              bindtap="onToggleShareTarget"
+              data-id="{{item.id}}"
+            >
+              <view class="avatar-wrap" style="position: relative;">
+                <image class="share-user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+                <view class="check-icon" wx:if="{{item.selected}}" style="position: absolute; right: -4rpx; bottom: -4rpx; width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                  <view class="check-icon-inner" style="width: 32rpx; height: 32rpx; border-radius: 50%; background: #FF9E59; display: flex; align-items: center; justify-content: center;">
+                    <text class="check-icon-mark" style="color: #fff; font-size: 22rpx; line-height: 1; font-weight: 700;">✓</text>
+                  </view>
+                </view>
+                <view class="uncheck-icon" wx:else style="position: absolute; right: -4rpx; bottom: -4rpx; width: 44rpx; height: 44rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff;">
+                  <view class="uncheck-circle" style="width: 32rpx; height: 32rpx; border-radius: 50%; border: 2rpx solid #e0e0e0; box-sizing: border-box;"></view>
+                </view>
+              </view>
+              <text class="share-user-name">{{item.nickname}}</text>
+              <text class="share-user-status" wx:if="{{item.group==='mutual'}}">互关好友</text>
+              <text class="share-user-status" wx:elif="{{item.group==='following'}}">关注</text>
+              <text class="share-user-status" wx:else>粉丝</text>
+            </view>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="sheet-block action-block">
+      <scroll-view class="action-scroll" scroll-x enable-flex>
+        <view class="action-list">
+          <button class="action-btn" open-type="share" bindtap="onShareToWxFriend">
+            <view class="action-icon-wrap wechat">
+              <image class="a-icon" src="/assets/icons/community/wechat.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">微信好友</text>
+          </button>
+          <view class="action-btn" bindtap="onShareToTimeline">
+            <view class="action-icon-wrap timeline">
+              <image class="a-icon" src="/assets/icons/community/timeline.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">朋友圈</text>
+          </view>
+          <view class="action-btn" bindtap="onCopyShareLink">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/link.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">复制链接</text>
+          </view>
+          <view class="action-btn" bindtap="onSaveImagesTap">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/download.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">保存图片</text>
+          </view>
+          <view class="action-btn" bindtap="onEditPostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/edit.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">编辑帖子</text>
+          </view>
+          <view class="action-btn" bindtap="onPinPostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap default">
+              <image class="a-icon" src="/assets/icons/community/pin.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text">{{post.isPinned ? '取消置顶' : '置顶帖子'}}</text>
+          </view>
+          <view class="action-btn" bindtap="onDeletePostTap" wx:if="{{isSelfPost}}">
+            <view class="action-icon-wrap danger">
+              <image class="a-icon" src="/assets/icons/community/trash.svg" mode="aspectFit"></image>
+            </view>
+            <text class="action-text danger">删除帖子</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Bottom Actions -->
+    <view class="bottom-actions" wx:if="{{selectedShareIds.length > 0}}">
+      <view class="input-fake">
+        <text class="placeholder">跟朋友说点什么吧.....</text>
+      </view>
+      <view class="send-btns">
+        <view class="btn-single" bindtap="onSendInternalShare">发送</view>
+      </view>
+    </view>
+    
+    <view class="cancel-action" wx:if="{{selectedShareIds.length === 0}}">
+      <view class="cancel-btn" bindtap="closeActionPanel">取消</view>
+    </view>
+  </view>
 </view>
 
 <template name="commentList">
   <view class="comment-list">
     <block wx:for="{{comments}}" wx:key="id">
-      <view class="comment-item">
+      <view class="comment-item" id="c_{{item.id}}">
         <image class="c-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill" catchtap="goUserProfile" data-userid="{{item.userId}}"></image>
         <view class="c-right">
           <view class="c-header" catchtap="goUserProfile" data-userid="{{item.userId}}">
             <text class="c-nickname">{{item.user.nickname}}</text>
           </view>
           <view class="c-content" bindtap="onReplyTap" data-item="{{item}}">
+            <text class="pinned-tag" wx:if="{{item.isPinned}}">置顶</text>
             <text wx:if="{{item.replyTo}}">回复 <text class="reply-target">@{{item.replyTo.nickname}}</text>：</text>{{item.content}}
           </view>
           <view class="c-footer">
@@ -118,6 +234,9 @@
               <view class="c-like" bindtap="onLikeCommentTap" data-index="{{index}}" data-id="{{item.id}}">
                 <image class="icon-img-sm" src="/assets/icons/community/{{item.isLiked ? 'heart-filled' : 'heart'}}.svg" mode="aspectFit"></image>
                 <text wx:if="{{item.likeCount > 0}}">{{item.likeCount}}</text>
+              </view>
+              <view class="c-more" bindtap="onCommentMoreTap" data-item="{{item}}" wx:if="{{item.canDelete || isSelfPost}}">
+                <image class="icon-img-sm" src="/assets/icons/community/ellipsis.svg" mode="aspectFit"></image>
               </view>
             </view>
           </view>

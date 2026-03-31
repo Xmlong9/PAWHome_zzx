@@ -1,4 +1,4 @@
-<view class="fav-page">
+<view class="fav-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <block wx:if="{{list.length > 0}}">
     <view class="post-list">
       <block wx:for="{{list}}" wx:key="id">

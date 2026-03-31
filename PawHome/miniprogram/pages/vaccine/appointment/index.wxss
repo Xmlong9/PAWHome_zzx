@@ -1,0 +1,331 @@
+page {
+  background-color: #FFFFFF;
+}
+
+.page {
+  padding: 24rpx 30rpx 48rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.pet-row {
+  display: flex;
+  gap: 40rpx;
+  padding: 10rpx 0 18rpx 0;
+}
+
+.pet-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120rpx;
+}
+
+.pet-avatar {
+  width: 90rpx;
+  height: 90rpx;
+  border-radius: 50%;
+  background-color: #F2F2F2;
+}
+
+.pet-chip.active .pet-avatar {
+  border: 4rpx solid #333333;
+  box-sizing: border-box;
+}
+
+.pet-name {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #666666;
+  font-weight: 600;
+}
+
+.pet-chip.active .pet-name {
+  color: #111111;
+  font-weight: 700;
+}
+
+.section {
+  margin-top: 18rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #111111;
+  margin-bottom: 18rpx;
+}
+
+.section-title-small {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.vaccine-card {
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 26rpx 24rpx;
+  margin-bottom: 18rpx;
+  border: 2rpx solid transparent;
+}
+
+.vaccine-card.active {
+  background-color: #FFF8F3;
+  border-color: #FF9E5E;
+}
+
+.vaccine-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.vaccine-name {
+  font-size: 30rpx;
+  color: #111111;
+  font-weight: 800;
+}
+
+.vaccine-price {
+  font-size: 30rpx;
+  color: #111111;
+  font-weight: 800;
+}
+
+.vaccine-sub {
+  font-size: 24rpx;
+  color: #999999;
+  margin-bottom: 6rpx;
+}
+
+.map-card {
+  width: 100%;
+  height: 260rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 18rpx;
+  position: relative;
+  background-color: #F2F2F2;
+}
+
+.map-real {
+  width: 100%;
+  height: 100%;
+}
+
+.map-marker {
+  position: relative;
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.marker-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 6rpx rgba(255, 158, 94, 0.45);
+}
+
+.marker-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 158, 94, 0.35);
+  transform: translate(-50%, -50%) scale(1);
+  animation: markerPulse 1400ms ease-out infinite;
+  opacity: 0.9;
+}
+
+.map-marker.active .marker-dot {
+  box-shadow: 0 0 0 8rpx rgba(255, 158, 94, 0.55);
+}
+
+.map-marker.active .marker-pulse {
+  background-color: rgba(255, 158, 94, 0.55);
+}
+
+@keyframes markerPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+  }
+}
+
+.hospital-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.hospital-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  background-color: #EEEEEE;
+  margin-right: 18rpx;
+  flex-shrink: 0;
+}
+
+.hospital-info {
+  flex: 1;
+}
+
+.hospital-name {
+  font-size: 30rpx;
+  color: #111111;
+  font-weight: 800;
+  margin-bottom: 10rpx;
+}
+
+.hospital-sub {
+  font-size: 24rpx;
+  color: #999999;
+  margin-bottom: 6rpx;
+}
+
+.hospital-btn {
+  width: 120rpx;
+  height: 80rpx;
+  background-color: #FF9E5E;
+  color: #111111;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.hospital-btn.active {
+  background-color: #FF9E5E;
+}
+
+.day-row {
+  display: flex;
+  gap: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.day-item {
+  flex: 1;
+  height: 74rpx;
+  background-color: #F7F8FA;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.day-item.active {
+  background-color: #FF9E5E;
+}
+
+.time-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.time-item {
+  width: calc(33.33% - 12rpx);
+  height: 74rpx;
+  background-color: #F7F8FA;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.time-item.active {
+  background-color: #FF9E5E;
+}
+
+.remark-wrap {
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  padding: 20rpx;
+}
+
+.remark-input {
+  width: 100%;
+  height: 140rpx;
+  font-size: 26rpx;
+  color: #111111;
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12rpx;
+}
+
+.fee-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.fee-val {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.fee-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid #EEEEEE;
+}
+
+.fee-total-val {
+  font-size: 28rpx;
+  color: #111111;
+  font-weight: 800;
+}
+
+.page-footer {
+  padding: 32rpx 0 calc(env(safe-area-inset-bottom) + 24rpx);
+}
+
+.bottom-btn {
+  height: 96rpx;
+  background-color: #FF9E5E;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.bottom-btn-text {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #111111;
+}

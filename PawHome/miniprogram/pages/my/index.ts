@@ -1,4 +1,5 @@
 import { getUserProfile, getPetProfile, getPetList, UserProfile, PetProfile } from "../../services/user"
+import { navigateToWithTransition } from "../../utils/transition"
 
 Page({
   data: {
@@ -9,9 +10,12 @@ Page({
   },
   onShow() {
     this.setData({ showBlob: true });
-    if (wx.getStorageSync('petListNeedRefresh')) {
+    const petListNeedRefresh = wx.getStorageSync('petListNeedRefresh')
+    const userProfileNeedRefresh = wx.getStorageSync("userProfileNeedRefresh")
+    if (petListNeedRefresh || userProfileNeedRefresh) {
       this.fetchData();
       wx.removeStorageSync('petListNeedRefresh');
+      wx.removeStorageSync("userProfileNeedRefresh");
     }
   },
   onHide() {
@@ -20,12 +24,22 @@ Page({
   async fetchData() {
     try {
       const userInfo = await getUserProfile()
+      this.setData({ userInfo })
       
       // 如果本地缓存了选中的宠物 ID，则获取指定的，否则获取默认第一个
-      const currentPetId = wx.getStorageSync('currentPetId') || undefined;
-      const petInfo = await getPetProfile(currentPetId);
-      
-      this.setData({ userInfo, petInfo })
+      const raw = wx.getStorageSync('currentPetId');
+      const currentPetId = typeof raw === "string" ? raw : undefined;
+      try {
+        const petInfo = await getPetProfile(currentPetId);
+        this.setData({ petInfo })
+      } catch (e: any) {
+        if (e?.code === "NOT_FOUND") {
+          this.setData({ petInfo: null })
+          wx.removeStorageSync("currentPetId")
+        } else {
+          throw e
+        }
+      }
     } catch (e) {
       console.error(e)
     }
@@ -39,7 +53,7 @@ Page({
     wx.navigateTo({ url: "/pages/my/edit-profile/index" })
   },
   goMyProfile() {
-    wx.navigateTo({ url: "/pages/user-profile/index" })
+    navigateToWithTransition("/pages/user-profile/index")
   },
   goFavorites() {
     wx.navigateTo({ url: "/pages/my/favorites/index" })

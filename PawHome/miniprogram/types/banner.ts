@@ -1,5 +1,5 @@
 export interface BannerItem {
-  id: number
+  id: string
   slot: string
   imageUrl: string
   title?: string
@@ -14,7 +14,7 @@ export interface BannerItem {
 }
 
 export interface CommunityCard {
-  id: number
+  id: string
   imageUrl: string
   title: string
   linkUrl?: string

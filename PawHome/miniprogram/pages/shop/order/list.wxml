@@ -1,4 +1,4 @@
-<view class="order-page">
+<view class="order-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}">
   <scroll-view class="tabs" scroll-x="true" enable-flex>
     <block wx:for="{{tabs}}" wx:key="key">
       <view class="tab {{currentStatus===item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="switchStatus">
@@ -7,9 +7,21 @@
     </block>
   </scroll-view>
 
+  <view class="paid-banner" wx:if="{{showPaidBanner}}">
+    <view class="paid-banner-left">
+      <view class="paid-title">支付成功</view>
+      <view class="paid-desc">订单已更新，去逛逛更多好物</view>
+    </view>
+    <view class="paid-actions">
+      <view class="paid-btn ghost" bindtap="dismissPaidBanner">知道了</view>
+      <view class="paid-btn primary" bindtap="goShopHome">返回商店</view>
+    </view>
+  </view>
+
   <view class="order-list">
     <block wx:for="{{list}}" wx:key="id">
-      <view class="order-card {{highlight===item.id ? 'highlight' : ''}}" data-id="{{item.id}}" bindtap="goToDetail">
+      <view class="order-card-shell {{item.status==='pending_pay' ? 'pending' : ''}}">
+        <view class="order-card {{highlight===item.id ? 'highlight' : ''}}" data-id="{{item.id}}" bindtap="goToDetail">
         <view class="card-header">
           <view class="shop-info">
             <text class="platform-tag">自营</text>
@@ -55,55 +67,57 @@
             </view>
           </view>
         </view>
+        </view>
       </view>
     </block>
   </view>
 
-  <!-- 确认收货半屏弹窗 -->
-  <view class="half-modal {{showConfirmModal ? 'show' : ''}}" catchtouchmove="stopProp">
-    <view class="mask" catchtap="closeConfirmModal"></view>
-    <view class="modal-content">
-      <view class="modal-header">
-        <text class="modal-title">确认收到货了吗</text>
-        <text class="close-btn" catchtap="closeConfirmModal">×</text>
-      </view>
-      
-      <view class="modal-body" wx:if="{{confirmingOrder}}">
-        <view class="confirm-card">
-          <view class="confirm-shop">
-            <view class="check-icon active"></view>
-            <text class="shop-name">PAWHome 官方精选</text>
-            <text class="status-tag">已发货</text>
+</view>
+
+<!-- 确认收货半屏弹窗 -->
+<view wx:if="{{showConfirmModal}}" class="half-modal" catchtouchmove="stopProp">
+  <view class="mask" catchtap="closeConfirmModal"></view>
+  <view class="modal-content {{showConfirmModal ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">确认收到货了吗</text>
+      <text class="close-btn" catchtap="closeConfirmModal">×</text>
+    </view>
+    
+    <view class="modal-body" wx:if="{{confirmingOrder}}">
+      <view class="confirm-card">
+        <view class="confirm-shop">
+          <view class="check-icon active"></view>
+          <text class="shop-name">PAWHome 官方精选</text>
+          <text class="status-tag">已发货</text>
+        </view>
+        
+        <view class="confirm-goods" wx:for="{{confirmingOrder.items}}" wx:key="id" wx:for-item="goods">
+          <image class="goods-thumb" src="{{goods.imageUrl}}" mode="aspectFill"></image>
+          <view class="goods-info">
+            <view class="goods-name">{{goods.name}}</view>
+            <view class="goods-tags"><text class="tag">支持7天无理由</text></view>
           </view>
-          
-          <view class="confirm-goods" wx:for="{{confirmingOrder.items}}" wx:key="id" wx:for-item="goods">
-            <image class="goods-thumb" src="{{goods.imageUrl}}" mode="aspectFill"></image>
-            <view class="goods-info">
-              <view class="goods-name">{{goods.name}}</view>
-              <view class="goods-tags"><text class="tag">支持7天无理由</text></view>
-            </view>
-            <view class="goods-price-box">
-              <view class="goods-price">¥{{goods.price}}</view>
-              <view class="goods-count">x{{goods.count}}</view>
-            </view>
-          </view>
-          
-          <view class="confirm-delivery">
-            <text class="icon">📦</text>
-            <text>商家选择无需物流配送</text>
-          </view>
-          
-          <view class="confirm-total">
-            实付款<text class="price-symbol">¥</text><text class="price-num">{{confirmingOrder.amount}}</text>
+          <view class="goods-price-box">
+            <view class="goods-price">¥{{goods.price}}</view>
+            <view class="goods-count">x{{goods.count}}</view>
           </view>
         </view>
         
-        <view class="confirm-tips">为保障你的售后权益，请确认无误后再确认收货</view>
+        <view class="confirm-delivery">
+          <text class="icon">📦</text>
+          <text>商家选择无需物流配送</text>
+        </view>
+        
+        <view class="confirm-total">
+          实付款<text class="price-symbol">¥</text><text class="price-num">{{confirmingOrder.amount}}</text>
+        </view>
       </view>
       
-      <view class="modal-footer">
-        <view class="confirm-btn" bindtap="submitConfirmReceipt">确认收货</view>
-      </view>
+      <view class="confirm-tips">为保障你的售后权益，请确认无误后再确认收货</view>
+    </view>
+    
+    <view class="modal-footer">
+      <view class="confirm-btn" bindtap="submitConfirmReceipt">确认收货</view>
     </view>
   </view>
 </view>

@@ -1,21 +1,74 @@
-import { getBanners, getCommunityCards } from "../../services/banners";
+import { getCommunityCards } from "../../services/banners";
+import { getBaseUrl } from "../../config/env";
+import { resolveImageSrc } from "../../utils/mediaCache";
+
+const HOME_PUSH_FALLBACK_MEDIA = ["推送1.jpg", "推送2.jpg", "推送3.jpg", "推送4.jpg", "推送5.jpg"]
+
+function getApiOrigin(): string {
+  const base = getBaseUrl()
+  return base.split("/").slice(0, 3).join("/")
+}
+
+function toAbsoluteUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  if (/^data:/i.test(url)) return url
+  if (/^wxfile:\/\//i.test(url)) return url
+  if (url.startsWith("/assets/")) return url
+  const origin = getApiOrigin()
+  if (url.startsWith("/")) return origin + url
+  return origin + "/" + url
+}
+
+function hashString(s: string): number {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  return h >>> 0
+}
+
+function pickHomePushFallbackImageUrl(id: string): string {
+  const origin = getApiOrigin()
+  const idx = HOME_PUSH_FALLBACK_MEDIA.length ? hashString(id) % HOME_PUSH_FALLBACK_MEDIA.length : 0
+  const name = HOME_PUSH_FALLBACK_MEDIA[idx] || ""
+  return `${origin}/media/${encodeURIComponent(name)}`
+}
+
+function getShopBannerUrl(): string {
+  return `${getApiOrigin()}/media/shop_banner.png`
+}
+
+function cacheBustIfNotRelease(url: string): string {
+  try {
+    const v = wx.getAccountInfoSync().miniProgram.envVersion
+    if (v === "release") return url
+  } catch {}
+  const sep = url.includes("?") ? "&" : "?"
+  return `${url}${sep}t=${Date.now()}`
+}
 
 Page({
   data: {
     swiperList: [
-      { src: '/assets/images/home/slideshow1@1x.png' },
-      { src: '/assets/images/home/slideshow1@1x.png' },
-      { src: '/assets/images/home/slideshow1@1x.png' }
+      { id: 0, src: "/assets/images/home/slideshow1@1x.png" },
+      { id: 1, src: "/assets/images/home/slideshow1@1x.png" },
+      { id: 2, src: "/assets/images/home/slideshow1@1x.png" }
     ],
     current: 0,
     indicatorBars: [],
     safeTop: 0,
     promo: null as any,
-    communityCard: null as any,
+    promoFallbackUrl: "",
+    promoLocalFallbackUrl: "/assets/images/home/advertise@1x.png",
+    hotPosts: [] as any[],
     showBlob: false
   },
   onShow() {
     this.setData({ showBlob: true });
+    const need = wx.getStorageSync("community_need_refresh")
+    if (need) {
+      wx.removeStorageSync("community_need_refresh")
+      this.loadHotPosts()
+    }
   },
   onHide() {
     this.setData({ showBlob: false });
@@ -46,11 +99,16 @@ Page({
   goService(){ wx.navigateTo({ url: '/pages/service/index' }); },
   goMy(){ wx.switchTab({ url: '/pages/my/index' }); },
   goHome(){ wx.switchTab({ url: '/pages/home/index' }); },
-  goServiceVaccine(){ wx.navigateTo({ url: '/pages/service/index?type=vaccine' }); },
+  goServiceVaccine(){ wx.navigateTo({ url: '/pages/vaccine/record/index' }); },
   goServiceBeauty(){ wx.navigateTo({ url: '/pages/service/index?type=beauty' }); },
   goServiceMedical(){ wx.navigateTo({ url: '/pages/service/index?type=medical' }); },
   goServiceFoster(){ wx.navigateTo({ url: '/pages/service/index?type=foster' }); }
   ,
+  openHotPost(e: any) {
+    const url = e.currentTarget?.dataset?.url
+    if (!url) return
+    wx.navigateTo({ url })
+  },
   onSwiperChange(e: any){
     this.setData({ current: e.detail.current })
   },
@@ -58,15 +116,35 @@ Page({
     const bars = Array.from({ length: this.data.swiperList.length }, (_, i) => i)
     const info = wx.getSystemInfoSync()
     const safeTop = (info.statusBarHeight || 0) + 8
-    this.setData({ indicatorBars: bars, safeTop })
-    getBanners("home_promo").then(list => {
-      if (list && list.length) this.setData({ promo: list[0] })
-    }).catch(() => {})
-    getBanners("home_community").then(list => {
-      if (list && list.length) this.setData({ communityCard: list[0] })
-    }).catch(() => {})
-    getCommunityCards(1,1).then(list => {
-      if (list && list.length && !this.data.communityCard) this.setData({ communityCard: { imageUrl: list[0].imageUrl, title: list[0].title, badge: list[0].badge } })
+    const shopBanner = cacheBustIfNotRelease(getShopBannerUrl())
+    this.setData({
+      indicatorBars: bars,
+      safeTop,
+      promo: { imageUrl: shopBanner },
+      promoFallbackUrl: shopBanner
+    }, async () => {
+      const banner = await resolveImageSrc(shopBanner)
+      if (banner && banner !== shopBanner) {
+        this.setData({ promo: { imageUrl: banner }, promoFallbackUrl: banner })
+      }
+    })
+    this.loadHotPosts()
+  }
+  ,
+  onPromoError() {
+    this.setData({ promo: null, promoFallbackUrl: this.data.promoLocalFallbackUrl })
+  }
+  ,
+  loadHotPosts() {
+    getCommunityCards(1, 4).then(list => {
+      Promise.resolve().then(async () => {
+        const items = await Promise.all((list || []).map(async (item) => {
+          const raw = item.imageUrl ? item.imageUrl : pickHomePushFallbackImageUrl(String(item.id || ""))
+          const coverUrl = await resolveImageSrc(toAbsoluteUrl(raw))
+          return { ...item, coverUrl }
+        }))
+        this.setData({ hotPosts: items })
+      })
     }).catch(() => {})
   }
 });

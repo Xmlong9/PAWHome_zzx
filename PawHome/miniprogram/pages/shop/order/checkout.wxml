@@ -1,6 +1,14 @@
-<view class="checkout-page" wx:if="{{preview}}">
+<view class="checkout-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" wx:if="{{preview}}">
   <!-- Address Section -->
-  <view class="address-section" wx:if="{{address}}">
+  <view class="address-section" bindtap="goChooseAddress">
+    <view class="address-empty" wx:if="{{!address}}">
+      <view class="address-empty-text">
+        <view class="address-empty-title">请选择收货地址</view>
+        <view class="address-empty-desc">支持地图选点与默认地址</view>
+      </view>
+      <view class="arrow-right">›</view>
+    </view>
+    <block wx:else>
     <view class="address-left">
       <view class="user-info">
         <text class="user-name">{{address.name}}</text>
@@ -12,6 +20,7 @@
       </view>
     </view>
     <view class="arrow-right">›</view>
+    </block>
   </view>
 
   <!-- Goods List -->
@@ -61,6 +70,18 @@
           <text class="pay-name">微信支付</text>
         </view>
         <view class="radio-icon {{payType==='wx' ? 'active' : ''}}"></view>
+      </view>
+      <view class="divider"></view>
+      <view class="pay-item {{preview && walletBalance < preview.payableAmount ? 'pay-item-disabled' : ''}}" data-value="balance" bindtap="choosePayType">
+        <view class="pay-left">
+          <view class="pay-icon-text">💰</view>
+          <view class="pay-name-wrap">
+            <text class="pay-name">余额支付</text>
+            <text class="pay-desc">余额 ¥{{walletBalance}}</text>
+            <text class="pay-desc pay-desc-warn" wx:if="{{preview && walletBalance < preview.payableAmount}}">余额不足</text>
+          </view>
+        </view>
+        <view class="radio-icon {{payType==='balance' ? 'active' : ''}}"></view>
       </view>
       <view class="divider"></view>
       <view class="pay-item" data-value="alipay" bindtap="choosePayType">

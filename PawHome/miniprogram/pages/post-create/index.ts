@@ -1,3 +1,8 @@
+import { createPost } from "../../services/posts"
+import { uploadFile } from "../../services/upload"
+import { getPetList } from "../../services/user"
+import { navigateBackWithTransition } from "../../utils/transition"
+
 Page({
   data: {
     statusBarHeight: 0,
@@ -7,6 +12,11 @@ Page({
     topic: '',
     location: null as { name: string; address: string } | null,
     pet: '',
+    petBreed: '',
+    petRawType: '',
+    petType: "all" as "all" | "cat" | "dog",
+    petTypeText: "不分类",
+    taggedPetType: "" as "" | "cat" | "dog",
     visibility: 'public', // 'public' | 'followers' | 'private'
     visibilityText: '所有人可见'
   },
@@ -20,7 +30,7 @@ Page({
   },
 
   goBack() {
-    wx.navigateBack();
+    navigateBackWithTransition()
   },
 
   switchType(e: WechatMiniprogram.TouchEvent) {
@@ -36,7 +46,7 @@ Page({
 
   chooseMedia() {
     const { postType, mediaList } = this.data;
-    const count = 9 - mediaList.length;
+    const count = postType === "video" ? 1 : 9 - mediaList.length;
     
     if (count <= 0) return;
 
@@ -49,9 +59,12 @@ Page({
       mediaType,
       sourceType: ['album', 'camera'],
       success: (res) => {
-        this.setData({
-          mediaList: [...this.data.mediaList, ...res.tempFiles]
-        });
+        if (postType === "video") {
+          const v = res.tempFiles.find((f: any) => f.fileType === "video")
+          this.setData({ mediaList: v ? [v] : [] })
+          return
+        }
+        this.setData({ mediaList: [...this.data.mediaList, ...res.tempFiles] });
       }
     });
   },
@@ -103,8 +116,61 @@ Page({
     });
   },
 
+  choosePetType() {
+    const options = ["不分类", "猫咪", "狗狗"]
+    const values: Array<"all" | "cat" | "dog"> = ["all", "cat", "dog"]
+    wx.showActionSheet({
+      itemList: options,
+      success: (res) => {
+        this.setData({
+          petType: values[res.tapIndex],
+          petTypeText: options[res.tapIndex]
+        })
+      }
+    })
+  },
+
+  inferPetType(rawType?: string) {
+    if (!rawType) return ""
+    const normalized = String(rawType).toLowerCase()
+    if (normalized.includes("cat") || normalized.includes("猫")) return "cat"
+    if (normalized.includes("dog") || normalized.includes("狗")) return "dog"
+    return ""
+  },
+
   tagPet() {
-    wx.showToast({ title: '宠物标记功能开发中', icon: 'none' });
+    getPetList()
+      .then((pets) => {
+        if (!pets.length) {
+          wx.showModal({
+            title: "暂无宠物",
+            content: "请先完善宠物档案后再标记宠物",
+            confirmText: "去添加",
+            success: (res) => {
+              if (res.confirm) {
+                wx.navigateTo({ url: "/pages/my/settings/pets/add/index" })
+              }
+            }
+          })
+          return
+        }
+        const names = pets.map((p) => p.name)
+        wx.showActionSheet({
+          itemList: names,
+          success: (res) => {
+            const selected = pets[res.tapIndex]
+            this.setData({
+              pet: selected.name,
+              petBreed: (selected as any)?.breed ? String((selected as any).breed) : "",
+              petRawType: (selected as any)?.type ? String((selected as any).type) : "",
+              taggedPetType: this.inferPetType((selected as any).type)
+            })
+          }
+        })
+      })
+      .catch(() => {
+        wx.showToast({ title: "宠物列表加载失败", icon: "none" })
+      })
   },
 
   chooseVisibility() {
@@ -123,20 +189,88 @@ Page({
   },
 
   publish() {
-    if (!this.data.content && this.data.mediaList.length === 0) {
+    const baseContent = (this.data.content || "").trim()
+    const baseTopic = (this.data.topic || "").trim()
+    const finalType = this.data.taggedPetType || this.data.petType || "all"
+    const typeTag = finalType === "cat" ? "#猫咪" : finalType === "dog" ? "#狗狗" : ""
+    const breedTagRaw = (this.data.petBreed || "").trim()
+    const breedTag = breedTagRaw ? `#${breedTagRaw}` : ""
+    const rawTypeTag = !typeTag && (this.data.petRawType || "").trim() ? `#${String(this.data.petRawType).trim()}` : ""
+
+    const combined = `${baseContent} ${baseTopic}`.trim()
+    const hasTag = (tag: string) => (tag ? combined.includes(tag) : false)
+
+    const contentParts = [
+      baseContent,
+      baseTopic,
+      !hasTag(typeTag) ? typeTag : "",
+      !hasTag(rawTypeTag) ? rawTypeTag : "",
+      !hasTag(breedTag) ? breedTag : ""
+    ].filter(Boolean)
+    const finalContent = contentParts.join(" ").trim()
+
+    if (!finalContent && this.data.mediaList.length === 0) {
       wx.showToast({ title: '请输入内容或上传图片', icon: 'none' });
       return;
     }
 
     wx.showLoading({ title: '发布中...' });
 
-    // Mock publish
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({ title: '发布成功' });
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1500);
-    }, 1500);
+    Promise.resolve()
+      .then(async () => {
+        if (this.data.postType === "video") {
+          const video = this.data.mediaList.find((m: any) => m.fileType === "video")
+          if (!video?.tempFilePath) {
+            wx.hideLoading()
+            wx.showToast({ title: "请选择视频", icon: "none" })
+            throw new Error("video required")
+          }
+          const videoUrl = await uploadFile(video.tempFilePath)
+          const coverPath = (video as any).thumbTempFilePath
+          const coverUrl = typeof coverPath === "string" && coverPath ? await uploadFile(coverPath) : undefined
+          await createPost({
+            content: finalContent,
+            videoUrl,
+            coverUrl,
+            location: this.data.location?.name,
+            visibility: this.data.visibility,
+            type: finalType
+          })
+          return
+        }
+
+        const imagePaths = this.data.mediaList
+          .filter((m: any) => m.fileType === "image")
+          .map((m: any) => m.tempFilePath)
+        const imageUrls: string[] = []
+        for (const p of imagePaths) {
+          imageUrls.push(await uploadFile(p))
+        }
+        await createPost({
+          content: finalContent,
+          images: imageUrls,
+          location: this.data.location?.name,
+          visibility: this.data.visibility,
+          type: finalType
+        })
+      })
+      .then(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '发布成功' });
+        setTimeout(() => {
+          wx.setStorageSync("community_need_refresh", true)
+          wx.navigateBack({
+            delta: 1,
+            fail: () => {
+              wx.switchTab({ url: "/pages/community/index" })
+            }
+          });
+        }, 800);
+      })
+      .catch((e) => {
+        console.error(e)
+        wx.hideLoading();
+        wx.showToast({ title: '发布失败', icon: 'none' });
+      })
   }
 });

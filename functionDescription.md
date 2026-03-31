@@ -1990,6 +1990,50 @@
 
 ---
 
+## 商城订单页确认收货弹层显示
+
+**目的**
+- 修复订单列表页点击“确认收货”后只出现遮罩、底部弹层内容不可见的问题，保证用户能正常完成确认操作。
+
+**入口**
+- 订单列表页：`/pages/shop/order/list`
+- 点击待收货订单卡片底部的“确认收货”按钮触发。
+
+**数据流/状态**
+- `showConfirmModal`：控制确认收货弹层是否挂载。
+- `confirmingOrder`：保存当前正在确认收货的订单，用于渲染弹层中的商品与金额信息。
+
+**关键分支**
+- 点击“确认收货”时，`onConfirmReceipt` 根据 `id` 找到订单并写入 `showConfirmModal=true`、`confirmingOrder=order`。
+- 弹层结构改为在 `showConfirmModal=true` 时才渲染，同时给 `.modal-content` 直接绑定 `show` 类，避免仅依赖父节点状态选择器导致面板未进场。
+- 弹层样式改为与项目内其它底部 Sheet 一致的固定定位模式：遮罩和面板分别固定在视口上，面板通过 `.modal-content.show` 从底部滑入。
+- 点击“确认收货”按钮后调用 `confirmOrderReceipt(order.id)`，成功后关闭弹层并刷新订单列表。
+
+**边界条件**
+- 当未找到目标订单时，不会打开弹层。
+- 当 `confirmingOrder` 为空时，不渲染订单内容区域，避免空数据报错。
+- 弹层关闭后节点会被卸载，不会留下不可见但仍占层级的遮罩。
+
+**相关文件**
+- `PawHome/miniprogram/pages/shop/order/list.wxml`
+- `PawHome/miniprogram/pages/shop/order/list.wxss`
+- `PawHome/miniprogram/pages/shop/order/list.ts`
+- `PawHome/miniprogram/utils/orderConfirmModal.test.ts`
+
+### 变更 2026-04-01：弹层移出页面容器，避免定位到整页底部
+
+**问题现象**
+- 订单列表滚动较长时，点击上方订单的“确认收货”，遮罩会出现，但弹层内容跑到整页最底部，当前视口看不到。
+
+**根因**
+- 页面根节点使用了全局转场类 `paw-route`，该类持续带有 `transform`。
+- 确认收货弹层原本挂在 `paw-route` 容器内部，`position: fixed` 会受这个父层影响，实际相对页面容器定位，而不是相对视口定位。
+
+**修复方案**
+- 将确认收货弹层整体从 `.order-page.paw-route` 内部移到同级节点。
+- 保留现有遮罩与面板动画，但让 fixed 定位脱离带 transform 的页面容器。
+- 增加结构回归测试，约束弹层必须与页面根容器同级，避免后续再次回退。
+
 ### 变更 2026-03-31：启动页背景图加载失败兜底（devtools 默认 BASE_URL）
 
 **问题现象**

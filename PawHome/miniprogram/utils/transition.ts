@@ -33,9 +33,15 @@ export function enterPageTransition(page: any) {
 
 export function reenterPageIfNeeded(page: any) {
   const need = wx.getStorageSync(REENTER_KEY)
-  if (!need) return
-  wx.removeStorageSync(REENTER_KEY)
-  enterPageTransition(page)
+  if (need) {
+    wx.removeStorageSync(REENTER_KEY)
+    enterPageTransition(page)
+    return
+  }
+  const d = page?.data
+  if (d && d.pageMounted && (d.pageVisible === false || d.pageLeaving === true)) {
+    enterPageTransition(page)
+  }
 }
 
 export function navigateToWithTransition(url: string) {

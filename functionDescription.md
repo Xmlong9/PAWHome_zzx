@@ -1838,6 +1838,21 @@
 - `PawHome/miniprogram/pages/cart/index.wxml`
 - `PawHome/miniprogram/pages/search/index.wxml`
 
+### 变更 2026-03-31：多层返回白屏兜底复位
+
+**问题现象**
+- 页面跳转层级较深时（如 社区 → 帖子 → 个人主页），点击返回回到上一层页面出现空白，但再返回到更上一层又正常。
+
+**根因**
+- `navigateToWithTransition*` 会在离场前把“当前页”置为 `pageVisible=false`（使其 `paw-route` 变为不可见）。
+- 若返回动作不是通过 `navigateBackWithTransition*`（例如系统左上角返回/手势返回/直接 `wx.navigateBack()`），不会写入 re-enter 标记，上一页 `onShow` 不会触发复位，从而持续不可见表现为白屏。
+
+**修复方案**
+- 在 `reenterPageIfNeeded` 内增加兜底：当页面处于 `pageMounted=true` 且 `pageVisible=false`（或 `pageLeaving=true`）时，即使没有 re-enter 标记也强制执行 `enterPageTransition` 复位可见性，覆盖系统返回与手势返回路径。
+
+**相关文件**
+- `PawHome/miniprogram/utils/transition.ts`
+
 ---
 
 ## 底部弹窗 Sheet 动效（挂载/显隐分离）

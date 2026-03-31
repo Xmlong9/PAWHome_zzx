@@ -1,5 +1,6 @@
 import { searchCommunity, searchShop } from "../../services/search"
 import { debounce } from "../../utils/debounce"
+import { resolveImageSrc } from "../../utils/mediaCache"
 import { getSearchCache, makeSearchCacheKey, setSearchCache } from "../../utils/searchCache"
 import { navigateBackWithTransition } from "../../utils/transition"
 
@@ -187,22 +188,14 @@ Page({
         if (reset && page === 1) {
           const cached = getSearchCache<any>(cacheKey, 24 * 60 * 60 * 1000)
           if (cached && Array.isArray(cached.list)) {
-            const mapped = cached.list.map((r: any) => this.mapShopResult(r, kw))
+            const mapped = await Promise.all(cached.list.map((r: any) => this.mapShopResult(r, kw)))
             this.setData({ results: mapped, page: 1, hasMore: mapped.length === pageSize })
           }
         }
 
         const res = await searchShop(kw, page, pageSize)
         if (this.data.requestSeq !== seq) return
-        const results = res.list.map((r) => ({
-          id: r.id,
-          title: r.title,
-          summary: r.summary,
-          titleSegs: this.highlightSegs(r.title, kw),
-          summarySegs: this.highlightSegs(r.summary, kw),
-          image: r.image,
-          price: `¥ ${(r.price ?? 0).toFixed(2)}`
-        }))
+        const results = await Promise.all(res.list.map((r) => this.mapShopResult(r, kw)))
         const next = reset ? results : [...this.data.results, ...results]
         this.setData({ results: next, page, hasMore: results.length === pageSize })
         if (reset && page === 1) setSearchCache(cacheKey, res, 50)
@@ -327,14 +320,14 @@ Page({
     }
   },
 
-  mapShopResult(r: any, kw: string) {
+  async mapShopResult(r: any, kw: string) {
     return {
       id: r.id,
       title: r.title,
       summary: r.summary,
       titleSegs: this.highlightSegs(r.title, kw),
       summarySegs: this.highlightSegs(r.summary, kw),
-      image: r.image,
+      image: await resolveImageSrc(r.image),
       price: `¥ ${(r.price ?? 0).toFixed(2)}`
     }
   }

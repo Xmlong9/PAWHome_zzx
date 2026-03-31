@@ -42,6 +42,28 @@ function isBypassUrl(url: string): boolean {
   return false
 }
 
+export function getLocalMediaFallback(src: string): string {
+  if (typeof src !== "string" || !src.trim()) return ""
+  const raw = src.trim()
+  const normalized = normalizeBackendUrl(raw)
+  const path = normalized.replace(/^https?:\/\/[^/]+/i, "")
+  if (!path.startsWith("/media/")) return ""
+  const name = decodeURIComponent(path.slice("/media/".length))
+  if (/^prod_(\d+)\.jpg$/i.test(name)) {
+    const matched = name.match(/^prod_(\d+)\.jpg$/i)
+    const num = Number(matched?.[1] || 1)
+    const fallbackIndex = ((Math.max(1, num) - 1) % 4) + 1
+    return `/assets/images/shop/商品${fallbackIndex}.jpg`
+  }
+  if (name === "shop_banner.png") {
+    return "/assets/images/home/advertise@1x.png"
+  }
+  if (/^推送[1-5]\.jpg$/i.test(name)) {
+    return "/assets/images/home/slideshow1@1x.png"
+  }
+  return "/assets/images/shop/问号猫.png"
+}
+
 function hashKey(input: string): string {
   let h = 5381
   for (let i = 0; i < input.length; i++) {
@@ -124,7 +146,7 @@ export async function resolveImageSrc(src: string): Promise<string> {
 
   const p = (async () => {
     const dl = await downloadToTemp(url)
-    if (!dl.ok || !dl.tempFilePath) return url
+    if (!dl.ok || !dl.tempFilePath) return getLocalMediaFallback(url) || url
     const saved = await saveTempFile(dl.tempFilePath)
     const finalPath = saved || dl.tempFilePath
     MEM.set(url, finalPath)

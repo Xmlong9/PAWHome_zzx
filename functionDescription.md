@@ -2034,6 +2034,74 @@
 - 保留现有遮罩与面板动画，但让 fixed 定位脱离带 transform 的页面容器。
 - 增加结构回归测试，约束弹层必须与页面根容器同级，避免后续再次回退。
 
+## 图片媒体资源加载兜底
+
+**目的**
+- 解决主页、社区、商店等页面依赖 `/media/...` 时，因本地后端媒体文件缺失导致图片全部加载失败的问题。
+
+**入口**
+- 所有经 `resolveImageSrc` 处理的图片地址。
+- 典型页面包括主页热帖与横幅、社区帖子封面、商店商品图。
+
+**数据流/状态**
+- 小程序先把相对图片地址归一化为后端媒体 URL。
+- 若下载成功，缓存为本地文件路径继续渲染。
+- 若下载失败，改走包内静态兜底图，避免页面出现大面积空白或报错。
+
+**关键分支**
+- `/media/prod_XX.jpg`：回退到商店内置商品图。
+- `/media/shop_banner.png`：回退到首页本地横幅图。
+- `/media/推送1.jpg ~ 推送5.jpg`：回退到首页轮播占位图。
+- 其他 `/media/...`：统一回退到商店通用占位图。
+
+**边界条件**
+- `/assets/`、`wxfile://`、`data:` 等本地可用路径不走兜底逻辑。
+- 只有网络下载失败时才启用兜底，不影响原本可访问的真实图片。
+
+**相关文件**
+- `PawHome/miniprogram/utils/mediaCache.ts`
+- `PawHome/miniprogram/utils/mediaCache.test.ts`
+
+### 变更 2026-04-01：商店搜索结果接入图片兜底链路
+
+**问题现象**
+- 商店搜索结果列表中的商品图片仍直接请求 `/media/prod_XX.jpg`，本地后端缺少媒体文件时会报 500，搜索结果只显示灰色占位块。
+
+**根因**
+- 搜索页的商店分支没有复用商城商品列表的图片处理流程。
+- 搜索结果在 `setData` 前直接透传接口返回的 `image` 字段，没有经过 `resolveImageSrc`，因此不会触发本地兜底图逻辑。
+
+**修复方案**
+- 搜索页引入 `resolveImageSrc`。
+- 商店搜索结果在渲染前统一异步处理图片地址，缓存命中和实时搜索结果都走同一套图片兜底链路。
+- 增加结构测试，约束商店搜索结果必须在映射阶段调用 `resolveImageSrc`。
+
+**相关文件**
+- `PawHome/miniprogram/pages/search/index.ts`
+- `PawHome/miniprogram/utils/searchPageMedia.test.ts`
+
+## 智能客服昵称文案
+
+**目的**
+- 统一智能客服的人设称呼，将默认欢迎语里的“小蜜”替换为“小宠”。
+
+**入口**
+- 商城客服聊天页：`/pages/shop/customer-service-chat/index`
+
+**数据流/状态**
+- 本次只修改聊天页静态欢迎语文案，不影响会话、消息、FAQ 或 AI 回答逻辑。
+
+**关键分支**
+- 首条欢迎语从“我是智能小蜜”改为“我是智能小宠”。
+- 第二条引导语从“向小蜜咨询”改为“向小宠咨询”。
+
+**边界条件**
+- 仅修改默认展示文案；历史消息记录不会自动改写。
+
+**相关文件**
+- `PawHome/miniprogram/pages/shop/customer-service-chat/index.wxml`
+- `PawHome/miniprogram/utils/customerServiceCopy.test.ts`
+
 ### 变更 2026-03-31：启动页背景图加载失败兜底（devtools 默认 BASE_URL）
 
 **问题现象**

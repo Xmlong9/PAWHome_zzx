@@ -5,15 +5,26 @@ function getApiOrigin(): string {
   return base.split("/").slice(0, 3).join("/")
 }
 
+function cacheBustIfNotRelease(url: string): string {
+  try {
+    const v = wx.getAccountInfoSync().miniProgram.envVersion
+    if (v === "release") return url
+  } catch {}
+  const sep = url.includes("?") ? "&" : "?"
+  return `${url}${sep}t=${Date.now()}`
+}
+
 Page({
   data: {
     countdown: 3,
     timer: null as any,
-    bgUrl: ""
+    bgUrl: "",
+    bgFallbackUsed: false
   },
 
   onLoad() {
-    this.setData({ bgUrl: `${getApiOrigin()}/media/splash-bg.png` })
+    const url = `${getApiOrigin()}/media/splash-bg.png`
+    this.setData({ bgUrl: cacheBustIfNotRelease(url) })
     this.startTimer();
   },
 
@@ -51,6 +62,11 @@ Page({
   onSkip() {
     this.clearTimer();
     this.goToLogin();
+  },
+
+  onBgError() {
+    if (this.data.bgFallbackUsed) return
+    this.setData({ bgUrl: "/assets/images/home/slideshow1@1x.png", bgFallbackUsed: true })
   },
 
   goToLogin() {

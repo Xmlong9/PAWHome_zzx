@@ -1,4 +1,13 @@
-export const DEFAULT_BASE_URL = "http://172.20.10.4:5001/api/v1";
+function defaultBaseUrl(): string {
+  try {
+    const sys = wx.getSystemInfoSync()
+    if (sys?.platform === "devtools") return "http://127.0.0.1:5001/api/v1"
+  } catch {
+  }
+  return "http://172.20.10.4:5001/api/v1"
+}
+
+export const DEFAULT_BASE_URL = defaultBaseUrl();
 
 export function getBaseUrl(): string {
   try {

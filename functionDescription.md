@@ -1987,3 +1987,22 @@
 **相关文件**
 - `PawHome/miniprogram/services/request.ts`
 - `PawHome/miniprogram/config/env.ts`
+
+---
+
+### 变更 2026-03-31：启动页背景图加载失败兜底（devtools 默认 BASE_URL）
+
+**问题现象**
+- 启动页 `pages/splash/index` 背景图请求失败，报 `net::ERR_CONNECTION_REFUSED`，页面背景空白。
+
+**根因**
+- `config/env.ts` 的默认 `DEFAULT_BASE_URL` 写死为特定局域网 IP；在开发者工具环境中该地址不一定可达，导致拼出的 `/media/splash-bg.png` 直接连接失败。
+- 启动页图片没有 `binderror` 兜底，网络失败时不会切换本地占位图。
+
+**修复方案**
+- `DEFAULT_BASE_URL` 按运行平台区分：devtools 默认使用 `127.0.0.1`，避免本机联调被固定 IP 阻断。
+- 启动页背景图增加 `binderror`：加载失败时切换到包内占位图，避免启动页空白；同时非 release 环境增加时间戳参数避免缓存旧图。
+
+**相关文件**
+- `PawHome/miniprogram/config/env.ts`
+- `PawHome/miniprogram/pages/splash/index.(ts|wxml)`

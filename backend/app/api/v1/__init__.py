@@ -16,6 +16,7 @@ from .shop import register_routes as _register_shop_routes
 from .uploads import register_routes as _register_upload_routes
 from .users import register_routes as _register_user_routes
 from .vaccines import register_routes as _register_vaccine_routes
+from .admin import register_routes as _register_admin_routes
 
 _register_auth_routes(api_v1_bp)
 _register_feed_routes(api_v1_bp)
@@ -29,3 +30,4 @@ _register_service_routes(api_v1_bp)
 _register_vaccine_routes(api_v1_bp)
 _register_shop_routes(api_v1_bp)
 _register_upload_routes(api_v1_bp)
+_register_admin_routes(api_v1_bp)

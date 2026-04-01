@@ -565,3 +565,67 @@ class IMMessage(db.Model, TimestampMixin):
     sender_id = db.Column(db.String(36), db.ForeignKey("users.id"), index=True, nullable=False)
     message_type = db.Column(db.String(32), default="text", nullable=False)
     content = db.Column(db.Text, nullable=False)
+
+
+# ==============================================================================
+# Admin Panel Models
+# ==============================================================================
+
+class AdminRole(db.Model, TimestampMixin):
+    __tablename__ = "admin_roles"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    description = db.Column(db.String(256), nullable=True)
+
+
+class RolePermission(db.Model, TimestampMixin):
+    __tablename__ = "role_permissions"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    role_id = db.Column(db.String(36), db.ForeignKey("admin_roles.id"), index=True, nullable=False)
+    permission = db.Column(db.String(128), index=True, nullable=False)
+
+
+class AdminUser(db.Model, TimestampMixin):
+    __tablename__ = "admin_users"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    username = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(64), nullable=True)
+    role_id = db.Column(db.String(36), db.ForeignKey("admin_roles.id"), index=True, nullable=False)
+    status = db.Column(db.String(32), default="active", nullable=False)
+
+
+class AdminLog(db.Model, TimestampMixin):
+    __tablename__ = "admin_logs"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    admin_id = db.Column(db.String(36), db.ForeignKey("admin_users.id"), index=True, nullable=False)
+    action = db.Column(db.String(128), nullable=False)
+    target_type = db.Column(db.String(64), nullable=True)
+    target_id = db.Column(db.String(36), nullable=True)
+    ip = db.Column(db.String(64), nullable=True)
+    user_agent = db.Column(db.String(512), nullable=True)
+
+    __table_args__ = (
+        Index("ix_admin_logs_admin_created", "admin_id", "created_at"),
+    )
+
+
+class AdminSession(db.Model, TimestampMixin):
+    __tablename__ = "admin_sessions"
+
+    token = db.Column(db.String(64), primary_key=True)
+    admin_id = db.Column(db.String(36), db.ForeignKey("admin_users.id"), index=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+class SystemConfig(db.Model, TimestampMixin):
+    __tablename__ = "system_configs"
+
+    id = db.Column(db.String(36), primary_key=True, default=_uuid)
+    config_key = db.Column(db.String(128), unique=True, index=True, nullable=False)
+    config_value = db.Column(db.Text, nullable=True)
+    description = db.Column(db.String(256), nullable=True)
+

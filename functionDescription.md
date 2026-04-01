@@ -2165,5 +2165,34 @@
 - 如果用户未登记宠物，系统提示词也会附加用户当前尚未登记宠物信息的说明。
 
 **相关文件**
-- 后端：\ackend/app/api/v1/shop.py\
+- 后端：\backend/app/api/v1/shop.py\
+
+---
+
+## 管理端数据看板-营收统计与趋势图（按已支付订单）
+
+**目的**
+- 管理端「数据看板」展示“总营收/今日营收”以及“近 7 天营收与订单趋势”图表，口径与商城订单状态一致。
+
+**入口**
+- 管理端页面：`/dashboard`
+- 接口：`GET /api/v1/admin/dashboard/stats`
+
+**数据流/状态**
+- 前端 `Dashboard.vue` 请求 `GET /api/v1/admin/dashboard/stats`，并将 `data.charts.revenueTrend / orderTrend / dates` 映射到 ECharts 柱状图+折线图。
+- 后端统计基于 `shop_orders`（`ShopOrder.total_cents`）做聚合，营收单位为分，前端展示时换算为元。
+
+**关键分支**
+- 营收口径：使用“已支付订单状态集合”统计营收，而不是依赖单一状态值。
+  - 兼容集合：`completed/done/shipping/shipped/pending_ship`
+  - 总营收：`status in paid_statuses` 的订单金额求和
+  - 近 7 天营收趋势：按天过滤订单后，仅对 `status in paid_statuses` 的订单金额求和
+
+**边界条件**
+- 若某天无已支付订单，则该天 `revenueTrend` 为 `0`，图表柱状条高度为 0（可能视觉上接近“没有柱子”）。
+- 订单状态枚举若调整，需要同步更新“已支付状态集合”，避免营收被统计为 0。
+
+**相关文件**
+- 管理端：`admin-panel/src/views/Dashboard.vue`
+- 后端：`backend/app/api/v1/admin/dashboard.py`
 

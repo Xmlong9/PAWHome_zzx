@@ -1,0 +1,637 @@
+# 爱宠家管理端系统设计图
+
+---
+
+## 1. 系统整体架构图
+
+```mermaid
+graph TB
+    subgraph "客户端层"
+        A[小程序用户端]
+        B[管理端浏览器]
+    end
+    
+    subgraph "接入层"
+        C[Nginx反向代理]
+    end
+    
+    subgraph "应用层"
+        D[管理端前端静态资源]
+        E[Flask后端服务]
+    end
+    
+    subgraph "服务层"
+        F[认证服务]
+        G[用户服务]
+        H[内容服务]
+        I[商城服务]
+        J[服务管理服务]
+        K[系统服务]
+    end
+    
+    subgraph "数据层"
+        L[(MySQL数据库)]
+        M[(Redis缓存)]
+    end
+    
+    A -->|HTTP/HTTPS| C
+    B -->|HTTPS| C
+    C -->|静态资源| D
+    C -->|API请求| E
+    E --> F
+    E --> G
+    E --> H
+    E --> I
+    E --> J
+    E --> K
+    F --> L
+    G --> L
+    H --> L
+    I --> L
+    J --> L
+    K --> L
+    E --> M
+```
+
+---
+
+## 2. 前端架构图
+
+```mermaid
+graph TB
+    subgraph "页面层"
+        A[登录页]
+        B[仪表盘]
+        C[用户管理]
+        D[内容管理]
+        E[商城管理]
+        F[服务管理]
+        G[系统设置]
+    end
+    
+    subgraph "组件层"
+        H[布局组件]
+        I[表格组件]
+        J[表单组件]
+        K[图表组件]
+    end
+    
+    subgraph "服务层"
+        L[API服务]
+        M[认证服务]
+    end
+    
+    subgraph "状态层"
+        N[Redux Store]
+    end
+    
+    subgraph "工具层"
+        O[工具函数]
+        P[请求封装]
+    end
+    
+    A --> L
+    B --> L
+    C --> L
+    D --> L
+    E --> L
+    F --> L
+    G --> L
+    
+    B --> K
+    C --> I
+    C --> J
+    D --> I
+    D --> J
+    E --> I
+    E --> J
+    F --> I
+    F --> J
+    G --> J
+    
+    L --> M
+    L --> P
+    M --> N
+    P --> O
+```
+
+---
+
+## 3. 后端架构图
+
+```mermaid
+graph TB
+    subgraph "API层"
+        A[认证API]
+        B[用户API]
+        C[内容API]
+        D[商城API]
+        E[服务API]
+        F[系统API]
+    end
+    
+    subgraph "中间件层"
+        G[JWT认证]
+        H[权限验证]
+        I[日志记录]
+        J[错误处理]
+    end
+    
+    subgraph "业务层"
+        K[认证服务]
+        L[用户服务]
+        M[内容服务]
+        N[商城服务]
+        O[服务服务]
+        P[系统服务]
+    end
+    
+    subgraph "数据层"
+        Q[数据模型]
+        R[数据库操作]
+    end
+    
+    A --> G
+    B --> G
+    C --> G
+    D --> G
+    E --> G
+    F --> G
+    
+    G --> H
+    H --> I
+    I --> J
+    
+    A --> K
+    B --> L
+    C --> M
+    D --> N
+    E --> O
+    F --> P
+    
+    K --> Q
+    L --> Q
+    M --> Q
+    N --> Q
+    O --> Q
+    P --> Q
+    
+    Q --> R
+```
+
+---
+
+## 4. 用户注册登录流程图
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant W as 微信
+    participant A as 小程序
+    participant B as 后端
+    participant D as 数据库
+    
+    U->>A: 点击登录
+    alt 微信登录
+        A->>W: 获取code
+        W-->>A: 返回code
+        A->>B: 发送code
+        B->>W: 验证code获取openid
+        W-->>B: 返回openid
+        alt 新用户
+            B->>D: 创建用户记录
+            D-->>B: 确认
+        else 老用户
+            B->>D: 查询用户信息
+            D-->>B: 返回用户信息
+        end
+    else 手机号登录
+        A->>B: 发送手机号+验证码
+        B->>D: 验证验证码
+        D-->>B: 验证结果
+        alt 新用户
+            B->>D: 创建用户记录
+            D-->>B: 确认
+        else 老用户
+            B->>D: 查询用户信息
+            D-->>B: 返回用户信息
+        end
+    end
+    B->>B: 生成JWT Token
+    B-->>A: 返回Token和用户信息
+    A->>A: 保存Token
+    A-->>U: 登录成功
+```
+
+---
+
+## 5. 订单创建流程图
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant A as 小程序
+    participant B as 后端
+    participant D as 数据库
+    
+    U->>A: 选择商品加入购物车
+    A->>B: 添加购物车请求
+    B->>D: 保存购物车项
+    D-->>B: 确认
+    B-->>A: 成功
+    
+    U->>A: 进入购物车结算
+    A->>B: 获取购物车列表
+    B->>D: 查询购物车
+    D-->>B: 返回购物车数据
+    B-->>A: 返回购物车
+    
+    U->>A: 选择收货地址
+    U->>A: 选择支付方式
+    U->>A: 提交订单
+    A->>B: 创建订单请求
+    B->>D: 校验库存
+    D-->>B: 库存状态
+    alt 库存充足
+        B->>D: 创建订单记录
+        B->>D: 创建订单项
+        B->>D: 扣减库存
+        B->>D: 清空购物车
+        D-->>B: 全部确认
+        B-->>A: 返回订单信息
+        A-->>U: 订单创建成功，待支付
+    else 库存不足
+        B-->>A: 返回库存不足
+        A-->>U: 提示库存不足
+    end
+```
+
+---
+
+## 6. 服务预约流程图
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant A as 小程序
+    participant B as 后端
+    participant D as 数据库
+    
+    U->>A: 选择服务类型
+    A->>B: 获取服务提供商列表
+    B->>D: 查询服务提供商
+    D-->>B: 返回列表
+    B-->>A: 返回列表
+    
+    U->>A: 选择服务提供商
+    A->>B: 获取服务项目
+    B->>D: 查询服务项目
+    D-->>B: 返回
+    B-->>A: 返回
+    
+    U->>A: 选择服务项目
+    U->>A: 选择时间槽
+    U->>A: 选择宠物
+    U->>A: 填写联系信息
+    U->>A: 提交预约
+    A->>B: 创建预约请求
+    B->>D: 校验时间槽可用性
+    D-->>B: 可用状态
+    alt 时间槽可用
+        B->>D: 创建预约记录
+        B->>D: 更新时间槽预约数
+        D-->>B: 确认
+        B-->>A: 返回预约信息
+        A-->>U: 预约成功
+    else 时间槽不可用
+        B-->>A: 返回不可用
+        A-->>U: 提示时间已被预约
+    end
+```
+
+---
+
+## 7. E-R模型图
+
+```mermaid
+erDiagram
+    AdminUser ||--o{ AdminLog : "产生"
+    AdminUser }o--|| AdminRole : "属于"
+    AdminRole ||--o{ RolePermission : "拥有"
+    
+    User ||--o{ Pet : "拥有"
+    User ||--o{ Post : "发布"
+    User ||--o{ Comment : "发表"
+    User ||--o{ ShopOrder : "创建"
+    User ||--o{ ServiceAppointment : "预约"
+    
+    Post ||--o{ Comment : "包含"
+    Post ||--o{ PostLike : "收到"
+    Post ||--o{ PostFavorite : "收到"
+    
+    ShopProduct ||--o{ ShopOrderItem : "包含在"
+    ShopOrder ||--o{ ShopOrderItem : "包含"
+    ShopOrder ||--o{ ShopOrderEvent : "有"
+    
+    ServiceProvider ||--o{ ServiceOffering : "提供"
+    ServiceOffering ||--o{ ServiceSlot : "有"
+    ServiceSlot ||--o{ ServiceAppointment : "被预约"
+    
+    AdminUser {
+        string id PK
+        string username
+        string password_hash
+        string name
+        string role_id FK
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+    
+    AdminRole {
+        string id PK
+        string name
+        string description
+        datetime created_at
+    }
+    
+    AdminLog {
+        string id PK
+        string admin_id FK
+        string action
+        string target_type
+        string target_id
+        string ip
+        string user_agent
+        datetime created_at
+    }
+    
+    User {
+        string id PK
+        string public_id
+        string phone
+        string wechat_openid
+        string nickname
+        string avatar_url
+        string location
+        string gender
+        date birthday
+        string bio
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Pet {
+        string id PK
+        string user_id FK
+        string name
+        string pet_type
+        string breed
+        string gender
+        string weight
+        boolean is_neutered
+        date birthday
+        string avatar_url
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Post {
+        string id PK
+        string author_id FK
+        text content
+        text media_json
+        string location_name
+        string visibility
+        string post_type
+        int like_count
+        int favorite_count
+        int comment_count
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Comment {
+        string id PK
+        string post_id FK
+        string author_id FK
+        string parent_id FK
+        text content
+        int like_count
+        datetime created_at
+        datetime updated_at
+    }
+    
+    ShopProduct {
+        string id PK
+        string title
+        string title_pinyin
+        string title_initials
+        text description
+        int price_cents
+        string currency
+        text images_json
+        int stock
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+    
+    ShopOrder {
+        string id PK
+        string user_id FK
+        string status
+        string pay_method
+        int subtotal_cents
+        int shipping_cents
+        int discount_cents
+        int total_cents
+        string receiver_name
+        string receiver_phone
+        string receiver_address
+        datetime created_at
+        datetime updated_at
+    }
+    
+    ServiceProvider {
+        string id PK
+        string service_type
+        string name
+        string description
+        string distance_text
+        string rating_text
+        string business_hours
+        string address
+        string cover_image
+        string status
+        int sort_order
+        datetime created_at
+        datetime updated_at
+    }
+    
+    ServiceAppointment {
+        string id PK
+        string user_id FK
+        string pet_id FK
+        string provider_id FK
+        string offering_id FK
+        string slot_id FK
+        string service_type
+        date service_date
+        string time_label
+        datetime appointment_at
+        int price
+        string contact_phone
+        string address
+        string notes
+        text snapshot_json
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+```
+
+---
+
+## 8. 部署架构图
+
+```mermaid
+graph TB
+    subgraph "用户层"
+        A[管理员浏览器]
+    end
+    
+    subgraph "CDN层"
+        B[CDN加速]
+    end
+    
+    subgraph "负载均衡层"
+        C[Nginx负载均衡]
+    end
+    
+    subgraph "应用层"
+        D[管理端前端1]
+        E[管理端前端2]
+        F[Flask后端1]
+        G[Flask后端2]
+    end
+    
+    subgraph "数据层"
+        H[(MySQL主库)]
+        I[(MySQL从库)]
+        J[(Redis)]
+    end
+    
+    subgraph "监控层"
+        K[日志收集]
+        L[性能监控]
+        M[告警系统]
+    end
+    
+    A --> B
+    B --> C
+    C --> D
+    C --> E
+    D --> F
+    E --> G
+    F --> H
+    G --> H
+    F --> I
+    G --> I
+    F --> J
+    G --> J
+    D --> K
+    E --> K
+    F --> K
+    G --> K
+    K --> L
+    L --> M
+```
+
+---
+
+## 9. 管理端功能模块图
+
+```mermaid
+graph TB
+    A[管理端] --> B[仪表盘]
+    A --> C[用户管理]
+    A --> D[内容管理]
+    A --> E[商城管理]
+    A --> F[服务管理]
+    A --> G[系统设置]
+    
+    B --> B1[数据概览]
+    B --> B2[趋势分析]
+    B --> B3[系统状态]
+    
+    C --> C1[用户列表]
+    C --> C2[用户详情]
+    C --> C3[用户操作]
+    
+    D --> D1[帖子管理]
+    D --> D2[评论管理]
+    D --> D3[内容审核]
+    
+    E --> E1[商品管理]
+    E --> E2[订单管理]
+    E --> E3[库存管理]
+    
+    F --> F1[服务商管理]
+    F --> F2[服务项目管理]
+    F --> F3[预约管理]
+    F --> F4[疫苗管理]
+    
+    G --> G1[系统配置]
+    G --> G2[权限管理]
+    G --> G3[日志管理]
+```
+
+---
+
+## 10. 权限控制流程图
+
+```mermaid
+sequenceDiagram
+    participant A as 管理员
+    participant F as 前端
+    participant B as 后端
+    participant D as 数据库
+    
+    A->>F: 登录
+    F->>B: 发送用户名密码
+    B->>D: 查询管理员信息
+    D-->>B: 返回管理员信息
+    B->>B: 验证密码
+    alt 验证成功
+        B->>B: 生成JWT Token
+        B->>D: 查询管理员角色和权限
+        D-->>B: 返回角色权限
+        B-->>F: 返回Token和权限信息
+        F->>F: 保存Token和权限
+        F-->>A: 登录成功
+    else 验证失败
+        B-->>F: 返回错误
+        F-->>A: 提示登录失败
+    end
+    
+    A->>F: 访问功能页面
+    F->>F: 检查权限
+    alt 有权限
+        F->>B: 发送API请求（带Token）
+        B->>B: 验证Token
+        B->>B: 验证权限
+        alt 验证通过
+            B->>D: 执行数据操作
+            D-->>B: 返回结果
+            B-->>F: 返回数据
+            F-->>A: 显示页面
+        else 权限不足
+            B-->>F: 返回权限不足
+            F-->>A: 提示无权限
+        end
+    else 无权限
+        F-->>A: 隐藏功能入口
+    end
+```
+

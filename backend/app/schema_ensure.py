@@ -7,7 +7,7 @@ from urllib.parse import quote
 from sqlalchemy import text
 
 from .extensions import db
-from .models import ServiceOffering, ServiceProvider, ServiceSlot, VaccineCatalog
+from .models import Banner, ServiceOffering, ServiceProvider, ServiceSlot, VaccineCatalog
 from .pinyin import to_pinyin_full_and_initials
 from .timeutil import BJ_TZ
 
@@ -414,3 +414,28 @@ def ensure_vaccine_module_schema() -> None:
             )
         )
     db.session.commit()
+
+
+def ensure_ai_page_banners() -> None:
+    db.create_all()
+    if not _has_table("banners"):
+        return
+
+    banner = Banner.query.filter_by(slot="ai_hero").order_by(Banner.sort.asc()).first()
+    if banner is None:
+        db.session.add(
+            Banner(
+                slot="ai_hero",
+                title="AI宠",
+                image_url=_media_path("AI.png"),
+                link_url=None,
+                sort=0,
+            )
+        )
+        db.session.commit()
+        return
+
+    current = (banner.image_url or "").strip()
+    if (not current) or current == "/assets/icons/tab/ai-pet@1x.png":
+        banner.image_url = _media_path("AI.png")
+        db.session.commit()

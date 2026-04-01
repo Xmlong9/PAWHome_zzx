@@ -4,6 +4,8 @@
     "pages/index/index",
     "pages/home/index",
     "pages/community/index",
+    "pages/ai/index",
+    "pages/ai/chat/index",
     "pages/messages/index",
     "pages/chat/index",
     "pages/post-create/index",
@@ -72,6 +74,12 @@
         "text": "社区",
         "iconPath": "assets/icons/tab/community_notselect@1x.png",
         "selectedIconPath": "assets/icons/tab/community@1x.png"
+      },
+      {
+        "pagePath": "pages/ai/index",
+        "text": "AI宠",
+        "iconPath": "assets/icons/tab/ai-pet_notselect@1x.png",
+        "selectedIconPath": "assets/icons/tab/ai-pet@1x.png"
       },
       {
         "pagePath": "pages/shop/index",

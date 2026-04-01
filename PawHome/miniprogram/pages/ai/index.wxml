@@ -1,0 +1,38 @@
+<view class="ai-page">
+  <view class="hero-section">
+    <view class="hero-card">
+      <view class="hero-deco hero-deco-1"></view>
+      <view class="hero-deco hero-deco-2"></view>
+      <image class="hero-icon" src="{{heroIconUrl}}" mode="aspectFit"></image>
+      <view class="hero-title">AI宠</view>
+      <view class="hero-desc">你的专属养宠智囊团，让每一次陪伴都更懂 TA</view>
+    </view>
+  </view>
+
+  <view class="features-section">
+    <view class="section-header">
+      <text class="section-title">你可以在这里做什么</text>
+      <text class="section-subtitle">AI 助手随时待命</text>
+    </view>
+
+    <view class="highlight-list">
+      <view class="highlight-card" wx:for="{{highlights}}" wx:key="id" hover-class="card-hover" bindtap="showComingSoon">
+        <view class="highlight-icon-wrap" style="background: {{item.color}}; color: {{item.textColor}};">
+          <text class="highlight-emoji">{{item.icon}}</text>
+        </view>
+        <view class="highlight-content">
+          <view class="highlight-title">{{item.title}}</view>
+          <view class="highlight-desc">{{item.desc}}</view>
+        </view>
+        <view class="highlight-arrow">
+          <view class="arrow-icon"></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="primary-btn" bindtap="showComingSoon" hover-class="btn-hover">
+      <text>开始体验</text>
+      <view class="btn-shine"></view>
+    </view>
+  </view>
+</view>

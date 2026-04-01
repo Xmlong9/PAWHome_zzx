@@ -1,6 +1,6 @@
 <view class="ai-page">
   <view class="hero-card">
-    <image class="hero-icon" src="/assets/icons/tab/ai-pet@1x.png" mode="aspectFit"></image>
+    <image class="hero-icon" src="{{heroIconUrl}}" mode="aspectFit"></image>
     <view class="hero-title">AI宠</view>
     <view class="hero-desc">把养宠灵感、护理建议和日常问题放到一个入口里</view>
   </view>

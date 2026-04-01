@@ -2118,3 +2118,30 @@
 **相关文件**
 - `PawHome/miniprogram/config/env.ts`
 - `PawHome/miniprogram/pages/splash/index.(ts|wxml)`
+
+---
+
+## AI页主图从数据库 Banner 读取
+
+**目的**
+- AI 页头部主图标不再固定使用小程序包内静态资源，而是支持通过后端配置（数据库）动态下发，便于后续替换素材而无需重新发版。
+
+**入口**
+- 后端：`GET /api/v1/banners?slot=ai_hero`
+- 小程序：`/pages/ai/index` 页面加载时拉取。
+
+**数据流/状态**
+- 图片物理文件放在后端 `instance/uploads` 下，通过静态路由 `/media/<filename>` 对外提供访问。
+- 后端启动时执行幂等初始化：若 `banners` 表不存在 `slot=ai_hero` 的记录，则插入一条默认记录并设置 `image_url=/media/AI.png`。
+- 小程序 AI 页 `onLoad` 调用 `getBanners("ai_hero")`，取第一条 `imageUrl` 作为 `heroIconUrl` 渲染。
+
+**边界条件**
+- 拉取失败或无数据时：`heroIconUrl` 保持默认本地图标 `/assets/icons/tab/ai-pet@1x.png`，页面不受影响。
+
+**相关文件**
+- 后端：
+  - `backend/app/schema_ensure.py`
+  - `backend/app/__init__.py`
+- 小程序：
+  - `PawHome/miniprogram/pages/ai/index.ts`
+  - `PawHome/miniprogram/pages/ai/index.wxml`

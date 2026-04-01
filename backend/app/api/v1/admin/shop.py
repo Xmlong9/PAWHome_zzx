@@ -20,9 +20,11 @@ def register_admin_shop_routes(bp):
             products.append({
                 "id": product.id,
                 "title": product.title,
+                "description": product.description,
                 "price_cents": product.price_cents,
                 "stock": product.stock,
                 "is_active": product.is_active,
+                "images_json": product.images_json,
                 "created_at": product.created_at.isoformat() + "Z" if product.created_at else None,
             })
 
@@ -32,6 +34,61 @@ def register_admin_shop_routes(bp):
             "page": page,
             "size": size
         })
+
+    @bp.post("/admin/shop/products")
+    @admin_required
+    def create_product():
+        data = request.get_json(silent=True) or {}
+        title = data.get("title")
+        if not title:
+            return fail(code="BAD_REQUEST", message="Title is required", status_code=400)
+            
+        price_cents = data.get("price_cents", 0)
+        stock = data.get("stock", 0)
+        description = data.get("description", "")
+        images_json = data.get("images_json", "[]")
+        is_active = data.get("is_active", True)
+        
+        product = ShopProduct(
+            title=title,
+            description=description,
+            price_cents=price_cents,
+            stock=stock,
+            images_json=images_json,
+            is_active=is_active
+        )
+        db.session.add(product)
+        db.session.commit()
+        log_admin_action("create_product", "product", product.id)
+        
+        return ok({"id": product.id, "message": "Product created successfully"})
+
+    @bp.put("/admin/shop/products/<product_id>")
+    @admin_required
+    def update_product(product_id):
+        product = ShopProduct.query.get(product_id)
+        if not product:
+            return fail(code="NOT_FOUND", message="Product not found", status_code=404)
+            
+        data = request.get_json(silent=True) or {}
+        
+        if "title" in data:
+            product.title = data["title"]
+        if "description" in data:
+            product.description = data["description"]
+        if "price_cents" in data:
+            product.price_cents = data["price_cents"]
+        if "stock" in data:
+            product.stock = data["stock"]
+        if "images_json" in data:
+            product.images_json = data["images_json"]
+        if "is_active" in data:
+            product.is_active = data["is_active"]
+            
+        db.session.commit()
+        log_admin_action("update_product", "product", product.id)
+        
+        return ok({"message": "Product updated successfully"})
 
     @bp.put("/admin/shop/products/<product_id>/status")
     @admin_required

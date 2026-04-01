@@ -2145,3 +2145,25 @@
 - 小程序：
   - `PawHome/miniprogram/pages/ai/index.ts`
   - `PawHome/miniprogram/pages/ai/index.wxml`
+
+---
+
+## AI宠物智能客服整合用户档案
+
+**目的**
+- 让「AI宠」能够读取用户的数据库（包含宠物档案、疫苗接种记录、驱虫记录），从而提供更具针对性和个性化的养宠建议。
+
+**入口**
+- 后端：\POST /api/v1/shop/support/conversations/<cid>/messages\（复用智能客服聊天接口，在组装 doubao 提示词时拦截）
+- 小程序：\/pages/ai/chat/index\
+
+**数据流/状态**
+- 在组装 system prompt (\_ai_pet_system_prompt\) 时，根据当前用户的 \user_id\ 从数据库中查询 \Pet\ 表获取宠物基本信息。
+- 根据 \pet.id\ 查询 \VaccineRecord\ 和 \VaccineCatalog\ 获取疫苗历史。
+- 根据 \pet.id\ 查询 \DewormingRecord\ 获取驱虫历史。
+- 将这些结构化信息格式化为文本，拼接到系统提示词（System Prompt）中。大模型通过提示词获取了这些档案上下文，即可进行个性化回答。
+- 如果用户未登记宠物，系统提示词也会附加用户当前尚未登记宠物信息的说明。
+
+**相关文件**
+- 后端：\ackend/app/api/v1/shop.py\
+

@@ -22,7 +22,7 @@ type OrderCard = {
   items: Array<{ name: string; count: number }>
 }
 
-type UiMessage = SupportMessage & { orderCard?: OrderCard; displayTime?: string; showTime?: boolean }
+type UiMessage = SupportMessage & { orderCard?: OrderCard; displayTime?: string; showTime?: boolean; isTyping?: boolean; displayContent?: string; isAnimating?: boolean }
 
 Page({
   data: {
@@ -39,7 +39,8 @@ Page({
     showOrderSheet: false,
     orderSheetVisible: false,
     recentOrders: [] as Array<ShopOrder & { displayTime: string; titleText: string }>,
-    loadingOrders: false
+    loadingOrders: false,
+    isWaitingResponse: false
   },
   async onLoad(options: Record<string, string | undefined>) {
     const sysInfo = wx.getSystemInfoSync()
@@ -97,20 +98,41 @@ Page({
       await closeSupportConversation(conversationId)
     } catch {}
   },
-  async refreshMessages() {
+  async refreshMessages(animateNewBot = false) {
     const conversationId = this.data.conversationId
     if (!conversationId) return
     try {
       const list = await listSupportMessages(conversationId)
       const threshold = 5 * 60 * 1000
       let prev = 0
+
+      const set = ((this as any).animatedMessageIds = (this as any).animatedMessageIds || new Set<string>())
+      let animateTargetId = ""
+
       const mapped: UiMessage[] = list.map((m, idx) => {
         const createdAtMs = this.normalizeMs(m.createdAt)
         const showTime = idx === 0 || (createdAtMs && prev && createdAtMs - prev >= threshold)
         if (createdAtMs) prev = createdAtMs
 
+        let isAnimating = false
+        let displayContent = m.content
+
         if (m.type !== "order_card") {
-          return { ...(m as UiMessage), displayTime: createdAtMs ? this.formatTimeFull(createdAtMs) : "", showTime }
+          if (animateNewBot && idx === list.length - 1 && m.role === "bot" && !set.has(m.id)) {
+            set.add(m.id)
+            animateTargetId = m.id
+            isAnimating = true
+            displayContent = ""
+          } else {
+            const oldMsg = this.data.messages.find((old) => old.id === m.id)
+            if (oldMsg && oldMsg.isAnimating) {
+              isAnimating = true
+              displayContent = oldMsg.displayContent || ""
+            } else if (set.has(m.id)) {
+              isAnimating = false
+            }
+          }
+          return { ...(m as UiMessage), displayTime: createdAtMs ? this.formatTimeFull(createdAtMs) : "", showTime, isAnimating, displayContent }
         }
 
         try {
@@ -130,16 +152,49 @@ Page({
             ...(m as UiMessage),
             orderCard,
             displayTime: createdAtMs ? this.formatTimeFull(createdAtMs) : "",
-            showTime
+            showTime,
+            isAnimating: false,
+            displayContent: ""
           }
         } catch {
-          return { ...(m as UiMessage), displayTime: createdAtMs ? this.formatTimeFull(createdAtMs) : "", showTime }
+          return { ...(m as UiMessage), displayTime: createdAtMs ? this.formatTimeFull(createdAtMs) : "", showTime, isAnimating: false, displayContent: "" }
         }
       })
       this.setData({ messages: mapped, scrollTo: "bottom" })
+
+      if (animateTargetId) {
+        const targetMsg = mapped.find((m) => m.id === animateTargetId)
+        if (targetMsg) {
+          this.startTypewriter(targetMsg.id, targetMsg.content)
+        }
+      }
     } catch {
       wx.showToast({ title: "加载失败", icon: "none" })
     }
+  },
+  startTypewriter(id: string, fullText: string) {
+    let currentLen = 0
+    const step = () => {
+      const target = this.data.messages.find((m) => m.id === id)
+      if (!target || !target.isAnimating) return
+
+      currentLen += 2
+      if (currentLen > fullText.length) currentLen = fullText.length
+
+      const msgs = this.data.messages.map((m) => {
+        if (m.id === id) {
+          return { ...m, displayContent: fullText.substring(0, currentLen), isAnimating: currentLen < fullText.length }
+        }
+        return m
+      })
+
+      this.setData({ messages: msgs, scrollTo: `msg_${id}` })
+
+      if (currentLen < fullText.length) {
+        setTimeout(step, 30)
+      }
+    }
+    step()
   },
   onInput(e: WechatMiniprogram.Input) {
     this.setData({ text: e.detail.value })
@@ -223,32 +278,55 @@ Page({
     const orderId = String((e.currentTarget.dataset as any)?.id || "")
     const target = this.data.recentOrders.find((x) => x.id === orderId)
     if (!orderId || !target) return
-    const snapshot: OrderCard = {
-      orderId: target.id,
-      amount: target.amount,
-      createdAt: target.createdAt,
-      displayTime: this.formatTime(target.createdAt),
-      productNames: target.productNames || [],
-      items: (target.items || []).slice(0, 5).map((it) => ({ name: it.name, count: it.count }))
-    }
-    const optimistic: UiMessage = {
-      id: newId(),
+    const tempId = `m_temp_${Date.now()}`
+    const order = this.data.recentOrders.find((o) => o.id === orderId)
+    const tempMsg: UiMessage = {
+      id: tempId,
       role: "user",
       type: "order_card",
-      content: JSON.stringify(snapshot),
+      content: "",
       createdAt: Date.now(),
-      orderCard: snapshot
+      displayTime: "",
+      showTime: false,
+      orderCard: order
+        ? {
+            orderId: order.id,
+            amount: order.totalCents / 100,
+            createdAt: this.normalizeMs(order.createdAt),
+            displayTime: order.displayTime,
+            productNames: [],
+            items: (order.items || []).slice(0, 5).map((it) => ({ name: it.title || "", count: it.quantity || 1 }))
+          }
+        : undefined
     }
+
+    const typingMsg: UiMessage = {
+      id: "typing_indicator",
+      role: "bot",
+      type: "text",
+      content: "",
+      createdAt: Date.now(),
+      displayTime: "",
+      showTime: false,
+      isTyping: true
+    }
+
     this.closeOrderSheet()
     this.setData({
-      messages: [...this.data.messages, optimistic],
-      scrollTo: `msg_${optimistic.id}`
+      messages: [...this.data.messages, tempMsg, typingMsg],
+      scrollTo: "typing_indicator",
+      isWaitingResponse: true
     })
     try {
       await sendSupportOrderCard(conversationId, orderId)
-      await this.refreshMessages()
+      await this.refreshMessages(true)
     } catch {
       wx.showToast({ title: "发送失败", icon: "none" })
+      this.setData({
+        messages: this.data.messages.filter((m) => m.id !== tempId && m.id !== "typing_indicator")
+      })
+    } finally {
+      this.setData({ isWaitingResponse: false })
     }
   },
   async send() {
@@ -257,20 +335,43 @@ Page({
     if (!conversationId) return
     if (!content) return
 
+    const tempId = `m_temp_${Date.now()}`
     const optimistic: UiMessage = {
-      id: newId(),
+      id: tempId,
       role: "user",
       type: "text",
       content,
       createdAt: Date.now()
     }
-    this.setData({ messages: [...this.data.messages, optimistic], text: "", scrollTo: `msg_${optimistic.id}` })
+
+    const typingMsg: UiMessage = {
+      id: "typing_indicator",
+      role: "bot",
+      type: "text",
+      content: "",
+      createdAt: Date.now(),
+      displayTime: "",
+      showTime: false,
+      isTyping: true
+    }
+
+    this.setData({
+      messages: [...this.data.messages, optimistic, typingMsg],
+      text: "",
+      scrollTo: "typing_indicator",
+      isWaitingResponse: true
+    })
 
     try {
       await sendSupportMessage(conversationId, content)
-      await this.refreshMessages()
+      await this.refreshMessages(true)
     } catch {
       wx.showToast({ title: "发送失败", icon: "none" })
+      this.setData({
+        messages: this.data.messages.filter((m) => m.id !== tempId && m.id !== "typing_indicator")
+      })
+    } finally {
+      this.setData({ isWaitingResponse: false })
     }
   }
 })

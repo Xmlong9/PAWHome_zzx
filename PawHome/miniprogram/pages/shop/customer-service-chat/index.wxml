@@ -82,7 +82,14 @@
             </block>
           </view>
         </view>
-        <view wx:else class="bubble">{{item.content}}</view>
+        <view wx:else class="bubble">
+          <text wx:if="{{!item.isTyping}}" user-select="true" decode="true" style="white-space: pre-wrap;">{{item.isAnimating ? item.displayContent : item.content}}</text>
+          <view class="typing-indicator" wx:else>
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+          </view>
+        </view>
       </view>
     </block>
 
@@ -101,13 +108,15 @@
 
     <view class="input-bar">
       <view class="input-wrap">
-        <input
+        <textarea
           class="input"
           value="{{text}}"
           placeholder="请输入想咨询的问题"
           bindinput="onInput"
-          confirm-type="send"
-          bindconfirm="send"
+          auto-height
+          fixed
+          show-confirm-bar="{{false}}"
+          cursor-spacing="20"
         />
         <view class="icon-send-order"></view>
       </view>

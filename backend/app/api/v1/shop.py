@@ -27,6 +27,10 @@ from ...models import (
     ShopProduct,
     User,
     Wallet,
+    Pet,
+    VaccineRecord,
+    VaccineCatalog,
+    DewormingRecord,
 )
 from ...responses import fail, ok
 
@@ -68,7 +72,55 @@ def _support_system_prompt() -> str:
     )
 
 
-def _call_doubao_text(text: str, *, conversation_id: str, user_id: str) -> str:
+def _ai_pet_system_prompt(user_id: str) -> str:
+    base_prompt = (
+        "你是爱宠家的专属养宠智囊团「AI宠」。"
+        "你是一个专业的宠物医生和养宠专家，可以回答关于宠物健康、饮食、行为训练、日常护理等全方位的问题。\n\n"
+        "【排版和格式要求（非常重要！）】：\n"
+        "1. 绝对不要使用 Markdown 中的 `#` 或 `*` 符号（例如 `###`、`**`、`*` 等）。\n"
+        "2. 不要把所有内容挤在一段里。\n"
+        "3. 请使用清晰的段落和纯文本的换行。比如分点列出原因时，每个点前面必须加换行，使用 `1. 标题：详细说明` 的格式。\n"
+        "4. 在说明可能的原因和对应的解决建议时，要条理清晰、容易阅读，不要使用过长的不换行的句子。\n"
+        "5. 回答要温和、专业、有同理心。如果遇到紧急的医疗问题，请明确提醒用户及时就医。\n"
+        "6. 不要回答与宠物无关的政治、时事等敏感话题。\n\n"
+    )
+    
+    pets = Pet.query.filter_by(user_id=user_id).all()
+    if not pets:
+        return base_prompt + "【提示】用户当前尚未登记宠物信息。"
+        
+    pet_infos = []
+    for pet in pets:
+        info = f"宠物名字：{pet.name}\n- 种类：{pet.pet_type}\n- 品种：{pet.breed or '未知'}\n- 性别：{pet.gender or '未知'}\n- 体重：{pet.weight or '未知'}\n- 是否绝育：{'是' if pet.is_neutered else '否'}\n"
+        if pet.birthday:
+            info += f"- 生日：{pet.birthday.isoformat()}\n"
+            
+        v_records = VaccineRecord.query.filter_by(pet_id=pet.id).order_by(VaccineRecord.vaccinated_at.desc()).all()
+        if v_records:
+            v_items = []
+            for vr in v_records:
+                cat = VaccineCatalog.query.get(vr.vaccine_id)
+                v_name = cat.name if cat else "未知疫苗"
+                v_items.append(f"{v_name}({vr.vaccinated_at.strftime('%Y-%m-%d')})")
+            info += f"- 疫苗记录：{', '.join(v_items)}\n"
+        else:
+            info += "- 疫苗记录：暂无\n"
+            
+        d_records = DewormingRecord.query.filter_by(pet_id=pet.id).order_by(DewormingRecord.record_at.desc()).all()
+        if d_records:
+            d_items = []
+            for dr in d_records:
+                d_items.append(f"{dr.title}({dr.record_at.strftime('%Y-%m-%d')})")
+            info += f"- 驱虫记录：{', '.join(d_items)}\n"
+        else:
+            info += "- 驱虫记录：暂无\n"
+            
+        pet_infos.append(info)
+        
+    return base_prompt + "【以下是用户的宠物档案，请结合这些信息（如种类、年龄、绝育状态、疫苗驱虫情况）来提供最准确的个性化建议】：\n" + "\n".join(pet_infos)
+
+
+def _call_doubao_text(text: str, *, conversation_id: str, user_id: str, system_prompt: str = None) -> str:
     client = _get_ark_client()
     if client is None:
         return ""
@@ -80,7 +132,9 @@ def _call_doubao_text(text: str, *, conversation_id: str, user_id: str) -> str:
         .all()
     )
     rows = list(reversed(rows))
-    messages = [{"role": "system", "content": _support_system_prompt()}]
+    if system_prompt is None:
+        system_prompt = _support_system_prompt()
+    messages = [{"role": "system", "content": system_prompt}]
     for m in rows:
         role = "user" if m.sender_role == "user" else "assistant"
         content = (m.content or "").strip()
@@ -99,7 +153,16 @@ def _call_doubao_text(text: str, *, conversation_id: str, user_id: str) -> str:
     choice = resp.choices[0] if getattr(resp, "choices", None) else None
     msg = getattr(choice, "message", None) if choice is not None else None
     content = getattr(msg, "content", "") if msg is not None else ""
-    return (content or "").strip()
+    
+    content = (content or "").strip()
+    
+    # post-process markdown
+    content = re.sub(r'#+\s*', '', content)
+    content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+    content = re.sub(r'\*(.*?)\*', r'\1', content)
+    content = re.sub(r'-(?=\s)', '•', content)
+    
+    return content.strip()
 
 
 def _support_ai_allow(*, user_id: str, conversation_id: str) -> bool:
@@ -874,17 +937,18 @@ def register_routes(bp) -> None:
         mode = data.get("mode")
         if mode not in {"smart", "human"}:
             mode = "smart"
+        channel = data.get("channel") or "shop"
         force_new = bool(data.get("forceNew"))
 
         conv = None
         if not force_new:
             conv = (
-                SupportConversation.query.filter_by(user_id=me.id, channel="shop", mode=mode)
+                SupportConversation.query.filter_by(user_id=me.id, channel=channel, mode=mode)
                 .order_by(SupportConversation.updated_at.desc())
                 .first()
             )
         if conv is None or conv.status != "open":
-            conv = SupportConversation(user_id=me.id, channel="shop", mode=mode, status="open")
+            conv = SupportConversation(user_id=me.id, channel=channel, mode=mode, status="open")
             db.session.add(conv)
             db.session.commit()
 
@@ -924,8 +988,9 @@ def register_routes(bp) -> None:
     def list_support_conversations():
         _ensure_support_tables()
         me: User = g.current_user
+        channel = request.args.get("channel", "shop")
         rows = (
-            SupportConversation.query.filter_by(user_id=me.id, channel="shop")
+            SupportConversation.query.filter_by(user_id=me.id, channel=channel)
             .order_by(SupportConversation.updated_at.desc())
             .limit(50)
             .all()
@@ -951,6 +1016,7 @@ def register_routes(bp) -> None:
         _ensure_support_tables()
         me: User = g.current_user
         data = request.get_json(silent=True) or {}
+        channel = data.get("channel") or "shop"
         keep = data.get("keep")
         try:
             keep_n = int(keep) if keep is not None else 5
@@ -962,14 +1028,14 @@ def register_routes(bp) -> None:
             keep_n = 50
 
         keep_rows = (
-            SupportConversation.query.filter_by(user_id=me.id, channel="shop")
+            SupportConversation.query.filter_by(user_id=me.id, channel=channel)
             .order_by(SupportConversation.updated_at.desc())
             .limit(keep_n)
             .all()
         )
         keep_ids = {c.id for c in keep_rows}
 
-        q = SupportConversation.query.filter_by(user_id=me.id, channel="shop", status="closed")
+        q = SupportConversation.query.filter_by(user_id=me.id, channel=channel, status="closed")
         if keep_ids:
             q = q.filter(~SupportConversation.id.in_(list(keep_ids)))
         del_ids = [r[0] for r in q.with_entities(SupportConversation.id).all()]
@@ -1179,6 +1245,22 @@ def register_routes(bp) -> None:
             pass
         return "我先记下了～如果是订单/退款/地址修改等问题，可以点上方常见问题快速获取答案；也可以转人工客服。"
 
+    def _ai_pet_reply(text: str, *, conversation_id: str, user_id: str) -> str:
+        t = (text or "").strip()
+        if not t:
+            return "你好呀！我是你的专属 AI 宠。可以问我关于宠物健康、日常护理、行为训练的问题哦～"
+        try:
+            allow_fn = getattr(sys.modules[__name__], "_support_ai_allow")
+            if not allow_fn(user_id=user_id, conversation_id=conversation_id):
+                return "提问太频繁，请稍后再试。"
+            fn = getattr(sys.modules[__name__], "_call_doubao_text")
+            r = fn(t, conversation_id=conversation_id, user_id=user_id, system_prompt=_ai_pet_system_prompt(user_id))
+            if isinstance(r, str) and r.strip():
+                return r.strip()
+        except Exception:
+            pass
+        return "我现在有点小迷糊，可以换个说法再问我一次吗？"
+
     @bp.post("/shop/support/conversations/<cid>/messages")
     @require_auth
     def send_support_message(cid: str):
@@ -1242,7 +1324,10 @@ def register_routes(bp) -> None:
         db.session.commit()
 
         if conv.mode == "smart":
-            reply = _smart_reply(user_text_for_ai, conversation_id=cid, user_id=me.id)
+            if getattr(conv, "channel", "shop") == "ai_pet":
+                reply = _ai_pet_reply(user_text_for_ai, conversation_id=cid, user_id=me.id)
+            else:
+                reply = _smart_reply(user_text_for_ai, conversation_id=cid, user_id=me.id)
             db.session.add(
                 SupportMessage(conversation_id=cid, sender_role="bot", message_type="text", content=reply)
             )

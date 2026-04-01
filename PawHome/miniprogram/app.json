@@ -5,6 +5,7 @@
     "pages/home/index",
     "pages/community/index",
     "pages/ai/index",
+    "pages/ai/chat/index",
     "pages/messages/index",
     "pages/chat/index",
     "pages/post-create/index",

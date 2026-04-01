@@ -18,12 +18,12 @@ export type SupportMessage = {
 
 export const createSupportConversation = async (
   mode: "smart" | "human",
-  opts?: { forceNew?: boolean }
+  opts?: { forceNew?: boolean, channel?: string }
 ): Promise<SupportConversation> => {
   return await request<SupportConversation>({
     url: "/shop/support/conversations",
     method: "POST",
-    data: { mode, forceNew: !!opts?.forceNew }
+    data: { mode, forceNew: !!opts?.forceNew, channel: opts?.channel }
   })
 }
 

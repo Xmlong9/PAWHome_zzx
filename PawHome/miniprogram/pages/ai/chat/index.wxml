@@ -1,0 +1,75 @@
+<view class="cs-chat-page paw-route {{pageVisible ? 'is-visible' : ''}} {{pageLeaving ? 'is-leaving' : ''}}" style="padding-top: {{statusBarHeight + navBarHeight}}px;">
+  <!-- Custom Navigation Bar -->
+  <view class="custom-nav-bar" style="height: {{statusBarHeight + navBarHeight}}px; padding-top: {{statusBarHeight}}px;">
+    <view class="nav-back" bindtap="goBack">
+      <view class="icon-back"></view>
+    </view>
+    <view class="nav-title"></view>
+    <view class="nav-right"></view>
+  </view>
+
+  <!-- Header Card -->
+  <view class="header-card">
+    <image class="header-avatar" src="/assets/icons/tab/ai-pet@1x.png" mode="aspectFill"></image>
+    <view class="header-info">
+      <view class="header-name-row">
+        <text class="header-name">AI宠</text>
+      </view>
+      <view class="header-desc">你的专属养宠智囊团</view>
+      <view class="header-time" wx:if="{{sessionDisplayTime}}">对话时间：{{sessionDisplayTime}}</view>
+    </view>
+  </view>
+
+  <scroll-view
+    class="msg-scroll"
+    scroll-y
+    scroll-with-animation
+    scroll-into-view="{{scrollTo}}"
+  >
+    <view class="msg-padding-top"></view>
+
+    <!-- Welcome Messages -->
+    <view class="msg-row them" id="msg_welcome_1">
+      <image class="avatar bot-avatar" src="/assets/icons/tab/ai-pet@1x.png" mode="aspectFit"></image>
+      <view class="bubble">你好呀！我是你的专属 AI 宠。可以问我关于宠物健康、日常护理、行为训练的问题哦～</view>
+    </view>
+
+    <!-- History Messages -->
+    <block wx:for="{{messages}}" wx:key="id">
+      <view class="msg-time" wx:if="{{item.showTime && item.displayTime}}">{{item.displayTime}}</view>
+      <view class="msg-row {{item.role==='user' ? 'me' : 'them'}}" id="msg_{{item.id}}">
+        <image wx:if="{{item.role!=='user'}}" class="avatar bot-avatar" src="/assets/icons/tab/ai-pet@1x.png" mode="aspectFit"></image>
+        <view class="bubble">
+          <text wx:if="{{!item.isTyping}}" user-select="true" decode="true" style="white-space: pre-wrap;">{{item.isAnimating ? item.displayContent : item.content}}</text>
+          <view class="typing-indicator" wx:else>
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+            <view class="typing-dot"></view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view id="bottom" style="height: 40rpx;"></view>
+  </scroll-view>
+
+  <!-- Bottom Actions -->
+  <view class="bottom-area">
+    <view class="input-bar">
+      <view class="input-wrap">
+        <textarea
+          class="input"
+          value="{{text}}"
+          placeholder="请输入想咨询的问题"
+          bindinput="onInput"
+          auto-height
+          fixed
+          show-confirm-bar="{{false}}"
+          cursor-spacing="20"
+        />
+      </view>
+      <view class="icon-plus" bindtap="send" wx:if="{{!text}}"></view>
+      <view class="send-btn" bindtap="send" wx:else>发送</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>爱宠家 - 商品管理</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#586566",
+              "on-tertiary": "#ffffff",
+              "background": "#f4fafe",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#663e00",
+              "surface-dim": "#d5dbdf",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#d78800",
+              "tertiary-fixed-dim": "#ffb961",
+              "surface-variant": "#dde3e7",
+              "secondary-fixed-dim": "#bcc9ca",
+              "on-primary-fixed": "#301400",
+              "primary-fixed": "#ffdcc5",
+              "tertiary-fixed": "#ffddb9",
+              "inverse-on-surface": "#ecf1f6",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#d8e5e6",
+              "surface-container-low": "#eff4f8",
+              "surface-bright": "#f4fafe",
+              "outline": "#897365",
+              "on-background": "#161c20",
+              "on-tertiary-container": "#482b00",
+              "primary": "#944a00",
+              "surface-container-high": "#e3e9ed",
+              "surface-container-highest": "#dde3e7",
+              "on-secondary-fixed-variant": "#3d494a",
+              "on-primary-container": "#502600",
+              "error": "#ba1a1a",
+              "on-secondary-fixed": "#121e1f",
+              "error-container": "#ffdad6",
+              "surface": "#f4fafe",
+              "on-tertiary-fixed": "#2b1700",
+              "on-error-container": "#93000a",
+              "primary-fixed-dim": "#ffb783",
+              "tertiary": "#865300",
+              "surface-container": "#e9eff3",
+              "on-surface": "#161c20",
+              "inverse-primary": "#ffb783",
+              "on-primary-fixed-variant": "#713700",
+              "outline-variant": "#dcc1b1",
+              "secondary-container": "#d5e2e3",
+              "on-primary": "#ffffff",
+              "primary-container": "#e67e22",
+              "secondary": "#546162",
+              "on-surface-variant": "#564337",
+              "inverse-surface": "#2b3135",
+              "surface-tint": "#944a00"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-[#f4fafe] dark:bg-slate-950 flex flex-col p-4 gap-2 z-50 overflow-y-auto no-scrollbar">
+<div class="flex flex-col mb-8 px-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#944a00] to-[#e67e22] flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-[#944a00] to-[#e67e22] bg-clip-text text-transparent">爱宠家</h1>
+<p class="text-[10px] text-on-surface-variant/60 font-bold tracking-widest uppercase">社区管理门户</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] dark:text-slate-400 hover:bg-[#eff4f8] dark:hover:bg-slate-900 rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">数据看板</span>
+</a>
+<!-- User Management -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] dark:text-slate-400 hover:bg-[#eff4f8] dark:hover:bg-slate-900 rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-medium text-sm">用户管理</span>
+</a>
+<!-- Content Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-[#564337] dark:text-slate-400 hover:bg-[#eff4f8] dark:hover:bg-slate-900 rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined">description</span>
+<span class="font-medium text-sm">内容管理</span>
+<span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">帖子管理</a>
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">评论管理</a>
+</div>
+</div>
+<!-- Store Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#944a00] to-[#e67e22] text-white rounded-xl shadow-sm transition-transform hover:scale-[1.02] active:scale-98 duration-150 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span class="font-medium text-sm">商城管理</span>
+<span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-xs font-bold text-primary transition-colors" href="#">商品管理</a>
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">订单管理</a>
+</div>
+</div>
+<!-- Service Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-[#564337] dark:text-slate-400 hover:bg-[#eff4f8] dark:hover:bg-slate-900 rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="font-medium text-sm">服务管理</span>
+<span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">预约管理</a>
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">客服会话</a>
+</div>
+</div>
+<!-- System Settings -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-[#564337] dark:text-slate-400 hover:bg-[#eff4f8] dark:hover:bg-slate-900 rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">系统设置</span>
+<span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">管理员账号</a>
+<a class="block py-2 text-xs text-[#564337]/70 hover:text-primary transition-colors" href="#">操作日志</a>
+</div>
+</div>
+</nav>
+<div class="mt-8 p-4 bg-surface-container-low rounded-xl">
+<div class="flex items-center gap-3">
+<img alt="超级管理员" class="w-10 h-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdxRk-c-NVFjCTidb56M36U7lobXVl0TBxvVEYU1JITuBf0fjHnB6Q1LjAsDdkBBqDfNymxexA_-fpYjnUPXqkAw4lEyw3N1y8ET-1hg0XdTpDYUAl7mOyY-jwxZjccbVmE3PTOcQgnWo8JcD3lBtQjpYbpYPLrJMr4yFJyzD1DKhEfLckOTdkh-t9yoXZ0AiloJHlK1soevjw83k8_HULswZIxsc2DuAO2QSblY0601h_TfRXubRgeF0Hug_NOzrS0z3AsjugXA0"/>
+<div class="overflow-hidden">
+<p class="text-xs font-bold text-on-surface truncate">超级管理员</p>
+<p class="text-[10px] text-on-surface-variant truncate">admin@aichongjia.com</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar (Shared Component) -->
+<header class="sticky top-0 z-40 bg-[#eff4f8]/80 backdrop-blur-md px-8 py-3 flex justify-between items-center shadow-[0px_8px_24px_rgba(86,67,55,0.08)]">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="hover:text-primary cursor-pointer transition-colors">商城管理</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-bold">商品管理</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="bg-surface-container-highest border-none rounded-xl pl-10 pr-4 py-2 text-sm w-64 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="搜索商品名称或ID..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-[#dde3e7] transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="bg-gradient-to-r from-primary to-primary-container text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                    新增商品
+                </button>
+</div>
+</div>
+</header>
+<!-- Content Page -->
+<div class="p-8 space-y-8">
+<!-- Table Section (Asymmetric Editorial Style) -->
+<section class="bg-surface-container-low rounded-3xl p-1 overflow-hidden">
+<div class="bg-surface-container-lowest rounded-[1.4rem] shadow-sm">
+<div class="p-6 border-b border-surface-variant/30 flex justify-between items-end">
+<div>
+<h2 class="text-2xl font-bold text-primary">商品库</h2>
+<p class="text-sm text-on-surface-variant mt-1">管理您的商品目录、价格及库存状态</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">批量下架</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">导出表格</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-on-surface-variant text-[11px] uppercase tracking-wider font-bold">
+<th class="px-6 py-4">商品ID</th>
+<th class="px-6 py-4">商品信息</th>
+<th class="px-6 py-4 text-right">价格</th>
+<th class="px-6 py-4 text-center">库存</th>
+<th class="px-6 py-4">状态</th>
+<th class="px-6 py-4">创建时间</th>
+<th class="px-6 py-4 text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/20">
+<!-- Row 1 -->
+<tr class="group hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">#P10024</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-high shrink-0">
+<img class="w-full h-full object-cover" data-alt="close-up of a high-quality organic grain-free dog food package with professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmBrKxAKOL7ILF9cUBNridHLDAPjap5m2ZmNw3mk1D0uHbdRylumCPxyomZ35_o8Z0oAKrGUkeVVU7iz4o0knf4WlVXWXQ1kPzT8R8bUgidJtS4sWyKiC4sNCPNZq9Rnu80bMiY0v6N9uSBb4mj3s9i60hOEwT_v1GpdnCybB8Q5PyoAZPMpSeSmPpseSfFLzUu0nz-fDF6HJP3eWuQNomBYXzYxVnrCPR5zhybYALvpya0RlGWY_MEINKA_Qn-G4-b0r0YKrj-RI"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">天然无谷高蛋白犬粮 2kg</p>
+<p class="text-[10px] text-on-surface-variant">分类: 宠物主食 / 犬类</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right text-sm font-bold text-primary">¥ 189.00</td>
+<td class="px-6 py-4 text-center">
+<div class="text-sm font-medium">1,240</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mx-auto mt-1 overflow-hidden">
+<div class="h-full bg-primary-container w-3/4"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                        销售中
+                                    </span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">2023-11-05 14:20</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">#P10025</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-high shrink-0">
+<img class="w-full h-full object-cover" data-alt="modern aesthetic cat scratcher made of light wood and sisal rope in a sunlit minimalist room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAf1TfbmDIfRuBu7lXdD3g_X8Tf3UAvX4ESo6fDeht0ZAY0tdT3XNuMIMqrf3A63RLmglH_WLl6hPlf9KDBgO5uXt9WMp88O7AOJswDU0FoyqhDYi5LJgTaigkSkAUNWEX_vzbxskfVb5I36LiZJOSc9nxK1YFSpoisJU33ImkmouUJ2pV5r_XALegjtXJ9AdPBhD3lSv_ycuxJHM6lprCRASYTMFl2MxSKImRlkFBGARtxMRNLn71TPZ--sZJ5wrE1jk6mT5XuZMU"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">简约实木猫抓板 现代版</p>
+<p class="text-[10px] text-on-surface-variant">分类: 宠物用品 / 猫类</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right text-sm font-bold text-primary">¥ 58.00</td>
+<td class="px-6 py-4 text-center">
+<div class="text-sm font-medium">85</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mx-auto mt-1 overflow-hidden">
+<div class="h-full bg-error w-1/4"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary-container/20 text-on-tertiary-container text-[10px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+                                        库存紧张
+                                    </span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">2023-11-12 09:45</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">#P10026</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-high shrink-0">
+<img class="w-full h-full object-cover" data-alt="smart automatic pet water fountain with glowing blue light and flowing water stream" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD86wZf-QgXLT2SuWYX4kxEE4bXzXx_Dd1CD8MY9l79TDutnV0T8tBzL82IK8wVKYc2iSQNzCJt_HIqc4qz-3ayUjZk-qJWGaqFAmbfwCrzp_qYS-MxX2YJdUlkpK5sXEUWyl2F1iBvOOFJGiaAgW9kaoA-topxf7XJ7nP2s-SnpfR8g__qWR-3kyKmnTy4NbSVbkx_DS3CQ14weRE5mZtuDZK1SEhfTG_bqzUYs3QZJK4624HG9_4PTESdfccS-sRG3BhTMiLMLRM"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">智能自动循环宠物饮水机</p>
+<p class="text-[10px] text-on-surface-variant">分类: 智能设备 / 通用</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right text-sm font-bold text-primary">¥ 329.00</td>
+<td class="px-6 py-4 text-center">
+<div class="text-sm font-medium">0</div>
+<div class="w-16 h-1 bg-surface-container-high rounded-full mx-auto mt-1 overflow-hidden">
+<div class="h-full bg-surface-dim w-0"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant text-[10px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>
+                                        已下架
+                                    </span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">2023-11-20 16:10</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 border-t border-surface-variant/30 flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">显示 1 到 3 条，共 24 条商品</span>
+<div class="flex gap-1">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">2</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">3</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+</div>
+</div>
+</div>
+</section>
+<!-- Summary Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Total Stock Value -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 shadow-[0px_8px_24px_rgba(86,67,55,0.04)] relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-12 h-12 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.5%</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium">总库存价值</p>
+<h3 class="text-3xl font-black text-on-surface mt-1">¥ 1,245,800</h3>
+<p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">截止今日 08:00</p>
+</div>
+<!-- Active Products -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 shadow-[0px_8px_24px_rgba(86,67,55,0.04)] relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-tertiary-container/5 rounded-full blur-2xl group-hover:bg-tertiary-container/10 transition-colors"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full">稳定</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium">上架商品数</p>
+<h3 class="text-3xl font-black text-on-surface mt-1">1,420 <span class="text-sm font-normal text-on-surface-variant">件</span></h3>
+<p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">占总品类 88%</p>
+</div>
+<!-- New This Month -->
+<div class="bg-gradient-to-br from-primary to-primary-container rounded-3xl p-6 shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+<div class="absolute right-0 top-0 p-4 opacity-20">
+<span class="material-symbols-outlined text-6xl text-white">auto_awesome</span>
+</div>
+<div class="flex items-center justify-between mb-4">
+<div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">new_releases</span>
+</div>
+</div>
+<p class="text-white/80 text-sm font-medium">本月新增</p>
+<h3 class="text-3xl font-black text-white mt-1">42 <span class="text-sm font-normal text-white/70">款</span></h3>
+<div class="mt-4 flex items-center gap-2">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMFM0JINixvEka4hgitxuTp9YHihV7r7Gg8u9VLIxTyAW0N2jMxVNuquAO0ZkfwXXtv5KR_-LPjaNyk7G6-_-IiAl45Ey1Ll04OJ_9YdgYadlTqJVx-EVa7EA8U9Gqaw0jnDDUVm1kXY5QTPZl4hsWuh48cz03FlNdg4JxGtfspTLnoEk2Xm2zTIk7biu9Q66c6CwINOi0I6GfNTz0QPo2P5bt8pykcKqCVqoJFAInwmlK9IrHSGGJWcEjh-jfF-RMZVEoTFCF6n0"/></div>
+<div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx_JkIGIUm-a-69xTJ8CbRLHOEswFWXdE3DMwGCEOFQh1blGKzLgQ3rnHVdtVqeejN3x3zWm5PN7LP_6ijEsM6H7qZg-pxxyul0fsxBhh0kh2GM4lbho1LheOcEcaq6tU0pLL-of36bLhDXpIAGegB6DmMrj_l8OR1NxX3ic23XgaOvwwoT5JVjp40MV8C_9HFu9YTpkBpOZ-RpBmCh7jgNVQoXW2_Uv0IRoyApViM14iaLMd-eJdOgk-G2DbHpDeleEsypBWlOR4"/></div>
+<div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzuWaFmFX-VTUVl5RqA33SuXIK-TMuSEfhugsd2HhUIoDriDAPmo6hUXVl-QqISIqCEdUg2uJ3V2WU9LVo3cPgYA6MO2GcDckkTu2UYyXy1Etr2nhTGcmkv4n96d7tczYnY8fBVIDcugmRIfuQYFMjv-LzDvQt9S-7dpq-QIkTNnUSEn1QUfvzOVCf2X7EY4__SYuFC1hTi0TxpVfzA-XJv4EaEe1ccARK2L2ZkC3ZRqayhbVP3Gqh61XoD2MPohKQGf6jN9zk6yg"/></div>
+</div>
+<span class="text-[10px] text-white/90 font-bold">运营团队近期活跃新增</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (Contextual) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</body></html>

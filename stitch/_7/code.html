@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>爱宠家管理后台 - 预约管理</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#ffb961",
+                        "outline": "#897365",
+                        "secondary": "#546162",
+                        "on-surface": "#161c20",
+                        "tertiary": "#865300",
+                        "on-tertiary-fixed-variant": "#663e00",
+                        "primary-fixed": "#ffdcc5",
+                        "secondary-fixed-dim": "#bcc9ca",
+                        "primary-fixed-dim": "#ffb783",
+                        "surface-variant": "#dde3e7",
+                        "on-surface-variant": "#564337",
+                        "on-background": "#161c20",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3d494a",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#482b00",
+                        "inverse-surface": "#2b3135",
+                        "on-secondary-fixed": "#121e1f",
+                        "background": "#f4fafe",
+                        "on-primary-container": "#502600",
+                        "surface-container": "#e9eff3",
+                        "inverse-on-surface": "#ecf1f6",
+                        "tertiary-container": "#d78800",
+                        "surface-bright": "#f4fafe",
+                        "surface-tint": "#944a00",
+                        "primary-container": "#e67e22",
+                        "surface-container-low": "#eff4f8",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#586566",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e3e9ed",
+                        "tertiary-fixed": "#ffddb9",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary": "#944a00",
+                        "secondary-fixed": "#d8e5e6",
+                        "on-tertiary-fixed": "#2b1700",
+                        "on-primary-fixed-variant": "#713700",
+                        "surface-container-highest": "#dde3e7",
+                        "surface": "#f4fafe",
+                        "surface-dim": "#d5dbdf",
+                        "secondary-container": "#d5e2e3",
+                        "on-primary-fixed": "#301400",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#ffb783",
+                        "outline-variant": "#dcc1b1"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+                        "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+                        "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Side Navigation Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 border-r border-orange-100/20 flex flex-col p-4 gap-2 z-50 overflow-y-auto hide-scrollbar">
+<div class="px-4 py-6 mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-orange-400 flex items-center justify-center shadow-lg shadow-orange-200/50">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-orange-700 to-orange-400 bg-clip-text text-transparent">爱宠家</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Digital Curator</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- 数据看板 -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">数据看板</span>
+</a>
+<!-- 用户管理 -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-medium">用户管理</span>
+</a>
+<!-- 内容管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
+<span class="material-symbols-outlined text-sm">description</span>
+                    内容管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">帖子管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">评论管理</span>
+</a>
+</div>
+<!-- 商城管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
+<span class="material-symbols-outlined text-sm">storefront</span>
+                    商城管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">商品管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">订单管理</span>
+</a>
+</div>
+<!-- 服务管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
+<span class="material-symbols-outlined text-sm">medical_services</span>
+                    服务管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl shadow-lg shadow-orange-200/50" href="#">
+<span class="font-medium text-sm">预约管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">客服会话</span>
+</a>
+</div>
+<!-- 系统设置 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
+<span class="material-symbols-outlined text-sm">settings</span>
+                    系统设置
+                </div>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">管理员账号</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="font-medium text-sm">操作日志</span>
+</a>
+</div>
+</nav>
+<div class="mt-8 border-t border-slate-200 pt-4 px-2">
+<button class="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-error hover:bg-error-container/20 rounded-xl transition-colors">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">退出登录</span>
+</button>
+</div>
+</aside>
+<!-- Top Navigation Shell -->
+<header class="w-full sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(86,67,55,0.08)] ml-64 w-[calc(100%-16rem)]">
+<div class="flex justify-between items-center h-16 px-6">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-orange-700">爱宠家管理后台</span>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-highest border-none rounded-xl text-sm w-64 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="搜索预约、宠物或联系人..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<img alt="管理员头像" class="w-10 h-10 rounded-full border-2 border-orange-100" data-alt="close-up portrait of a friendly male professional avatar with glasses and a warm smile in vector style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuHohswC_iEgxOqymKJoSK64ncqSIjSr3LLLp2eUZTinLffKbZQCqRVXaAyoGRacxb0_grcnN9vbyN3LcKGS1ehAttSot7G7ub5Zu_urScvBhmINWm-KvntSemW6gWgXAWE7Rfa5trbnZudH1MVjAkm9tUTm594gmM3Y2YYHlsC1amS48b7Qcrx5a0DQdIAp8ZE0zTcsmauAmvOFDNZRuEcAjTQp-gJsmzTurUv5Hr8bdKkSe9uMgXELqhD8A-_6Ftss7u7Nz5GlI"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-on-surface">Admin_Felix</span>
+<span class="text-[10px] text-slate-500 font-medium">超级管理员</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 p-8 min-h-screen">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<nav class="flex items-center gap-2 text-sm text-slate-500 mb-2">
+<span>服务管理</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-orange-600 font-medium">预约管理</span>
+</nav>
+<h2 class="text-3xl font-black text-on-surface tracking-tight">预约概览</h2>
+<p class="text-on-surface-variant mt-1">欢迎回来，今日共有 <span class="font-bold text-primary">24</span> 个待处理预约。</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 bg-white border-none shadow-sm hover:shadow-md rounded-xl text-on-surface-variant font-semibold transition-all">
+<span class="material-symbols-outlined">download</span>
+                    导出报表
+                </button>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span>
+                    新增预约
+                </button>
+</div>
+</div>
+<!-- Bento Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-primary/20">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+<span class="text-xs font-bold text-primary bg-primary-fixed px-2 py-1 rounded-full">+12%</span>
+</div>
+<p class="text-sm font-medium text-on-surface-variant">待服务</p>
+<h3 class="text-2xl font-black mt-1">18</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-tertiary/20">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">location_home</span>
+</div>
+<span class="text-xs font-bold text-tertiary bg-tertiary-fixed-dim px-2 py-1 rounded-full">进行中</span>
+</div>
+<p class="text-sm font-medium text-on-surface-variant">已到店</p>
+<h3 class="text-2xl font-black mt-1">06</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-green-200">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">今日完成</span>
+</div>
+<p class="text-sm font-medium text-on-surface-variant">已完成</p>
+<h3 class="text-2xl font-black mt-1">42</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-error-container">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-xl bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cancel</span>
+</div>
+<span class="text-xs font-bold text-error bg-error-container px-2 py-1 rounded-full">-3%</span>
+</div>
+<p class="text-sm font-medium text-on-surface-variant">已取消</p>
+<h3 class="text-2xl font-black mt-1">03</h3>
+</div>
+</div>
+<!-- Filter & View Controls -->
+<div class="bg-surface-container-low rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-2 bg-surface-container-lowest p-1 rounded-xl shadow-inner">
+<button class="px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-lg font-bold text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">list</span>
+                    列表视图
+                </button>
+<button class="px-6 py-2 text-on-surface-variant hover:bg-orange-50 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-sm">calendar_month</span>
+                    日历视图
+                </button>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-widest">服务类型:</span>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold">全部</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">美容</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">洗澡</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">医疗</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">寄养</button>
+</div>
+</div>
+<div class="h-6 w-[1px] bg-slate-300"></div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors">
+<span class="material-symbols-outlined">filter_alt</span>
+</button>
+</div>
+</div>
+<!-- Appointment Table Container -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">预约详情</th>
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">宠物信息</th>
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">服务项目</th>
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">主人信息</th>
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">预约时段</th>
+<th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">当前状态</th>
+<th class="px-6 py-4 text-right"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-orange-50">
+<!-- Row 1 -->
+<tr class="hover:bg-orange-50/30 transition-colors group">
+<td class="px-6 py-5">
+<span class="block text-xs font-mono font-bold text-primary">#BK-2024032101</span>
+<span class="text-[10px] text-slate-400">下单时间: 09:12</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="宠物头像" class="w-10 h-10 rounded-lg bg-orange-100" data-alt="cute stylized orange and white cat cartoon illustration in a minimal flat design icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmDUm175YZBeiBAHZklM_l0qb3v9vLz0VoKRv3RoHCKTwl2KXVgnHAh86rOIoKx_D22E9V2HQ1afvuNobpYivHILk6p-nE5TvDMn1L7ghuiOWXvU1wEWV5h-sQFH04uDRstuGZFLxgcz-UX5C2n2Tm4ZZaYq8Edqeh8hn6mG4UjcMMFq1EsAEzIaCmBiYXNWirz0-_4PGfR6Sh7sxCZgpLu6BXnIcp_1CTi5h7Iaca4nUxw_FTrfmW1jt4SqkfevzD13TPrNB0oRM"/>
+<div>
+<span class="block font-bold text-on-surface">糯米 (Mochi)</span>
+<span class="text-xs text-on-surface-variant">布偶猫 · 2岁</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold">
+                                精致洗澡
+                            </span>
+</td>
+<td class="px-6 py-5">
+<span class="block font-medium text-on-surface">林女士</span>
+<span class="text-xs text-on-surface-variant">138 **** 9921</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">今日 14:00 - 15:30</span>
+<span class="text-[10px] text-orange-600 font-bold">预计时长 90min</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                待服务
+                            </span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-orange-50/30 transition-colors group">
+<td class="px-6 py-5">
+<span class="block text-xs font-mono font-bold text-primary">#BK-2024032105</span>
+<span class="text-[10px] text-slate-400">下单时间: 08:30</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="宠物头像" class="w-10 h-10 rounded-lg bg-slate-100" data-alt="playful dark grey husky dog character illustration in a sleek modern flat design vector style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANtjctKjnr9Pi_rWAbDHD-WAKPfYTylv2hG-jb_5S8wbkQnVXUojYCllg3Kd9RZpL_kuAwEXZ8_CZwdmef037lANdLuDzshJWLzq2mOgPlTGDeCqOd63QNmOz5HJ23TghRJzPO-j5o1JJWIKPd8JoXZmJPA5oFgDz1tXOZr2HIpzhlQMe3mIHVAhf74sf6shJum72wdVYkmnCEMYZUEEIFBGh354R4cm6bEUBY2E7yE1nKkOHv7xuyLeMxXP2nIRoc-o1m3a03XQw"/>
+<div>
+<span class="block font-bold text-on-surface">雷霆 (Thunder)</span>
+<span class="text-xs text-on-surface-variant">哈士奇 · 1.5岁</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-tertiary-container/20 text-tertiary text-xs font-bold">
+                                宠物医疗 · 疫苗
+                            </span>
+</td>
+<td class="px-6 py-5">
+<span class="block font-medium text-on-surface">张先生</span>
+<span class="text-xs text-on-surface-variant">159 **** 0088</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface text-tertiary">正在进行中</span>
+<span class="text-[10px] text-slate-400 font-bold">入店: 10:45</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                已到店
+                            </span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-orange-50/30 transition-colors group">
+<td class="px-6 py-5">
+<span class="block text-xs font-mono font-bold text-primary">#BK-2024032108</span>
+<span class="text-[10px] text-slate-400">下单时间: 昨天</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="宠物头像" class="w-10 h-10 rounded-lg bg-orange-50" data-alt="cute chocolate poodle puppy illustration with a happy expression in a modern minimalistic flat art style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB1i-3qbwvHm--j_X6-Zptx7y4hh2yqYmeAFYEBmP3j0vOCJJBVXdeiUSBepAZQEObpPfuhEQyT2B-2ctC5a_pFvHBjI3lJsfc1SooVMB3CHe0oD0C3Cc5Bd8kwKo8oMmpWNSm287RhPQZJmZQR0dlTQ1bbftWrPnE0QX6nHIs6A-FKayhfSOaDxj3rkzQ7fVLMx53DxzMWe1wxj4yQwAfpYLn6l-nw7iA_CDzwaFYFIWHl5C4mpQ2-uFa9sjAtTsmVas54OGdcI4"/>
+<div>
+<span class="block font-bold text-on-surface">可可 (Coco)</span>
+<span class="text-xs text-on-surface-variant">泰迪 · 4岁</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-primary-container/20 text-primary text-xs font-bold">
+                                寄养服务
+                            </span>
+</td>
+<td class="px-6 py-5">
+<span class="block font-medium text-on-surface">王小姐</span>
+<span class="text-xs text-on-surface-variant">133 **** 4455</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">3月22日 - 3月25日</span>
+<span class="text-[10px] text-slate-400 font-bold">共计 3 晚</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                待支付
+                            </span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-orange-50/30 transition-colors group">
+<td class="px-6 py-5">
+<span class="block text-xs font-mono font-bold text-primary">#BK-2024032109</span>
+<span class="text-[10px] text-slate-400">下单时间: 07:45</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="宠物头像" class="w-10 h-10 rounded-lg bg-orange-100" data-alt="energetic golden retriever dog cartoon avatar in high quality vector art with warm sunlight highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKEoXBYaFbqeLnCfvabZ2t5O1a7MuVg3eZwb3p8UPkLldUjHrBcrbZF7f1oj80kGcQp0h4ynnj7h5xRvgaKnb7mwQLIZnDwlmPy-WbSaJxhaZtR2THdGdjCE1bBULaR7RO6PHmu0Smoqf4Ixdv9UDl0iSxDCz8sBRZxSajfQo5lltwjVDja1pEAGxo6bjkfEk-hMFwLgP570hDrVZRoRs7rviJwN9Dkm4WtMWFm3vAQ9Ot2rJD2eQvW4S5vIUMdQNWlLqUn-w1PhE"/>
+<div>
+<span class="block font-bold text-on-surface">夏天 (Summer)</span>
+<span class="text-xs text-on-surface-variant">金毛 · 3岁</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold">
+                                全身美容
+                            </span>
+</td>
+<td class="px-6 py-5">
+<span class="block font-medium text-on-surface">刘先生</span>
+<span class="text-xs text-on-surface-variant">136 **** 2211</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">今日 09:30 - 11:00</span>
+<span class="text-[10px] text-green-600 font-bold">已于 11:05 完成</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                已完成
+                            </span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low/30 flex items-center justify-between">
+<span class="text-xs font-bold text-on-surface-variant">显示 1 到 10 条，共 84 条预约记录</span>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">...</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Information Cards (Asymmetric Layout) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+<!-- Promotion / Announcement Card -->
+<div class="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 to-primary-container p-8 text-white shadow-xl">
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div>
+<h4 class="text-2xl font-black mb-2">春季驱虫季特别提醒</h4>
+<p class="text-orange-100 max-w-md">本周寄养与医疗预约量激增，请各门店店长合理调配美容师排班。由于近期流感频发，请务必核实进店宠物的疫苗情况。</p>
+</div>
+<div class="mt-8 flex items-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-bold rounded-xl shadow-lg transition-transform active:scale-95">查看详情</button>
+<span class="text-xs text-orange-100 font-medium">截止日期: 2024年4月1日</span>
+</div>
+</div>
+<div class="absolute -right-8 -bottom-8 opacity-20 transform rotate-12">
+<span class="material-symbols-outlined text-[200px]" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+</div>
+<!-- Shop Efficiency Widget -->
+<div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm">
+<h4 class="text-lg font-black mb-6 text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                    资源占用率
+                </h4>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">美容间</span>
+<span class="text-primary">85%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">寄养仓</span>
+<span class="text-tertiary">42%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 42%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-bold mb-2">
+<span class="text-on-surface-variant">医疗科室</span>
+<span class="text-orange-400">60%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-orange-400 rounded-full" style="width: 60%"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-slate-100">
+<p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-4">今日值班店长</p>
+<div class="flex items-center gap-3">
+<img alt="店长头像" class="w-8 h-8 rounded-full border border-orange-200" data-alt="professional female shop manager avatar with auburn hair and a confident expression in vector illustration style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH1wCCQ2MygdcNvWhOArQ8fPpqIhdP4mg5bIrwWtn8DXnWHDSwGsVBqGCh9l38Pw6rQ4bjI5qkDDyw0_Uk-UUnzVNFqTYBuv3_5k_RlBU2PzVTnJMEwl43w0EbeVx1ktyPT3QkOpEc3JBhmsAr2nb834j_EXJzL6FvXgY24sL3ZNtgnIyWIgrEY2fUZYNfNcyYsk3A3yyeVxBW2yyBaX96IGaSjrSSYaw9wu7rvmmkk-E1ag-fXirz2C3qeQTZQukT-NnQ2JGajUI"/>
+<span class="text-sm font-bold text-on-surface">Sara Chen</span>
+<span class="ml-auto text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded-lg font-bold">在岗</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-600 to-orange-500 text-white shadow-2xl shadow-orange-300 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+</body></html>

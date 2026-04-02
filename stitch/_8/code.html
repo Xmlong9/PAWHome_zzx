@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>爱宠家管理后台 - 客服对话</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#ffb961",
+              "outline": "#897365",
+              "secondary": "#546162",
+              "on-surface": "#161c20",
+              "tertiary": "#865300",
+              "on-tertiary-fixed-variant": "#663e00",
+              "primary-fixed": "#ffdcc5",
+              "secondary-fixed-dim": "#bcc9ca",
+              "primary-fixed-dim": "#ffb783",
+              "surface-variant": "#dde3e7",
+              "on-surface-variant": "#564337",
+              "on-background": "#161c20",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed-variant": "#3d494a",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#482b00",
+              "inverse-surface": "#2b3135",
+              "on-secondary-fixed": "#121e1f",
+              "background": "#f4fafe",
+              "on-primary-container": "#502600",
+              "surface-container": "#e9eff3",
+              "inverse-on-surface": "#ecf1f6",
+              "tertiary-container": "#d78800",
+              "surface-bright": "#f4fafe",
+              "surface-tint": "#944a00",
+              "primary-container": "#e67e22",
+              "surface-container-low": "#eff4f8",
+              "on-error-container": "#93000a",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#586566",
+              "on-secondary": "#ffffff",
+              "surface-container-high": "#e3e9ed",
+              "tertiary-fixed": "#ffddb9",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "primary": "#944a00",
+              "secondary-fixed": "#d8e5e6",
+              "on-tertiary-fixed": "#2b1700",
+              "on-primary-fixed-variant": "#713700",
+              "surface-container-highest": "#dde3e7",
+              "surface": "#f4fafe",
+              "surface-dim": "#d5dbdf",
+              "secondary-container": "#d5e2e3",
+              "on-primary-fixed": "#301400",
+              "error": "#ba1a1a",
+              "inverse-primary": "#ffb783",
+              "outline-variant": "#dcc1b1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; }
+        .glass-nav { backdrop-filter: blur(12px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex min-h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-orange-100/20 flex flex-col p-4 z-50">
+<div class="mb-6 px-2 flex items-center gap-3 shrink-0">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-orange-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-orange-700 to-orange-400 bg-clip-text text-transparent">爱宠家</h1>
+<p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Digital Curator</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll pr-1 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="font-medium">数据看板</span>
+</a>
+<!-- User Management -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined text-xl">group</span>
+<span class="font-medium">用户管理</span>
+</a>
+<!-- Content Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 text-[11px] font-bold uppercase tracking-wider mt-2">
+                    内容管理
+                </div>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">帖子管理</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">评论管理</span>
+</a>
+</div>
+<!-- Mall Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 text-[11px] font-bold uppercase tracking-wider mt-2">
+                    商城管理
+                </div>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">商品管理</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">订单管理</span>
+</a>
+</div>
+<!-- Service Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 text-[11px] font-bold uppercase tracking-wider mt-2">
+                    服务管理
+                </div>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">预约管理</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl shadow-md shadow-orange-200/50 translate-x-1 pl-11" href="#">
+<span class="font-medium text-sm">客服会话</span>
+</a>
+</div>
+<!-- System Settings -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2.5 text-slate-400 text-[11px] font-bold uppercase tracking-wider mt-2">
+                    系统设置
+                </div>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">管理员账号</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:bg-orange-50 hover:translate-x-1 transition-all duration-300 rounded-xl pl-11" href="#">
+<span class="font-medium text-sm">操作日志</span>
+</a>
+</div>
+</nav>
+<div class="mt-4 border-t border-slate-100 pt-4 shrink-0">
+<button class="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors rounded-xl">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">退出登录</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 flex flex-col h-screen">
+<!-- TopNavBar -->
+<header class="w-full sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(86,67,55,0.08)] flex justify-between items-center h-16 px-8">
+<div class="flex items-center gap-6">
+<h2 class="text-xl font-bold tracking-tight text-orange-700">客服对话页面</h2>
+<div class="flex bg-surface-container-low rounded-full px-4 py-1.5 gap-4">
+<span class="text-sm font-semibold text-orange-700 border-b-2 border-orange-600">全部对话</span>
+<span class="text-sm text-slate-500 hover:text-orange-600 cursor-pointer">待处理</span>
+<span class="text-sm text-slate-500 hover:text-orange-600 cursor-pointer">服务记录</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-px bg-slate-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-orange-100" data-alt="Close-up portrait of a professional male administrator with a friendly expression in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRHXUnmNM5-NCSzS6I6OFWlV21Zq1BBW1KgUcL67nSQ7uDhJroFNLgM8JWki3xrA2enA_phab6tTfsm5PzP4Z580W0-Np4a1-jjuAm48x334c6o2c9nkCDDGO-0cDHees5BgUM68cEvoi3BrkRRN-sePOJnf4MZ9qmrJGau49LxwH6CRRSDJvymoIOcfsR4UOGkfSzoC3VHNOyrMKb8sl8bsIhVqxGAXriEet7NtkFYSyl8lkbJ9JCdpNZCiAXP-dAoUS60N__3aw"/>
+<span class="text-sm font-bold text-on-surface">管理员小橘</span>
+</div>
+</div>
+</header>
+<!-- Chat Workspace -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left: Contact List -->
+<section class="w-80 bg-surface-container-low flex flex-col border-r border-transparent">
+<div class="p-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest rounded-xl text-sm border-none focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400" placeholder="搜索联系人..." type="text"/>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar px-2 space-y-1">
+<!-- Contact Item Active -->
+<div class="bg-surface-container-lowest p-3 rounded-xl flex gap-3 shadow-sm cursor-pointer border-l-4 border-primary">
+<div class="relative">
+<img class="w-12 h-12 rounded-xl object-cover" data-alt="Profile photo of a smiling woman with glasses and brown hair, soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuSxPE1FEXmzbinNq2w3-uDVSGO5loarLJSjiXsTYmUe3aR74AZSH3sSIlCLaMEfbQGrv30VDjvsks9q_Dp7oPy_EbdoTOsZ-xEqbVPp9frWYs9VPVjTi_7LjwilgnyTt8MA2Nb6aYWRIjoZi_8BTW1hJQlKJtr2AqUt6sRWYsYL0z-Lyq5BTpNo7lfhB44XjGJE9qAC7DlAGaiwancJYLwxiq1bNtMWRL1V0Kjw438deWuWSNIKP23H9kuGu0nx5mRzSEGAycGOw"/>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h4 class="text-sm font-bold truncate">林小满</h4>
+<span class="text-[10px] text-slate-400 font-medium">10:45</span>
+</div>
+<p class="text-xs text-slate-500 truncate">医生您好，我家大橘最近有点食欲不振...</p>
+</div>
+</div>
+<!-- Contact Items -->
+<div class="hover:bg-surface-container-high p-3 rounded-xl flex gap-3 cursor-pointer transition-colors">
+<div class="relative">
+<img class="w-12 h-12 rounded-xl object-cover grayscale-[40%]" data-alt="Portrait of a friendly young man with short beard and casual clothing" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBWZQd2tCWslQQdcVj1AYjWXT8aIxPQGAfQFDysA7fYqiHD2Yc-zbl22puHVxUOaGPU7u1S1HpDPc3nv3-ZQWhUFoKjPM3hMH0afBCQYdY-FQwFEdjN0IkBHEiU7vSB18-vbHrRTiOFAz5N1WRHh5JJYmUnzjKhj8hnVr1tc31IoFl5C3_fYAmdcHeOiEDq1vxRgdcqjKMSg49V-5wQi8dKW_xk77rY-LvEPLjZs73tVpLkRcyQH5rKihPRkGy4nuU8QoLAOzPMUc"/>
+<div class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-surface-container-low">2</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h4 class="text-sm font-bold truncate text-on-surface-variant">张德培</h4>
+<span class="text-[10px] text-slate-400 font-medium">昨天</span>
+</div>
+<p class="text-xs text-slate-500 truncate font-semibold text-primary">想确认下明天的洗澡预约时间。</p>
+</div>
+</div>
+<div class="hover:bg-surface-container-high p-3 rounded-xl flex gap-3 cursor-pointer transition-colors opacity-80">
+<img class="w-12 h-12 rounded-xl object-cover" data-alt="Portrait of a stylish middle-aged woman with short black hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwsR5EnFNR4BWpD6BgcCighmK4nR7VYoo9ttWKNGH3SqsLvdnF3zPrUyW-R4p8Uwv_LBrn_4bF-QmZHcVpkbOo_IJ7BmjFZhPnHmQPc5LJORo1i0UVyMZaoTF4ALC2LSeYA9W9OU4LrjU8U5HonYBTvDcnfwe8BTvCUzYyi1_Lwu5m-iYyQImZGUGLhgq5XDQrgoRQocOqoKzFpuThkOx5z5KxZhfX9HAcR4B0ywKe5APL5R9gOgPQzllxE8880zmHLxH4z0dIxL8"/>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h4 class="text-sm font-bold truncate text-on-surface-variant">王女士</h4>
+<span class="text-[10px] text-slate-400 font-medium">昨天</span>
+</div>
+<p class="text-xs text-slate-500 truncate">好的，那麻烦帮我加上剪指甲服务。</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Middle: Chat Window -->
+<section class="flex-1 flex flex-col bg-surface overflow-hidden">
+<!-- Chat Header -->
+<div class="h-16 flex items-center justify-between px-6 bg-surface-container-lowest shadow-sm z-10">
+<div class="flex items-center gap-3">
+<h3 class="font-bold text-on-surface">对话中：林小满</h3>
+<span class="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full uppercase tracking-tighter">VIP 客户</span>
+</div>
+<div class="flex gap-4">
+<button class="text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">call</span></button>
+<button class="text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">video_call</span></button>
+<button class="text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Messages -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 bg-surface">
+<div class="flex justify-center">
+<span class="text-[11px] text-slate-400 font-bold bg-slate-100 px-3 py-1 rounded-full">10:30 上午</span>
+</div>
+<!-- Client Message -->
+<div class="flex gap-3 max-w-[80%]">
+<img class="w-10 h-10 rounded-xl object-cover flex-shrink-0" data-alt="Profile photo of a woman in her 30s with gentle features" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv6zwzvesvMxuhvHpEFQ519rL5vMwY51YgftY_d1i495-1zYsOmPnliIJNQ-Pqv2rlOGERY9qArbc8T3_E8Gc2do6NfISI7qpP3kQs25ZUWE2jOktV9Tn7lwo37ctaRDgRd5USOR5VfQULar_VQLduqjxAREB4W7LLv0WpAIg5CBtRHKaMZo6yfzkfl9vD1c0Y-HYtbKGBg_zTQ7PywbFJx3QWegu1N-wylonnu-Q6dB-yf9kQCVKCFlN6-LaYxoqw6ng56vQd2F4"/>
+<div class="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-on-surface-variant leading-relaxed">
+                            医生您好，我家大橘（橘猫）最近有点食欲不振，平时很爱吃罐头的，今天早上只舔了两口，精神状态也不如以前好。
+                        </div>
+</div>
+<!-- Admin Message -->
+<div class="flex gap-3 max-w-[80%] ml-auto flex-row-reverse">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white flex-shrink-0 shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">support_agent</span>
+</div>
+<div class="bg-gradient-to-br from-orange-600 to-orange-500 p-4 rounded-2xl rounded-tr-none shadow-lg text-sm text-white leading-relaxed">
+                            林女士您好，收到您的反馈。除了食欲不振，大橘还有呕吐、拉肚子或者是嗜睡的情况吗？另外最近有没有更换过猫粮或者环境变化？
+                        </div>
+</div>
+<!-- Image Message -->
+<div class="flex gap-3 max-w-[80%]">
+<img class="w-10 h-10 rounded-xl object-cover flex-shrink-0" data-alt="Avatar of user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2Ej45unuAIwXran5g5VsStVZsXWm1Y0jZi5ownH1yNFZXpwH9-1pNLdZStzowmFLwxD7X4J9dvX5ozM-0VWUdEADa1FU2AH592cXTV7EuEvoOeI-KepNSjsNqcIOZMUjf3l2Dpsn1OUVzTRZCF8vlnHNb3MtAb78C4x3ANHvemH3Dz2ex_nttjnPnl3nwtdoOYiWK1oNS61p5uKpAJVq_VLSrbgiys5RtfpYdnftdiLB1rhAr6IbdwC_HmeYRPek_ncKzsUvu0dA"/>
+<div class="space-y-2">
+<div class="bg-surface-container-lowest p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-on-surface-variant">
+                                还没换环境，这是它今天早上的样子，看起来有点蔫蔫的。
+                            </div>
+<img class="w-64 rounded-2xl shadow-sm border-4 border-white" data-alt="Close up of a fluffy orange cat lying on a sunlit wooden floor with half-closed eyes looking tired" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7CciRsuuNdb04rrq0AdMOr8pjd35k13pMRaJFWthL6ZRp_7JHCDpsGDfqPgBcnTnrIBkN5qfKAo2LOjrzJohS1ct87ax5YhGB3oB55cjCoFXzpPu53Gte1sH_sL8ervoS3gX8CQTeq9eDNplFcczW3W2nN0VEeVyWjAqfm-qlF0Mhic0CC1OVabrXm7ieofcKby8VREAcUCQGVNa5GYWfbu0qBldwvfFe_Vp5RApGxT1-dXzIClf2d5EdGcjlxU59FKfWGQLns-A"/>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-4 bg-surface-container-lowest border-t border-orange-50">
+<div class="flex gap-2 mb-3">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-orange-50 rounded-lg"><span class="material-symbols-outlined">sentiment_satisfied</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-orange-50 rounded-lg"><span class="material-symbols-outlined">image</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-orange-50 rounded-lg"><span class="material-symbols-outlined">attach_file</span></button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-orange-50 rounded-lg"><span class="material-symbols-outlined">history</span></button>
+</div>
+<div class="flex gap-3">
+<textarea class="flex-1 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm p-3 resize-none" placeholder="输入消息回复林小满..." rows="3"></textarea>
+<div class="flex flex-col justify-end">
+<button class="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-orange-400 text-white font-bold rounded-xl shadow-lg shadow-orange-200 active:scale-95 transition-all text-sm">
+                                发送
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Right: User Information Card -->
+<section class="w-80 bg-surface-container flex flex-col overflow-y-auto no-scrollbar border-l border-orange-50">
+<!-- User Profile Summary -->
+<div class="p-6 text-center">
+<div class="relative inline-block mb-4">
+<img class="w-24 h-24 rounded-3xl object-cover ring-4 ring-white shadow-xl mx-auto" data-alt="Large detailed profile picture of the client, a woman with a kind smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEPPtqcFmlFsFnKbKI3-PEZFoYqBpXrp2MSTZ5rQ1BPn0e_3_H23zZlz13kzj7I-AvFJTgooT2AxuCpd7DwHymVD_JMckDNbyRBgkhZjCrId7LXIYEyhFdhaLDjRkwtjQrdeZ0rYzEwIBNnGr4-xcNqPi9jlDqlImWTLBhOaG-msiZneJwV4zmfZBL3nbKXam9q8BI8QkG-nw7YBjGYm0_xmid75eD-ktIi5kUH6igm3OoPAcDXJVSkc9FJcZiGtbTQGSx310wGO4"/>
+<div class="absolute -bottom-2 right-0 bg-primary text-white p-1 rounded-lg">
+<span class="material-symbols-outlined text-xs">verified</span>
+</div>
+</div>
+<h3 class="text-xl font-black text-on-surface">林小满</h3>
+<p class="text-xs text-slate-500 font-medium mt-1">注册时间：2023-05-12</p>
+</div>
+<!-- Related Pets -->
+<div class="px-6 space-y-4">
+<div class="flex justify-between items-center">
+<h4 class="text-sm font-bold text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-600 text-lg">pets</span> 关联宠物
+                        </h4>
+<button class="text-xs text-primary font-bold">查看全部</button>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-2xl flex items-center gap-3 shadow-sm border border-orange-100/30">
+<img class="w-12 h-12 rounded-xl object-cover" data-alt="Close up of a ginger cat head" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoyKihz_cY0So5nbaN_mmbGXhHGl3dFNmMoYUpthwyPGSyxOd4leukdhdkdx-1HPPPQ3MsgKmssEihnLt9I5YjXxGrU0q0AFxEJJ6iKFT1BnEOQC4j3NnmX5jxZ8x1UK_4woYNPykhOx8RdA7cyP6Fzv42nK34VuUrUgFftNRr2UhT1la06uw7CiKimHtoUJaCV5bgoZZWvuoxoSZPnZ_YqAGBLoB5xqa-1PbuoPEH7yEWdb3hf86ydGp422WFowfb6ylCLCQcbC8"/>
+<div class="flex-1">
+<p class="text-sm font-bold">大橘 (Ginger)</p>
+<span class="text-[10px] px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full font-bold">中华田园猫 · 3岁</span>
+</div>
+<span class="material-symbols-outlined text-orange-400">chevron_right</span>
+</div>
+</div>
+<!-- Recent Orders -->
+<div class="px-6 mt-8 space-y-4">
+<h4 class="text-sm font-bold text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-600 text-lg">receipt_long</span> 历史订单
+                    </h4>
+<div class="space-y-2">
+<div class="bg-white/40 backdrop-blur-sm p-3 rounded-xl text-xs space-y-1">
+<div class="flex justify-between">
+<span class="font-bold">全项体检套餐</span>
+<span class="text-orange-600 font-bold">¥299.00</span>
+</div>
+<p class="text-slate-400">2024-03-10 · 已完成</p>
+</div>
+<div class="bg-white/40 backdrop-blur-sm p-3 rounded-xl text-xs space-y-1">
+<div class="flex justify-between">
+<span class="font-bold">精细洗澡服务 (中型)</span>
+<span class="text-slate-400 font-bold">¥128.00</span>
+</div>
+<p class="text-slate-400">2024-02-15 · 已取消</p>
+</div>
+</div>
+</div>
+<!-- Quick Replies -->
+<div class="px-6 mt-8 mb-8 space-y-4">
+<h4 class="text-sm font-bold text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-600 text-lg">flash_on</span> 快捷回复
+                    </h4>
+<div class="flex flex-wrap gap-2">
+<button class="text-xs px-3 py-2 bg-white rounded-xl shadow-sm hover:bg-orange-50 transition-colors text-slate-600 border border-transparent hover:border-orange-100">
+                            您好，我是您的专属管家。
+                        </button>
+<button class="text-xs px-3 py-2 bg-white rounded-xl shadow-sm hover:bg-orange-50 transition-colors text-slate-600 border border-transparent hover:border-orange-100">
+                            建议尽快带宠物到院检查。
+                        </button>
+<button class="text-xs px-3 py-2 bg-white rounded-xl shadow-sm hover:bg-orange-50 transition-colors text-slate-600 border border-transparent hover:border-orange-100">
+                            预约已成功，期待您的光临。
+                        </button>
+<button class="text-xs px-3 py-2 bg-white rounded-xl shadow-sm hover:bg-orange-50 transition-colors text-slate-600 border border-transparent hover:border-orange-100">
+                            好的，已经为您备注。
+                        </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-[340px] w-14 h-14 bg-gradient-to-tr from-orange-600 to-orange-400 rounded-full text-white shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+</body></html>

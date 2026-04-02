@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>爱宠家管理后台 - 订单管理</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#ffb961",
+              "outline": "#897365",
+              "secondary": "#546162",
+              "on-surface": "#161c20",
+              "tertiary": "#865300",
+              "on-tertiary-fixed-variant": "#663e00",
+              "primary-fixed": "#ffdcc5",
+              "secondary-fixed-dim": "#bcc9ca",
+              "primary-fixed-dim": "#ffb783",
+              "surface-variant": "#dde3e7",
+              "on-surface-variant": "#564337",
+              "on-background": "#161c20",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed-variant": "#3d494a",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#482b00",
+              "inverse-surface": "#2b3135",
+              "on-secondary-fixed": "#121e1f",
+              "background": "#f4fafe",
+              "on-primary-container": "#502600",
+              "surface-container": "#e9eff3",
+              "inverse-on-surface": "#ecf1f6",
+              "tertiary-container": "#d78800",
+              "surface-bright": "#f4fafe",
+              "surface-tint": "#944a00",
+              "primary-container": "#e67e22",
+              "surface-container-low": "#eff4f8",
+              "on-error-container": "#93000a",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#586566",
+              "on-secondary": "#ffffff",
+              "surface-container-high": "#e3e9ed",
+              "tertiary-fixed": "#ffddb9",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "primary": "#944a00",
+              "secondary-fixed": "#d8e5e6",
+              "on-tertiary-fixed": "#2b1700",
+              "on-primary-fixed-variant": "#713700",
+              "surface-container-highest": "#dde3e7",
+              "surface": "#f4fafe",
+              "surface-dim": "#d5dbdf",
+              "secondary-container": "#d5e2e3",
+              "on-primary-fixed": "#301400",
+              "error": "#ba1a1a",
+              "inverse-primary": "#ffb783",
+              "outline-variant": "#dcc1b1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+      }
+      /* Sidebar Scrollbar */
+      aside::-webkit-scrollbar {
+        width: 4px;
+      }
+      aside::-webkit-scrollbar-thumb {
+        background: #f1f5f9;
+        border-radius: 10px;
+      }
+      aside:hover::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- SideNavBar Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col p-4 gap-2 border-r border-orange-100/20 z-50 overflow-y-auto">
+<div class="mb-8 px-2 flex items-center gap-3 shrink-0">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-orange-200/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-orange-700 to-orange-400 bg-clip-text text-transparent">爱宠家</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Digital Curator</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<!-- 数据看板 -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">数据看板</span>
+</a>
+<!-- 用户管理 -->
+<a class="flex items-center gap-3 px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-medium">用户管理</span>
+</a>
+<!-- 内容管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">
+<span class="material-symbols-outlined text-sm">description</span>
+                    内容管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">帖子管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">评论管理</span>
+</a>
+</div>
+<!-- 商城管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">
+<span class="material-symbols-outlined text-sm">storefront</span>
+                    商城管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">商品管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl shadow-lg shadow-orange-200/50 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">订单管理</span>
+</a>
+</div>
+<!-- 服务管理 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">
+<span class="material-symbols-outlined text-sm">medical_services</span>
+                    服务管理
+                </div>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">预约管理</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">客服会话</span>
+</a>
+</div>
+<!-- 系统设置 -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">
+<span class="material-symbols-outlined text-sm">settings</span>
+                    系统设置
+                </div>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">管理员账号</span>
+</a>
+<a class="flex items-center gap-3 px-10 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-slate-900 rounded-xl hover:translate-x-1 transition-all duration-300" href="#">
+<span class="font-medium">操作日志</span>
+</a>
+</div>
+</nav>
+<div class="mt-auto pt-4 border-t border-slate-200/50 shrink-0">
+<button class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 rounded-xl transition-all duration-300">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">退出登录</span>
+</button>
+</div>
+</aside>
+<div class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar Shell -->
+<header class="w-full sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0_8px_24px_rgba(86,67,55,0.08)] flex justify-between items-center h-16 px-6">
+<div class="flex items-center gap-4">
+<nav class="flex items-center gap-2 text-sm text-slate-500">
+<span>商城管理</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-orange-700 font-semibold">订单列表</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-slate-100 dark:bg-slate-800 border-none rounded-full text-sm focus:ring-2 focus:ring-orange-500/20 w-64 transition-all" placeholder="搜索功能..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-slate-500">
+<button class="p-2 hover:bg-orange-50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 hover:bg-orange-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-on-surface">管理员 晓橘</p>
+<p class="text-[10px] text-slate-400">超级管理员</p>
+</div>
+<img alt="管理员头像" class="w-9 h-9 rounded-full bg-orange-100 border-2 border-orange-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsA7WGABlYCOmLjWTu345mo3j0XpHEB_ltWPR1d-5VSzRzQRJ2S0bNXtu6CVhcdvgQSMgdTkse99Var0fYTiX-_8soa0DiO5AQFCkO4dWlYBl9_KvphTkpBpT0LGotDC6WkfP1s2xai7IdU6IgvxH7CdxAr923f60j_bViuyGagYOXJJFRiZPrwPtCFoWfV42L3ou8SIvKVSRH4t9fwVauJiSxgAwxoEQzMFkw0swFeHdGPKzAWeW_0La5rJY986QhZ9NeQbR3ojU"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 p-8 space-y-8">
+<!-- Header Editorial Section -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-extrabold text-primary tracking-tight">订单中心</h2>
+<p class="text-on-surface-variant mt-1">处理来自全球爱宠人士的每一份关怀与责任。</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-xl font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+                        导出数据
+                    </button>
+<button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg">add</span>
+                        手动录单
+                    </button>
+</div>
+</div>
+<!-- Bento Stats Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-orange-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-700"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">today</span>
+</div>
+<span class="font-bold text-on-surface-variant">今日订单</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-black text-on-surface tracking-tighter">128</span>
+<span class="text-green-600 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+                                +12%
+                            </span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-700"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">local_shipping</span>
+</div>
+<span class="font-bold text-on-surface-variant">待发货订单</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-black text-on-surface tracking-tighter">45</span>
+<span class="text-red-500 text-xs font-bold">需尽快处理</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-tertiary-fixed rounded-full opacity-30 group-hover:scale-125 transition-transform duration-700"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<span class="font-bold text-on-surface-variant">总订单额</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-sm font-bold text-on-surface-variant">¥</span>
+<span class="text-4xl font-black text-on-surface tracking-tighter">12,840.50</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Filter Section -->
+<section class="bg-surface-container-low p-6 rounded-xl">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单号 / 手机号</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="输入搜索内容..." type="text"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">收货人姓名</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="姓名关键词" type="text"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单状态</label>
+<select class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all appearance-none cursor-pointer">
+<option>全部状态</option>
+<option>待付款</option>
+<option>待发货</option>
+<option>已发货</option>
+<option>已完成</option>
+<option>已取消</option>
+</select>
+</div>
+<div class="flex items-end gap-3">
+<button class="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all">
+                            查询
+                        </button>
+<button class="px-4 py-2.5 bg-white border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-slate-50 transition-all">
+                            重置
+                        </button>
+</div>
+</div>
+</section>
+<!-- Table Section -->
+<section class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden border border-orange-50">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-orange-100/30">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">订单信息</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">商品详情</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">买家信息</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">实付金额</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">状态</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-orange-50">
+<!-- Row 1 -->
+<tr class="hover:bg-orange-50/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-on-surface">#ORD-20231024-001</p>
+<p class="text-xs text-slate-400 mt-1">2023-10-24 14:30:22</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
+<img alt="商品预览" class="w-full h-full object-cover" data-alt="high-quality organic cat dry food packaging with warm orange tones and illustration of a ginger cat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface line-clamp-1">冻干三元猫粮 2.5kg</p>
+<p class="text-xs text-slate-500">经典橘猫款 x 2</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">王小橘</p>
+<p class="text-xs text-slate-500">138 **** 8888</p>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-black text-primary">¥398.00</p>
+<p class="text-[10px] text-slate-400">微信支付</p>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">待发货</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-2">
+<button class="p-2 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors group relative" title="立即发货">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+</button>
+<button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="订单详情">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="修改价格">
+<span class="material-symbols-outlined text-lg">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-orange-50/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-on-surface">#ORD-20231024-002</p>
+<p class="text-xs text-slate-400 mt-1">2023-10-24 15:12:45</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
+<img alt="商品预览" class="w-full h-full object-cover" data-alt="automatic laser cat toy in white and orange minimal design studio shot against soft warm background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWMzgrWvPboLhFu4xkiOUBV2TCiERSZllzq5dfay9gdP5zYm9QdmLuiqUDA4XBcHwgVyts_fh8iXsnlYjZZDaMwZHH8NJn0uSWSq7iuJDP1Cnb_90e4EX1n8GR7JjCq3oDSYmtOFR1NDT-LaXBEKkJ86bRHmJ-u5XsPHobbVl-3sh4W1rJ_n03X7Yy_81sTR8ZMXEb-sdJPTMk5Wgvg18Pm8c4qyV6DaAcZtopjY7W24_BV4yoEzNvaWPq0RWI3VXXC1s5-1PjpgE"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface line-clamp-1">智能红外激光逗猫器</p>
+<p class="text-xs text-slate-500">珍珠白 x 1</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">张大毛</p>
+<p class="text-xs text-slate-500">156 **** 9999</p>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-black text-primary">¥129.00</p>
+<p class="text-[10px] text-slate-400">支付宝支付</p>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">已完成</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-2">
+<button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors" title="订单详情">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-orange-50/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-on-surface">#ORD-20231024-003</p>
+<p class="text-xs text-slate-400 mt-1">2023-10-24 16:05:00</p>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
+<img alt="商品预览" class="w-full h-full object-cover" data-alt="natural tofu cat litter bag with organic illustrative graphics in earthy calico colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1wuOvVmtYfMksqVgk-1N_h11jMHjsDEDJEkUYYvLB2EtTXKWZdYjEeD5-14BFKdrkK5_hYL_7dPk4hdmy_UT_r47ExHjSo_GCLu-3hzEZq4pX45LNMNOVrkEXAWdob-yG0WrvGvZJnlnKYnckgE-V3eun_wxvDAYXxqAHYZ5FtyZqFtd4GiRXY6ZJ1cdxqxqSb5kSDgDsTfvSThMWarE6ftx_K9iTJ0wbEJPuuIZ4CIHZ8HX2ICf602Xwsa4LIX87-DFMzEiXKBM"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface line-clamp-1">除臭原味豆腐猫砂 6L</p>
+<p class="text-xs text-slate-500">超值装 x 6</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-bold text-on-surface">李三花</p>
+<p class="text-xs text-slate-500">139 **** 1234</p>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-black text-primary">¥210.50</p>
+<p class="text-[10px] text-slate-400">微信支付</p>
+</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">待付款</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-2">
+<button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors" title="订单详情">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors" title="修改价格">
+<span class="material-symbols-outlined text-lg">edit_note</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-slate-50/50 flex items-center justify-between">
+<p class="text-xs font-bold text-slate-400">显示第 1 至 10 条，共 1,240 条记录</p>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shadow-md shadow-orange-200">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">3</button>
+<span class="px-1 text-slate-400">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">124</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Floating Action Button Contextual (Hidden on desktop sidebar but kept for mobile) -->
+<div class="fixed bottom-8 right-8 md:hidden">
+<button class="w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</body></html>

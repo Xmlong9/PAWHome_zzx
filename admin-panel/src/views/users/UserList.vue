@@ -61,9 +61,7 @@
               </td>
               <td class="px-6 py-4 text-sm text-on-surface-variant">{{ u.phoneMasked }}</td>
               <td class="px-6 py-4 text-center">
-                <span v-if="u.gender === 'female'" class="material-symbols-outlined text-sm text-pink-400">female</span>
-                <span v-else-if="u.gender === 'male'" class="material-symbols-outlined text-sm text-blue-400">male</span>
-                <span v-else class="material-symbols-outlined text-sm text-on-surface-variant">help</span>
+                <span class="material-symbols-outlined text-sm" :class="genderIconClass(u.gender)">{{ genderIcon(u.gender) }}</span>
               </td>
               <td class="px-6 py-4 text-sm text-on-surface-variant">{{ formatDateTime(u.registeredAt) }}</td>
               <td class="px-6 py-4">
@@ -210,6 +208,37 @@ const end = computed(() => {
   return Math.min(total.value, page.value * pageSize.value)
 })
 
+function normalizeGender(input: unknown): 'male' | 'female' | 'unknown' {
+  const raw = typeof input === 'string' ? input.trim() : ''
+  if (!raw) return 'unknown'
+  const v = raw.toLowerCase()
+  if (v === 'male' || v === 'm' || v === 'man' || v === '1' || raw === '男') return 'male'
+  if (v === 'female' || v === 'f' || v === 'woman' || v === '0' || raw === '女') return 'female'
+  if (v === 'unknown' || raw === '未知') return 'unknown'
+  return 'unknown'
+}
+
+function genderIcon(input: unknown) {
+  const g = normalizeGender(input)
+  if (g === 'female') return 'female'
+  if (g === 'male') return 'male'
+  return 'help'
+}
+
+function genderIconClass(input: unknown) {
+  const g = normalizeGender(input)
+  if (g === 'female') return 'text-pink-400'
+  if (g === 'male') return 'text-blue-400'
+  return 'text-on-surface-variant'
+}
+
+function genderToStorage(input: unknown) {
+  const g = normalizeGender(input)
+  if (g === 'female') return '女'
+  if (g === 'male') return '男'
+  return 'unknown'
+}
+
 async function load() {
   loading.value = true
   try {
@@ -242,13 +271,17 @@ function editUser(u: UserItem) {
   editForm.value.id = u.id
   editForm.value.nickname = u.nickname
   editForm.value.phone = u.phone || ''
-  editForm.value.gender = u.gender || 'unknown'
+  editForm.value.gender = normalizeGender(u.gender)
   editDialogVisible.value = true
 }
 
 async function saveUser() {
   try {
-    await axios.put(`/api/v1/admin/users/${editForm.value.id}`, editForm.value)
+    const payload = {
+      ...editForm.value,
+      gender: genderToStorage(editForm.value.gender)
+    }
+    await axios.put(`/api/v1/admin/users/${editForm.value.id}`, payload)
     ElMessage.success('保存成功')
     editDialogVisible.value = false
     await load()

@@ -2336,3 +2336,18 @@
 - `admin-panel/src/views/shop/OrderList.vue`
 - `admin-panel/src/views/services/AppointmentList.vue`
 
+### 变更 2026-04-02：用户性别显示兼容
+
+**问题现象**
+- 用户管理列表“性别”列大量显示问号图标。
+
+**根因**
+- 后端 `User.gender` 为自由字符串，历史数据来自小程序侧写入的 `男/女`，而管理端仅识别 `male/female`。
+
+**修复方案**
+- 管理端展示侧对 `male/female/unknown` 与 `男/女/未知` 做兼容归一化，正确渲染性别图标。
+- 管理端保存用户资料时，将 `male/female` 写回为 `男/女`，避免继续扩大数据口径不一致。
+
+**相关文件**
+- `admin-panel/src/views/users/UserList.vue`
+

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#586566",
+              "on-tertiary": "#ffffff",
+              "background": "#f4fafe",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#663e00",
+              "surface-dim": "#d5dbdf",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#d78800",
+              "tertiary-fixed-dim": "#ffb961",
+              "surface-variant": "#dde3e7",
+              "secondary-fixed-dim": "#bcc9ca",
+              "on-primary-fixed": "#301400",
+              "primary-fixed": "#ffdcc5",
+              "tertiary-fixed": "#ffddb9",
+              "inverse-on-surface": "#ecf1f6",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#d8e5e6",
+              "surface-container-low": "#eff4f8",
+              "surface-bright": "#f4fafe",
+              "outline": "#897365",
+              "on-background": "#161c20",
+              "on-tertiary-container": "#482b00",
+              "primary": "#944a00",
+              "surface-container-high": "#e3e9ed",
+              "surface-container-highest": "#dde3e7",
+              "on-secondary-fixed-variant": "#3d494a",
+              "on-primary-container": "#502600",
+              "error": "#ba1a1a",
+              "on-secondary-fixed": "#121e1f",
+              "error-container": "#ffdad6",
+              "surface": "#f4fafe",
+              "on-tertiary-fixed": "#2b1700",
+              "on-error-container": "#93000a",
+              "primary-fixed-dim": "#ffb783",
+              "tertiary": "#865300",
+              "surface-container": "#e9eff3",
+              "on-surface": "#161c20",
+              "inverse-primary": "#ffb783",
+              "on-primary-fixed-variant": "#713700",
+              "outline-variant": "#dcc1b1",
+              "secondary-container": "#d5e2e3",
+              "on-primary": "#ffffff",
+              "primary-container": "#e67e22",
+              "secondary": "#546162",
+              "on-surface-variant": "#564337",
+              "inverse-surface": "#2b3135",
+              "surface-tint": "#944a00"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+              "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; background-color: #f4fafe; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dde3e7; border-radius: 10px; }
+        .nav-link-active { background: linear-gradient(to right, #944a00, #e67e22); color: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="text-on-background min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-[#f4fafe] dark:bg-slate-950 flex flex-col p-4 z-50 border-r border-outline-variant/10">
+<div class="flex items-center gap-3 px-2 py-6 mb-4">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#944a00] to-[#e67e22] flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-[#944a00] to-[#e67e22] bg-clip-text text-transparent leading-none">爱宠家</h1>
+<p class="text-xs text-[#564337] font-medium mt-1">社区管理门户</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 overflow-y-auto custom-scrollbar pr-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">数据看板</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 nav-link-active hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-medium text-sm">用户管理</span>
+</a>
+<div class="flex flex-col">
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-medium text-sm">内容管理</span>
+</a>
+<div class="ml-11 flex flex-col gap-1 mt-1 mb-2">
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">帖子管理</a>
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">评论管理</a>
+</div>
+</div>
+<div class="flex flex-col">
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-medium text-sm">商城管理</span>
+</a>
+<div class="ml-11 flex flex-col gap-1 mt-1 mb-2">
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">商品管理</a>
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">订单管理</a>
+</div>
+</div>
+<div class="flex flex-col">
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="font-medium text-sm">服务管理</span>
+</a>
+<div class="ml-11 flex flex-col gap-1 mt-1 mb-2">
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">预约管理</a>
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">客服会话</a>
+</div>
+</div>
+<div class="flex flex-col">
+<a class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] hover:scale-[1.02] transition-all rounded-xl duration-150" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">系统设置</span>
+</a>
+<div class="ml-11 flex flex-col gap-1 mt-1 mb-2">
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">管理员账号</a>
+<a class="px-3 py-1.5 text-xs text-[#897365] hover:text-primary transition-colors font-medium" href="#">操作日志</a>
+</div>
+</div>
+</nav>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-64 h-16 bg-[#eff4f8]/80 backdrop-blur-md flex items-center justify-between px-8 z-40">
+<div class="flex items-center bg-[#dde3e7] rounded-full px-4 py-1.5 w-96">
+<span class="material-symbols-outlined text-[#564337] text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-[#564337] placeholder-[#897365] w-full ml-2" placeholder="搜索昵称或手机号..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#dde3e7] text-[#564337] transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-px bg-[#dcc1b1] opacity-20"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold text-[#944a00]">超级管理员</p>
+<p class="text-[10px] text-[#564337]">ID: 88291</p>
+</div>
+<img alt="超级管理员" class="w-10 h-10 rounded-full bg-primary-fixed ring-2 ring-white shadow-sm" data-alt="professional avatar of a confident manager with short dark hair and a warm friendly smile wearing smart casual clothes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_pfqD81TYsVj7e28GMcLZeLtgEb6-OXMpP_3Xb3nFihYr69eW2ncez0Y8uS2fHYCD8cVXMbwb6K7kUoZydfYRJNyq1irhIEa2tfZCwlC7dgmcrX6KtjVRUDDANnK1OwpTAn-PVrcVidjqWoG-PBUpUZZ68xN4ume1QdGvEO4vek5lQyZkM3dVNo8lKdvO9rwVtdrfUd3AKlhYj0B-0CxaKZMFAecyE3rGmerR-wzZHfqlB418nyYgNLGDJ2yvWlh0MSrrU5gsRTU"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 pt-24 p-8 min-h-screen">
+<!-- Header Section -->
+<div class="mb-8 flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-extrabold text-primary tracking-tight">用户管理</h2>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2.5 py-0.5 rounded-full bg-tertiary-container/10 text-tertiary text-xs font-bold border border-tertiary-container/20">
+                        系统总注册用户: 14
+                    </span>
+<span class="text-on-surface-variant text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+                        数据截止至今日 14:00
+                    </span>
+</div>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0px_8px_24px_rgba(148,74,0,0.15)] hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined">person_add</span>
+            新增用户
+        </button>
+</div>
+<!-- Bento Stats Grid -->
+<div class="grid grid-cols-4 gap-6 mb-8">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">今日新增</p>
+<p class="text-2xl font-black text-on-surface">3</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">活跃用户</p>
+<p class="text-2xl font-black text-on-surface">12</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">pets</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">认证宠主</p>
+<p class="text-2xl font-black text-on-surface">9</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined">block</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">已封禁</p>
+<p class="text-2xl font-black text-on-surface">2</p>
+</div>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-surface-container-low rounded-xl shadow-[0px_8px_24px_rgba(86,67,55,0.08)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/50">
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">ID (UUID)</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">用户头像</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">用户昵称</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">手机号</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">性别</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">注册时间</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">状态</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">550e8400-e29b-41d4-a716</td>
+<td class="px-6 py-4">
+<img alt="用户头像" class="w-10 h-10 rounded-xl bg-surface-container-high" data-alt="cute female character avatar with big eyes and round glasses in a warm ginger aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2LiIs_j9MisRdm41_A1Kh9uTm9kFYiVhCtAvCmG46mvhU-kbmKeZqLYTTZagt4HVY8PnJyuoBigl0AscPdRjGCF587MVoNk-23dLBzv3mq_q7NW2H4IzplusMdiBWW_p8Gv_tWTdomP2psovKNTH12ns5tywW3kim8Mye5328Md7nfdCILoFte8W1DjFk6mbrYJxClbSaIFBqaoF0Ws5UUJOK8GPvDyJHdmBzsvE6BaxQuJWTStoigznwtYnP-96yFkQABqD0qpA"/>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-on-surface">橘猫饲养员</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">138****8899</td>
+<td class="px-6 py-4 text-center">
+<span class="material-symbols-outlined text-sm text-pink-400">female</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">2023-11-20</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">正常</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined text-xl">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">7c9e6679-7425-40de-944b</td>
+<td class="px-6 py-4">
+<img alt="用户头像" class="w-10 h-10 rounded-xl bg-surface-container-high" data-alt="male character avatar with cool headphones and a stylish cap in urban style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxcaNLIRikvH98sRWboDJom7cFCdD5k0JM9TNkZpYntIQwH_mg4AXMm0wga7043oWG-T3JHbq1TDfcHfq6n_HtgHeBt3TU9KHq5vTVonf47aIS2iaQ2IdTZLslqJc2IIPD8vt9TZPAHKXChGmH86QD1ALmvqwljX4gDKqfh9TGP97L7sXoFRwAehEuqSSE63PId_juH1I1Rd90JeFhpok6LBGjc-bZaAqspVb7QAqBYoPsYXjZV1pPP6svS4o46iscSXhGEFghdlk"/>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-on-surface">爱狗人士阿强</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">159****1234</td>
+<td class="px-6 py-4 text-center">
+<span class="material-symbols-outlined text-sm text-blue-400">male</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">2023-11-18</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-error-container text-error text-xs font-bold">封禁</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-2 rounded-lg text-green-600 hover:bg-green-100 transition-colors">
+<span class="material-symbols-outlined text-xl">check_circle</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">92bd51b0-2b1c-43f1-b962</td>
+<td class="px-6 py-4">
+<img alt="用户头像" class="w-10 h-10 rounded-xl bg-surface-container-high" data-alt="youthful female avatar with long flowing hair and a minimalist white sweater" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi0j3gJDWSyiJK72jS_9USYMoTSboLsgCVyTouisMs8qVD9KNOOlcmUThaqDmnA-uGz1CmPnw3k4U6jLuyZrll4bzREl9k8OjEC1RUIxjGIcDXR8NnkwP0p04w7DGXq3jJ_ZfRAYiFDg9PzeIGJOZtCB-qP1O44UoEugmDHaeRCM1O3wj5U80Nb9yRfBMRobEjeqmFBXGHVP5bipFhAcbSLgcef7fjY0xIjaQDBOrc49Rgi_TbeqPjtSfx9jhE5kIaFwChsNAIFBQ"/>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-on-surface">小王学长</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">177****5566</td>
+<td class="px-6 py-4 text-center">
+<span class="material-symbols-outlined text-sm text-pink-400">female</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">2023-11-21</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">正常</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined text-xl">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container/50 transition-colors">
+<td class="px-6 py-4 text-xs font-mono text-on-surface-variant">3a1e2b4c-9f0d-55e1-a2b3</td>
+<td class="px-6 py-4">
+<img alt="用户头像" class="w-10 h-10 rounded-xl bg-surface-container-high" data-alt="professional looking male avatar with a neatly trimmed beard and business attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhHfkqDhwWn0ba6adL3xugDPauHFTncPvHWBwKupvhNMv4EYuG4xJ_twbS3OYrbZpvRCTMae5VBDNghxXcX2xoOmGJc2QoSw__DSp8ysjA-9JsAGzgTc5PspobhtgwbX2CPoGajJFhaZzEem1KPL0glQ5iT7Na08k2BRSgwXYgtvIZzifAZ637LRyEn46mpctWbIiiFw4f-VS7PhrjOJaE73mqJVCPly7UesGT6R2LAkfUuWkSisHHlIhUHUiAFJsKGRMQ2-4vVO8"/>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-on-surface">汪汪队长</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">133****4432</td>
+<td class="px-6 py-4 text-center">
+<span class="material-symbols-outlined text-sm text-blue-400">male</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">2023-11-22</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">正常</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors">
+<span class="material-symbols-outlined text-xl">block</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-high/30 flex items-center justify-between">
+<span class="text-xs text-on-surface-variant font-medium">显示 1-10 条，共 14 条用户</span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors text-xs font-bold">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Organic Graphic Element (Editorial Asymmetry) -->
+<div class="fixed -bottom-12 -right-12 w-64 h-64 bg-primary-fixed-dim/20 rounded-full blur-3xl -z-10"></div>
+<div class="fixed top-1/2 -right-20 w-40 h-40 bg-tertiary-fixed-dim/10 rounded-full blur-2xl -z-10"></div>
+</main>
+</body></html>

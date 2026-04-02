@@ -761,7 +761,14 @@ export const clearInvalidCartItems = async (): Promise<void> => {
 
 export const buildCheckoutPreview = async (params: { from: "cart" | "detail"; productId?: string; count?: number }): Promise<CheckoutPreview> => {
   if (!MOCK()) {
-    return await request<CheckoutPreview>({ url: "/shop/order/preview", method: "POST", data: params })
+    const res = await request<CheckoutPreview>({ url: "/shop/order/preview", method: "POST", data: params })
+    const items = await Promise.all(
+      (res.items || []).map(async (it) => ({
+        ...it,
+        product: (await hydrateProduct(it.product)) as ShopProduct
+      }))
+    )
+    return { ...res, items }
   }
   ensureSeed()
   const products = getProductsSync()

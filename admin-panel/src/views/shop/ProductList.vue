@@ -9,14 +9,27 @@
             <p class="text-sm text-on-surface-variant mt-1">管理您的商品目录、价格及库存状态</p>
           </div>
           <div class="flex gap-2">
-            <button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">批量下架</button>
-            <button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">导出表格</button>
+            <button class="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1" @click="openAdd">
+              <span class="material-symbols-outlined text-sm">add</span>
+              新增商品
+            </button>
+            <button
+              class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all disabled:opacity-50"
+              :disabled="selectedIds.length === 0"
+              @click="batchOffSale"
+            >
+              批量下架
+            </button>
+            <button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all" @click="exportProducts">导出表格</button>
           </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-on-surface-variant text-[11px] uppercase tracking-wider font-bold">
+                <th class="px-6 py-4 w-10">
+                  <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+                </th>
                 <th class="px-6 py-4">商品ID</th>
                 <th class="px-6 py-4">商品信息</th>
                 <th class="px-6 py-4 text-right">价格</th>
@@ -28,6 +41,9 @@
             </thead>
             <tbody class="divide-y divide-surface-variant/20">
               <tr v-for="p in products" :key="p.id" class="group hover:bg-surface-container-low/50 transition-colors">
+                <td class="px-6 py-4">
+                  <input type="checkbox" :checked="selectedIds.includes(p.id)" @change="toggleSelect(p.id)" />
+                </td>
                 <td class="px-6 py-4 text-xs font-mono text-on-surface-variant">#{{ p.productNo }}</td>
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-4">
@@ -80,8 +96,8 @@
                     </button>
                     <button
                       class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"
-                      title="删除(下架)"
-                      @click="forceOffSale(p)"
+                      title="删除"
+                      @click="deleteProduct(p)"
                     >
                       <span class="material-symbols-outlined text-sm">delete</span>
                     </button>
@@ -179,7 +195,7 @@
     </section>
   </div>
 
-  <el-dialog v-model="editVisible" title="编辑商品" width="520">
+  <el-dialog v-model="editVisible" :title="editingId ? '编辑商品' : '新增商品'" width="520">
     <el-form label-position="top">
       <el-form-item label="商品名称">
         <el-input v-model="editForm.title" />
@@ -190,8 +206,23 @@
       <el-form-item label="库存">
         <el-input v-model="editForm.stock" inputmode="numeric" />
       </el-form-item>
-      <el-form-item label="图片(一行一个，支持 /media/... 或完整 URL)">
-        <el-input v-model="editForm.imagesText" type="textarea" :rows="4" />
+      <el-form-item label="商品图片">
+        <div class="space-y-3">
+          <div v-if="editForm.imageUrl" class="relative w-24 h-24 rounded-xl overflow-hidden bg-surface-container-high border border-outline-variant">
+            <img :src="normalizeMediaUrl(editForm.imageUrl)" class="w-full h-full object-cover" />
+            <button class="absolute top-1 right-1 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors" @click="editForm.imageUrl = ''">
+              <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+          <div v-else class="w-24 h-24 rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-on-surface-variant hover:border-primary/50 hover:text-primary transition-all cursor-pointer relative group">
+            <span class="material-symbols-outlined text-2xl mb-1">add_a_photo</span>
+            <span class="text-[10px] font-bold">上传图片</span>
+            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" @change="handleFileUpload" />
+          </div>
+          <div class="text-[10px] text-on-surface-variant italic">
+            支持 JPG/PNG/WebP，图片将存储于服务器 instance/uploads 目录。
+          </div>
+        </div>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -241,9 +272,58 @@ const summary = ref<ProductSummary | null>(null)
 const editVisible = ref(false)
 const saving = ref(false)
 const editingId = ref<string | null>(null)
-const editForm = ref({ title: '', priceYuan: '', stock: '', imagesText: '' })
+const editForm = ref({ title: '', priceYuan: '', stock: '', imageUrl: '' })
 const fallbackProductImg =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'
+
+const selectedIds = ref<string[]>([])
+const isAllSelected = computed(() => products.value.length > 0 && selectedIds.value.length === products.value.length)
+
+function toggleSelect(id: string) {
+  const idx = selectedIds.value.indexOf(id)
+  if (idx > -1) selectedIds.value.splice(idx, 1)
+  else selectedIds.value.push(id)
+}
+
+function toggleSelectAll() {
+  if (isAllSelected.value) selectedIds.value = []
+  else selectedIds.value = products.value.map((p) => p.id)
+}
+
+async function batchOffSale() {
+  if (selectedIds.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(`确认下架选中的 ${selectedIds.value.length} 个商品？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.post('/api/v1/admin/shop/products/batch-status', {
+      ids: selectedIds.value,
+      is_active: false
+    })
+    ElMessage.success('批量下架成功')
+    selectedIds.value = []
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
+  }
+}
+
+async function exportProducts() {
+  try {
+    const res = await axios.get('/api/v1/admin/shop/products/export', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'products.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e: any) {
+    ElMessage.error('导出失败')
+  }
+}
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 const pageItems = computed(() => {
@@ -311,13 +391,47 @@ function openEdit(p: ProductItem) {
     title: p.name || '',
     priceYuan: String(p.price ?? ''),
     stock: String(p.stockQty ?? ''),
-    imagesText: p.imageUrl ? String(p.imageUrl) : ''
+    imageUrl: p.imageUrl || ''
   }
   editVisible.value = true
 }
 
+function openAdd() {
+  editingId.value = null
+  editForm.value = {
+    title: '',
+    priceYuan: '',
+    stock: '',
+    imageUrl: ''
+  }
+  editVisible.value = true
+}
+
+async function handleFileUpload(e: Event) {
+  const el = e.target as HTMLInputElement
+  const file = el.files?.[0]
+  if (!file) return
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  loading.value = true
+  try {
+    const res = await axios.post('/api/v1/admin/uploads', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if (res.data?.ok) {
+      editForm.value.imageUrl = res.data.data.url
+      ElMessage.success('图片上传成功')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '图片上传失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 async function saveEdit() {
-  if (!editingId.value) return
   const title = editForm.value.title.trim()
   if (!title) {
     ElMessage.error('请输入商品名称')
@@ -333,18 +447,21 @@ async function saveEdit() {
     ElMessage.error('库存格式不正确')
     return
   }
-  const images = editForm.value.imagesText
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)
+  
+  const payload = {
+    title,
+    price_cents: Math.round(price * 100),
+    stock: Math.round(stock),
+    images_json: JSON.stringify(editForm.value.imageUrl ? [editForm.value.imageUrl] : [], null, 0)
+  }
+  
   saving.value = true
   try {
-    await axios.put(`/api/v1/admin/shop/products/${editingId.value}`, {
-      title,
-      price_cents: Math.round(price * 100),
-      stock: Math.round(stock),
-      images_json: JSON.stringify(images, null, 0)
-    })
+    if (editingId.value) {
+      await axios.put(`/api/v1/admin/shop/products/${editingId.value}`, payload)
+    } else {
+      await axios.post('/api/v1/admin/shop/products', payload)
+    }
     ElMessage.success('已保存')
     editVisible.value = false
     await load()
@@ -372,18 +489,22 @@ async function toggleActive(p: ProductItem) {
   }
 }
 
-async function forceOffSale(p: ProductItem) {
+async function deleteProduct(p: ProductItem) {
   try {
-    await ElMessageBox.confirm('确认下架该商品？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认物理删除该商品？删除后不可恢复。', '警告', {
+      type: 'error',
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消'
+    })
   } catch {
     return
   }
   try {
-    await axios.put(`/api/v1/admin/shop/products/${p.id}/status`, { is_active: false })
-    ElMessage.success('已下架')
+    await axios.delete(`/api/v1/admin/shop/products/${p.id}`)
+    ElMessage.success('已物理删除')
     await load()
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || '操作失败')
+    ElMessage.error(e?.response?.data?.message || '删除失败')
   }
 }
 

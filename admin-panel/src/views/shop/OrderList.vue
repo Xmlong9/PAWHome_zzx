@@ -7,7 +7,10 @@
         <p class="text-on-surface-variant mt-1">处理来自全球爱宠人士的每一份关怀与责任。</p>
       </div>
       <div class="flex gap-3">
-        <button class="px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-xl font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+        <button
+          class="px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-xl font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all"
+          @click="exportOrders"
+        >
           <span class="material-symbols-outlined text-lg">download</span>
           导出数据
         </button>
@@ -64,41 +67,6 @@
             <span class="text-sm font-bold text-on-surface-variant">¥</span>
             <span class="text-4xl font-black text-on-surface tracking-tighter">{{ formatMoney(totalPaid) }}</span>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Filter Section -->
-    <section class="bg-surface-container-low p-6 rounded-xl">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单号 / 手机号</label>
-          <div class="relative">
-            <input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="输入搜索内容..." type="text"/>
-          </div>
-        </div>
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">收货人姓名</label>
-          <input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="姓名关键词" type="text"/>
-        </div>
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单状态</label>
-          <select class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all appearance-none cursor-pointer">
-            <option>全部状态</option>
-            <option>待付款</option>
-            <option>待发货</option>
-            <option>已发货</option>
-            <option>已完成</option>
-            <option>已取消</option>
-          </select>
-        </div>
-        <div class="flex items-end gap-3">
-          <button class="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all">
-            查询
-          </button>
-          <button class="px-4 py-2.5 bg-white border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-slate-50 transition-all">
-            重置
-          </button>
         </div>
       </div>
     </section>
@@ -294,6 +262,21 @@ async function goPage(next: number) {
   if (p === page.value) return
   page.value = p
   await load()
+}
+
+async function exportOrders() {
+  try {
+    const res = await axios.get('/api/v1/admin/shop/orders/export', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'orders.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (e: any) {
+    ElMessage.error('导出失败')
+  }
 }
 
 function onImgError(e: Event, fallback: string) {

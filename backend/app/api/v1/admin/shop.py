@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from sqlalchemy import func
 from ....extensions import db
-from ....models import ShopProduct, ShopOrder, ShopOrderItem, User
+from ....models import ShopProduct, ShopOrder, ShopOrderItem, User, ShopFavorite, CartItem
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 
@@ -196,6 +196,67 @@ def register_admin_shop_routes(bp):
         
         return ok({"message": "Product status updated"})
 
+    @bp.delete("/admin/shop/products/<product_id>")
+    @admin_required
+    def delete_product(product_id):
+        product = ShopProduct.query.get(product_id)
+        if not product:
+            return fail(code="NOT_FOUND", message="Product not found", status_code=404)
+            
+        # Check if product has order items
+        has_orders = db.session.query(ShopOrderItem).filter_by(product_id=product_id).first()
+        if has_orders:
+            return fail(code="BAD_REQUEST", message="商品已有订单记录，不能删除，请使用下架功能", status_code=400)
+            
+        try:
+            # Clean up related data
+            ShopFavorite.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+            CartItem.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+            
+            db.session.delete(product)
+            db.session.commit()
+            
+            log_admin_action("delete_product", "product", product_id)
+            return ok({"message": "Product deleted successfully"})
+        except Exception as e:
+            db.session.rollback()
+            return fail(code="INTERNAL_ERROR", message=str(e), status_code=500)
+
+    @bp.post("/admin/shop/products/batch-status")
+    @admin_required
+    def batch_update_product_status():
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids", [])
+        is_active = data.get("is_active", False)
+        
+        if not ids:
+            return fail(code="BAD_REQUEST", message="ids required", status_code=400)
+            
+        ShopProduct.query.filter(ShopProduct.id.in_(ids)).update({"is_active": is_active}, synchronize_session=False)
+        db.session.commit()
+        log_admin_action(f"batch_update_product_status_{is_active}", "product", ",".join(ids))
+        
+        return ok({"message": "Batch status updated"})
+
+    @bp.get("/admin/shop/products/export")
+    @admin_required
+    def export_products():
+        products = ShopProduct.query.order_by(ShopProduct.created_at.desc()).all()
+        
+        output = "ID,商品名称,价格(元),库存,状态,创建时间\n"
+        for p in products:
+            status = _product_status(bool(p.is_active), int(p.stock or 0))
+            status_text = "销售中" if status == "on_sale" else "库存紧张" if status == "low_stock" else "已下架"
+            line = f"{p.id},{p.title},{p.price_cents/100},{p.stock},{status_text},{p.created_at.isoformat()}\n"
+            output += line
+            
+        from flask import Response
+        return Response(
+            "\uFEFF" + output,
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=products.csv"}
+        )
+
     @bp.get("/admin/shop/orders")
     @admin_required
     def get_orders():
@@ -260,6 +321,30 @@ def register_admin_shop_routes(bp):
             "page": page,
             "size": size
         })
+
+    @bp.get("/admin/shop/orders/export")
+    @admin_required
+    def export_orders():
+        orders = ShopOrder.query.order_by(ShopOrder.created_at.desc()).all()
+        
+        output = "订单ID,下单时间,实付金额,状态,买家ID\n"
+        for o in orders:
+            status_map = {
+                "pending_pay": "待付款",
+                "pending_ship": "待发货",
+                "shipped": "已发货",
+                "completed": "已完成",
+                "cancelled": "已取消",
+            }
+            line = f"{o.id},{o.created_at.isoformat()},{o.total_cents/100},{status_map.get(o.status, o.status)},{o.user_id}\n"
+            output += line
+            
+        from flask import Response
+        return Response(
+            "\uFEFF" + output,
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=orders.csv"}
+        )
 
     @bp.put("/admin/shop/orders/<order_id>/ship")
     @admin_required

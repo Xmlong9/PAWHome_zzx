@@ -50,6 +50,7 @@ class User(db.Model, TimestampMixin):
     gender = db.Column(db.String(16), nullable=True)
     birthday = db.Column(db.Date, nullable=True)
     bio = db.Column(db.String(512), nullable=True)
+    status = db.Column(db.String(32), default="active", nullable=False)
 
 
 class Session(db.Model, TimestampMixin):

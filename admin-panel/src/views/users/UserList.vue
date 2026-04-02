@@ -66,15 +66,16 @@
               <td class="px-6 py-4 text-sm text-on-surface-variant">{{ formatDateTime(u.registeredAt) }}</td>
               <td class="px-6 py-4">
                 <span v-if="u.status === 'active'" class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">正常</span>
-                <span v-else class="px-3 py-1 rounded-full bg-error-container text-error text-xs font-bold">封禁</span>
+                <span v-else-if="u.status === 'banned'" class="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">已封禁</span>
+                <span v-else class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold">{{ u.status }}</span>
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
                   <button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors" @click="editUser(u)">
                     <span class="material-symbols-outlined text-xl">edit</span>
                   </button>
-                  <button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors" @click="toggleBan(u)">
-                    <span class="material-symbols-outlined text-xl">block</span>
+                  <button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors" @click="deleteUser(u)">
+                    <span class="material-symbols-outlined text-xl">delete</span>
                   </button>
                 </div>
               </td>
@@ -290,20 +291,23 @@ async function saveUser() {
   }
 }
 
-async function toggleBan(u: UserItem) {
-  const next = u.status === 'active' ? 'banned' : 'active'
-  const label = next === 'banned' ? '封禁' : '解除封禁'
+async function deleteUser(u: UserItem) {
   try {
-    await ElMessageBox.confirm(`确认${label}该用户？`, '提示', { type: 'warning' })
+    await ElMessageBox.confirm(`确认删除用户“${u.nickname}”？此操作可能无法撤销。`, '提示', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      confirmButtonClass: 'el-button--danger',
+      cancelButtonText: '取消'
+    })
   } catch {
     return
   }
   try {
-    await axios.put(`/api/v1/admin/users/${u.id}/status`, { status: next })
-    ElMessage.success(`${label}成功`)
+    await axios.delete(`/api/v1/admin/users/${u.id}`)
+    ElMessage.success('删除成功')
     await load()
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || `${label}失败`)
+    ElMessage.error(e?.response?.data?.message || '删除失败')
   }
 }
 

@@ -2351,3 +2351,33 @@
 **相关文件**
 - `admin-panel/src/views/users/UserList.vue`
 
+---
+
+## 用户管理：编辑与删除
+
+**目的**
+- 实现对注册用户的资料编辑（昵称、手机号、性别）及物理/逻辑删除能力，并移除“封禁”占位功能。
+
+**入口**
+- 管理后台 -> 用户管理列表 -> 操作列：编辑按钮（edit）、删除按钮（delete）。
+
+**数据流/状态**
+- **编辑**：
+  - 点击编辑，将当前行 `UserItem` 数据克隆到 `editForm`。
+  - 调用 `PUT /api/v1/admin/users/<id>`，Payload 包含 `nickname`, `phone`, `gender`。
+  - 后端 Flask 接口通过 SQLAlchemy 更新 `users` 表。
+- **删除**：
+  - 点击删除，触发二次确认。
+  - 调用 `DELETE /api/v1/admin/users/<id>`。
+  - 后端 Flask 接口：优先尝试 `db.session.delete(user)` 硬删除；若因外键约束失败（例如有关联订单/预约），则自动回退并设置 `status='deleted'` 进行软删除。
+  - 用户列表 `GET /api/v1/admin/users` 接口已增加 `User.status != 'deleted'` 过滤条件。
+
+**关键分支**
+- 性别处理：前端显示映射为 `male/female/unknown` 以适配图标，保存时通过 `genderToStorage` 映射回“男/女”以保持 DB 历史数据一致性。
+- 软硬删除切换：自动捕获硬删除异常，优雅降级为软删除，确保 admin 操作不因数据完整性约束而报错阻断。
+
+**相关文件**
+- [UserList.vue](file:///f:/PAWHome/admin-panel/src/views/users/UserList.vue)
+- [users.py](file:///f:/PAWHome/backend/app/api/v1/admin/users.py)
+- [models.py](file:///f:/PAWHome/backend/app/models.py)
+

@@ -28,7 +28,7 @@ def register_admin_users_routes(bp):
         page, size = _pagination_args()
         keyword = request.args.get("keyword", "")
 
-        query = User.query
+        query = User.query.filter(User.status != "deleted")
 
         if keyword:
             query = query.filter((User.nickname.like(f"%{keyword}%")) | (User.phone.like(f"%{keyword}%")))
@@ -53,6 +53,53 @@ def register_admin_users_routes(bp):
             "page": page,
             "size": size
         })
+
+    @bp.put("/admin/users/<user_id>")
+    @admin_required
+    def update_user(user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return fail(code="NOT_FOUND", message="用户未找到", status_code=404)
+
+        data = request.get_json(silent=True) or {}
+        
+        if "nickname" in data:
+            user.nickname = data["nickname"]
+        if "phone" in data:
+            user.phone = data["phone"]
+        if "gender" in data:
+            user.gender = data["gender"]
+        if "status" in data:
+            user.status = data["status"]
+            
+        db.session.commit()
+        log_admin_action("update_user", "user", user_id)
+        
+        return ok({"message": "用户信息已更新", "user_id": user_id})
+
+    @bp.delete("/admin/users/<user_id>")
+    @admin_required
+    def delete_user(user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return fail(code="NOT_FOUND", message="用户未找到", status_code=404)
+
+        # To avoid foreign key issues, we can either use soft delete or hard delete.
+        # Given this is a demo, we will use hard delete and catch potential errors.
+        try:
+            # Optionally delete related records here if needed
+            # For now, let's try a simple delete
+            db.session.delete(user)
+            db.session.commit()
+            log_admin_action("delete_user", "user", user_id)
+            return ok({"message": "用户已删除"})
+        except Exception as e:
+            db.session.rollback()
+            # If hard delete fails, fall back to soft delete
+            user.status = "deleted"
+            db.session.commit()
+            log_admin_action("soft_delete_user", "user", user_id)
+            return ok({"message": "用户已标记为删除 (由于存在关联数据)"})
 
     @bp.put("/admin/users/<user_id>/status")
     @admin_required

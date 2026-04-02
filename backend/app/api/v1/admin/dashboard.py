@@ -183,6 +183,46 @@ def register_admin_dashboard_routes(bp):
             {"name": "视频", "value": video_cnt},
         ]
 
+        # 5. Most Active Author (Last 7 days, fallback to 30 days, then all time)
+        last_7_days_start = last_7_days[0]
+        active_author_query = db.session.query(
+            Post.author_id,
+            func.count(Post.id).label('post_count')
+        ).filter(Post.created_at >= last_7_days_start).group_by(Post.author_id).order_by(func.count(Post.id).desc()).first()
+
+        # Fallback to 30 days if no posts in 7 days
+        if not active_author_query:
+            last_30_days_start = today - timedelta(days=30)
+            active_author_query = db.session.query(
+                Post.author_id,
+                func.count(Post.id).label('post_count')
+            ).filter(Post.created_at >= last_30_days_start).group_by(Post.author_id).order_by(func.count(Post.id).desc()).first()
+        
+        # Fallback to all time if still no posts
+        if not active_author_query:
+            active_author_query = db.session.query(
+                Post.author_id,
+                func.count(Post.id).label('post_count')
+            ).group_by(Post.author_id).order_by(func.count(Post.id).desc()).first()
+
+        active_author = None
+        if active_author_query:
+            user_id, post_count = active_author_query
+            user = User.query.get(user_id)
+            if user:
+                # Calculate total likes for this user's posts (all time for consistency with "most active")
+                total_likes = db.session.query(func.count(PostLike.post_id)).join(Post, PostLike.post_id == Post.id).filter(
+                    Post.author_id == user_id
+                ).scalar() or 0
+                
+                active_author = {
+                    "id": user.id,
+                    "name": user.nickname or "未知用户",
+                    "avatarUrl": user.avatar_url,
+                    "postCount": post_count,
+                    "likeCount": total_likes
+                }
+
         return ok({
             "users": {
                 "total": total_users,
@@ -204,6 +244,7 @@ def register_admin_dashboard_routes(bp):
                 "total": total_appointments,
                 "today": today_appointments
             },
+            "activeAuthor": active_author,
             "charts": {
                 "dates": date_labels,
                 "revenueTrend": revenue_trend,

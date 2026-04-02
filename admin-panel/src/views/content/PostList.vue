@@ -160,20 +160,28 @@
       <!-- Stat Card: Top Author -->
       <div class="bg-surface-container-lowest rounded-[1.5rem] p-6 shadow-sm border border-outline-variant/10 flex flex-col">
         <h4 class="text-sm font-bold text-on-surface-variant mb-4 uppercase tracking-wider">最活跃作者</h4>
-        <div class="flex-1 flex items-center gap-4">
+        <div v-if="stats?.activeAuthor" class="flex-1 flex items-center gap-4">
           <div class="relative">
-            <img alt="金毛墩子" class="w-20 h-20 rounded-[1.5rem] object-cover ring-4 ring-primary-container/20" data-alt="portrait of a cheerful man in casual attire, looking directly at the camera with a friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByhY3cixa9JkJswX0qHVINhv_dXK05j_0zIUUMpJkOM6gqvbPxlm0Lg10IymmZsTF5lPY0acwgpp8zYbi0ijtinuFpCHYUg6xzxTY0uUiCfpCpcf66_ngOsP4zwf4PwY9c8l3KwjZoAsgi43SE7ErM3WRXcHUPwnWGbKIRsalo0G-K511lVTvQkd9lYJEP1DPhKmy0HgVbj6q8lH2VvjidtXLkrfpZ50EEPPVsAwoJ-iAY3ui0lOL1j4Zo8CJFLk7tGAhvcNYqtm4"/>
+            <img
+              :alt="stats.activeAuthor.name"
+              class="w-20 h-20 rounded-[1.5rem] object-cover ring-4 ring-primary-container/20"
+              :src="normalizeMediaUrl(stats.activeAuthor.avatarUrl) || fallbackAvatarImg"
+              @error="(e) => onImgError(e, fallbackAvatarImg)"
+            />
             <div class="absolute -bottom-2 -right-2 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
               <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
             </div>
           </div>
           <div class="overflow-hidden">
-            <h5 class="text-xl font-bold text-on-surface">金毛墩子</h5>
-            <p class="text-xs text-on-surface-variant mb-2">本周发布 18 篇 | 获赞 4.2k</p>
+            <h5 class="text-xl font-bold text-on-surface">{{ stats.activeAuthor.name }}</h5>
+            <p class="text-xs text-on-surface-variant mb-2">本周发布 {{ stats.activeAuthor.postCount }} 篇 | 获赞 {{ formatCount(stats.activeAuthor.likeCount) }}</p>
             <button class="text-xs font-extrabold text-primary hover:underline flex items-center gap-1">
               查看主页 <span class="material-symbols-outlined text-xs">arrow_forward_ios</span>
             </button>
           </div>
+        </div>
+        <div v-else class="flex-1 flex items-center justify-center text-on-surface-variant text-sm italic">
+          暂无活跃作者数据
         </div>
       </div>
     </div>

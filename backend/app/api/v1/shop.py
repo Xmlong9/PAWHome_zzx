@@ -786,6 +786,7 @@ def register_routes(bp) -> None:
         o = ShopOrder.query.filter_by(user_id=me.id, id=order_id).first()
         if o is None:
             return fail(code="NOT_FOUND", message="order not found", status_code=404)
+        ShopOrderEvent.query.filter_by(order_id=o.id).delete()
         ShopOrderItem.query.filter_by(order_id=o.id).delete()
         db.session.delete(o)
         db.session.commit()

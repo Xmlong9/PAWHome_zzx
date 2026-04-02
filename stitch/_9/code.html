@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>爱宠家管理后台 - 管理员账号</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+            background-color: #f4fafe;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+        }
+        .ginger-gradient {
+            background: linear-gradient(135deg, #944a00 0%, #e67e22 100%);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#ffb961",
+              "outline": "#897365",
+              "secondary": "#546162",
+              "on-surface": "#161c20",
+              "tertiary": "#865300",
+              "on-tertiary-fixed-variant": "#663e00",
+              "primary-fixed": "#ffdcc5",
+              "secondary-fixed-dim": "#bcc9ca",
+              "primary-fixed-dim": "#ffb783",
+              "surface-variant": "#dde3e7",
+              "on-surface-variant": "#564337",
+              "on-background": "#161c20",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed-variant": "#3d494a",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#482b00",
+              "inverse-surface": "#2b3135",
+              "on-secondary-fixed": "#121e1f",
+              "background": "#f4fafe",
+              "on-primary-container": "#502600",
+              "surface-container": "#e9eff3",
+              "inverse-on-surface": "#ecf1f6",
+              "tertiary-container": "#d78800",
+              "surface-bright": "#f4fafe",
+              "surface-tint": "#944a00",
+              "primary-container": "#e67e22",
+              "surface-container-low": "#eff4f8",
+              "on-error-container": "#93000a",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#586566",
+              "on-secondary": "#ffffff",
+              "surface-container-high": "#e3e9ed",
+              "tertiary-fixed": "#ffddb9",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "primary": "#944a00",
+              "secondary-fixed": "#d8e5e6",
+              "on-tertiary-fixed": "#2b1700",
+              "on-primary-fixed-variant": "#713700",
+              "surface-container-highest": "#dde3e7",
+              "surface": "#f4fafe",
+              "surface-dim": "#d5dbdf",
+              "secondary-container": "#d5e2e3",
+              "on-primary-fixed": "#301400",
+              "error": "#ba1a1a",
+              "inverse-primary": "#ffb783",
+              "outline-variant": "#dcc1b1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="text-on-surface">
+<!-- Sidebar Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-orange-100/20 flex flex-col p-4 gap-1 z-50 overflow-y-auto">
+<div class="px-2 py-6">
+<span class="text-2xl font-black bg-gradient-to-br from-orange-700 to-orange-400 bg-clip-text text-transparent">爱宠家</span>
+<p class="text-xs text-on-surface-variant/60 font-medium tracking-widest mt-1">DIGITAL CURATOR</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-orange-50 rounded-xl transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">数据看板</span>
+</a>
+<!-- User Management -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-orange-50 rounded-xl transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-sm font-medium">用户管理</span>
+</a>
+<!-- Content Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="text-sm font-bold">内容管理</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">帖子管理</a>
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">评论管理</a>
+</div>
+</div>
+<!-- Store Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-sm font-bold">商城管理</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">商品管理</a>
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">订单管理</a>
+</div>
+</div>
+<!-- Service Management -->
+<div class="space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+<span class="text-sm font-bold">服务管理</span>
+</div>
+<div class="pl-12 space-y-1">
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">预约管理</a>
+<a class="block py-2 text-sm text-slate-500 hover:text-orange-600 transition-colors" href="#">客服会话</a>
+</div>
+</div>
+<!-- System Settings -->
+<div class="pt-4 pb-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-bold">系统设置</span>
+</div>
+<div class="pl-10 pr-2 space-y-1">
+<a class="flex items-center px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl shadow-md shadow-orange-200/50 transition-all duration-300" href="#">
+<span class="text-sm font-medium">管理员账号</span>
+</a>
+<a class="flex items-center px-4 py-2 text-slate-500 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-all duration-300" href="#">
+<span class="text-sm font-medium">操作日志</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="mt-auto border-t border-slate-100 pt-4">
+<button class="w-full flex items-center gap-3 px-4 py-3 text-error hover:bg-error-container/20 rounded-xl transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-sm font-medium">退出登录</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen pb-12">
+<!-- Top Navigation -->
+<header class="w-full sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(86,67,55,0.08)]">
+<div class="flex justify-between items-center h-16 px-8">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold tracking-tight text-orange-700">爱宠家管理后台</span>
+<div class="h-4 w-[1px] bg-slate-200"></div>
+<div class="flex gap-1 text-sm font-medium text-slate-400">
+<span>系统设置</span>
+<span>/</span>
+<span class="text-on-surface">管理员账号</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-orange-600 transition-colors" data-icon="notifications">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+</div>
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-orange-600 transition-colors" data-icon="help">help</span>
+<span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-orange-600 transition-colors" data-icon="settings">settings</span>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-100">
+<img alt="管理员头像" class="w-8 h-8 rounded-full bg-orange-100" data-alt="close-up portrait of a friendly professional asian man with glasses, wearing a smart casual sweater, soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTd-gAtdJReAUe5ic8gHrO5FHB5QFwnWGI_Ver_oR8xJNh4E6EckIOpiMXAX0MiknE3uArcfW5eAD-2PyYelOalGmPHMLrrhxHUv5wczVKhYFmw7eGkrWrM9sSh1WlewfVvSYuOGz6H7He0L32eQjWkbnYWNahj3OdMXEnKMk5RO3IPhbPleGkJz9PaFBPCN7cnTc1IbKvI9wV7_ZeFKbRG21QHO7dfkWLq87z26blu2WpQiuItr4_93E7ZkhHQ5dkWjvmIrtKYLI"/>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-on-surface">Admin_Ginger</span>
+<span class="text-[10px] text-slate-500">超级管理员</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Editorial Header Section -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h1 class="text-4xl font-extrabold text-primary tracking-tight mb-2">管理员角色矩阵</h1>
+<p class="text-on-surface-variant max-w-md leading-relaxed">
+                    通过精细化的权限分配，确保爱宠家社区运营的高效与安全。您可以在此管理所有的核心团队成员。
+                </p>
+</div>
+<button class="ginger-gradient text-on-primary px-6 py-3 rounded-xl shadow-lg shadow-orange-200/50 flex items-center gap-2 font-bold hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                添加管理员
+            </button>
+</div>
+<!-- Dashboard Stats Bento (Small) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex items-center gap-5">
+<div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">总计账号</p>
+<p class="text-2xl font-black text-on-surface">12 <span class="text-sm font-normal text-slate-400">位</span></p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex items-center gap-5">
+<div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">活跃状态</p>
+<p class="text-2xl font-black text-on-surface">11 <span class="text-sm font-normal text-slate-400">位</span></p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm flex items-center gap-5 border border-orange-100/50">
+<div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-700">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">角色分组</p>
+<p class="text-2xl font-black text-on-surface">4 <span class="text-sm font-normal text-slate-400">组</span></p>
+</div>
+</div>
+</div>
+<!-- Table Container (Editorial Style) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_8px_24px_rgba(86,67,55,0.04)] overflow-hidden">
+<div class="p-6 flex items-center justify-between">
+<div class="flex gap-4 items-center">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-highest border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/40 w-64 transition-all" placeholder="搜索姓名或账号..." type="text"/>
+</div>
+<select class="bg-surface-container-highest border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/40 px-4 py-2 pr-10">
+<option>所有角色</option>
+<option>超级管理员</option>
+<option>客服</option>
+<option>内容运营</option>
+<option>商城管理员</option>
+</select>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="file_download">file_download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">姓名 &amp; 账号</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">手机号</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">所属角色</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">最后登录</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">状态</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">操作</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">LS</div>
+<div>
+<p class="text-sm font-bold text-on-surface">李三花</p>
+<p class="text-xs text-slate-400">admin_calico</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 text-sm font-medium text-on-surface-variant">138 0000 1234</td>
+<td class="px-6 py-5">
+<span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-[11px] font-bold">超级管理员</span>
+</td>
+<td class="px-6 py-5 text-sm text-slate-400">2023-11-24 14:20</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-sm font-medium text-on-surface">正常</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="权限分配">
+<span class="material-symbols-outlined text-xl" data-icon="key">key</span>
+</button>
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="编辑">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container/20 text-slate-400 hover:text-error rounded-lg transition-colors" title="删除">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="客服头像" class="w-10 h-10 rounded-full bg-slate-100" data-alt="smiling young woman with bob haircut, professional office wear, bright soft lighting, clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa3ce5R6tEyB-4ZIDjo6OPZx_MzQb-j5pcQ-jOheBIVihPA-aETrkdJyoBsyjELYbC4PFWv1el8J9K36do7S8neHColHJQ6tDBaA2Mu4TyxWGB7dg320oKs7Vl2wFXAmdxVLuFpDZ8c20Y4RVowXS5WCv_GjP0M4uAHqIgB-49AGe9J3swCV1twGyraj5fkR4nV7dRfkX2G6UKXGeZW58VZBPDPf4HRuwuGR204VeqsVZBKYEk_TEyVmO2m-T2Gy9RdhPDIET0_ak"/>
+<div>
+<p class="text-sm font-bold text-on-surface">张喵喵</p>
+<p class="text-xs text-slate-400">service_meow</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 text-sm font-medium text-on-surface-variant">139 1234 5678</td>
+<td class="px-6 py-5">
+<span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[11px] font-bold">客服</span>
+</td>
+<td class="px-6 py-5 text-sm text-slate-400">2023-11-24 09:15</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-sm font-medium text-on-surface">正常</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="权限分配">
+<span class="material-symbols-outlined text-xl" data-icon="key">key</span>
+</button>
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="编辑">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container/20 text-slate-400 hover:text-error rounded-lg transition-colors" title="删除">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold">WJ</div>
+<div>
+<p class="text-sm font-bold text-on-surface">王橘长</p>
+<p class="text-xs text-slate-400">content_chief</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 text-sm font-medium text-on-surface-variant">150 8888 9999</td>
+<td class="px-6 py-5">
+<span class="bg-purple-50 text-purple-600 px-3 py-1 rounded-full text-[11px] font-bold">内容运营</span>
+</td>
+<td class="px-6 py-5 text-sm text-slate-400">2023-11-23 18:45</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-300"></span>
+<span class="text-sm font-medium text-slate-400">禁用</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="权限分配">
+<span class="material-symbols-outlined text-xl" data-icon="key">key</span>
+</button>
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="编辑">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container/20 text-slate-400 hover:text-error rounded-lg transition-colors" title="删除">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">CL</div>
+<div>
+<p class="text-sm font-bold text-on-surface">陈溜溜</p>
+<p class="text-xs text-slate-400">mall_manager</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 text-sm font-medium text-on-surface-variant">136 5555 6666</td>
+<td class="px-6 py-5">
+<span class="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[11px] font-bold">商城管理员</span>
+</td>
+<td class="px-6 py-5 text-sm text-slate-400">2023-11-24 10:05</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-sm font-medium text-on-surface">正常</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="权限分配">
+<span class="material-symbols-outlined text-xl" data-icon="key">key</span>
+</button>
+<button class="p-2 hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-lg transition-colors" title="编辑">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container/20 text-slate-400 hover:text-error rounded-lg transition-colors" title="删除">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 flex items-center justify-between border-t border-slate-50">
+<p class="text-xs text-slate-400 font-medium">显示 1 到 4，共 12 条记录</p>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-medium">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-medium">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Permission Insight Card (Asymmetric Layout) -->
+<div class="mt-12 grid grid-cols-1 lg:grid-cols-5 gap-8">
+<div class="lg:col-span-3 bg-tertiary-container/10 p-8 rounded-[1.5rem] relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="text-xl font-black text-on-tertiary-container mb-4">关于权限分配的温馨提示</h3>
+<p class="text-on-tertiary-container/80 text-sm leading-relaxed mb-6">
+                        超级管理员拥有最高系统权限，请谨慎分配该角色。客服人员仅能查看订单与处理聊天对话。内容运营可管理社区发帖与评论。商城管理员专注于库存与发货流程。
+                    </p>
+<div class="flex gap-4">
+<button class="text-xs font-bold text-on-tertiary-container underline decoration-2 underline-offset-4">查看完整权限说明文档</button>
+</div>
+</div>
+<div class="absolute -right-8 -bottom-8 opacity-10">
+<span class="material-symbols-outlined text-[160px]" data-icon="pets">pets</span>
+</div>
+</div>
+<div class="lg:col-span-2 bg-secondary-container p-8 rounded-[1.5rem] flex flex-col justify-center">
+<div class="flex items-start gap-4 mb-4">
+<span class="material-symbols-outlined text-secondary text-4xl" data-icon="security">security</span>
+<div>
+<h4 class="font-bold text-on-secondary-container">安全合规性</h4>
+<p class="text-xs text-on-secondary-container/70 mt-1">系统已启用动态审计，所有管理员的操作都将被记录在日志中以备核查。</p>
+</div>
+</div>
+<div class="w-full h-1 bg-white/30 rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-secondary"></div>
+</div>
+<p class="text-[10px] font-bold text-secondary mt-2 text-right">已通过安全等级二级认证</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

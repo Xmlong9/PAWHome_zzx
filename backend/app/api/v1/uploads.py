@@ -64,4 +64,4 @@ def register_routes(bp) -> None:
             return fail(code="BAD_REQUEST", message=str(e), status_code=400)
 
         base = request.host_url.rstrip("/")
-        return ok({"url": f"{base}/media/{name}"}, status_code=201)
+        return ok({"url": f"/media/{name}", "absoluteUrl": f"{base}/media/{name}"}, status_code=201)

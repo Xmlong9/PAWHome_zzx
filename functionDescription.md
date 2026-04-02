@@ -2165,5 +2165,274 @@
 - 如果用户未登记宠物，系统提示词也会附加用户当前尚未登记宠物信息的说明。
 
 **相关文件**
-- 后端：\ackend/app/api/v1/shop.py\
+- 后端：\backend/app/api/v1/shop.py\
+
+---
+
+## 管理端数据看板-营收统计与趋势图（按已支付订单）
+
+**目的**
+- 管理端「数据看板」展示“总营收/今日营收”以及“近 7 天营收与订单趋势”图表，口径与商城订单状态一致。
+
+**入口**
+- 管理端页面：`/dashboard`
+- 接口：`GET /api/v1/admin/dashboard/stats`
+
+**数据流/状态**
+- 前端 `Dashboard.vue` 请求 `GET /api/v1/admin/dashboard/stats`，并将 `data.charts.revenueTrend / orderTrend / dates` 映射到 ECharts 柱状图+折线图。
+- 后端统计基于 `shop_orders`（`ShopOrder.total_cents`）做聚合，营收单位为分，前端展示时换算为元。
+
+**关键分支**
+- 营收口径：使用“已支付订单状态集合”统计营收，而不是依赖单一状态值。
+  - 兼容集合：`completed/done/shipping/shipped/pending_ship`
+  - 总营收：`status in paid_statuses` 的订单金额求和
+  - 近 7 天营收趋势：按天过滤订单后，仅对 `status in paid_statuses` 的订单金额求和
+
+**边界条件**
+- 若某天无已支付订单，则该天 `revenueTrend` 为 `0`，图表柱状条高度为 0（可能视觉上接近“没有柱子”）。
+- 订单状态枚举若调整，需要同步更新“已支付状态集合”，避免营收被统计为 0。
+
+**相关文件**
+- 管理端：`admin-panel/src/views/Dashboard.vue`
+- 后端：`backend/app/api/v1/admin/dashboard.py`
+
+---
+
+## 管理端前后端数据库打通（admin-panel → backend）
+
+**目的**
+- 管理端不再依赖 `admin-panel/server` 的 SQLite 演示数据，改为读取 `backend` 的真实数据库（`backend/instance/app.db`）。
+- 尽量保持管理端前端页面不改（或少改），通过后端接口层做字段/路由适配。
+
+**入口**
+- 管理端前端接口：`/api/v1/admin/*`（由 `admin-panel` 通过 Vite proxy 转发到 Flask）。
+- 管理端登录：`POST /api/v1/admin/auth/login`
+
+**数据流/状态**
+- 管理端 `axios` 请求 `/api/...`：
+  - dev 环境由 `admin-panel/vite.config.ts` 将 `/api` 与 `/media` 代理到 `backend`（默认 `http://127.0.0.1:5001`）。
+  - 管理端使用 `Authorization: Bearer <admin_token>` 访问需要鉴权的管理端接口。
+- 后端管理端接口统一从 SQLAlchemy 模型读取真实数据并返回管理端页面需要的字段结构。
+
+**关键分支**
+- 新增与适配的管理端接口：
+  - `GET /api/v1/admin/dashboard/overview`：返回 `{ userCount, postCount, orderCount, revenue }`。
+  - `GET /api/v1/admin/content/posts`、`GET /api/v1/admin/content/comments`：为管理端“内容管理”提供字段结构兼容。
+- 分页入参兼容：
+  - 前端使用 `page/pageSize`，后端兼容读取 `pageSize`（并保留 `size` 兼容）。
+
+**边界条件**
+- 部分管理端展示字段在业务表中并不存在（如评论审核状态、用户等级等）：后端以合理默认值返回，保证页面可渲染，后续再按需求补齐数据字段与迁移。
+
+**相关文件**
+- 管理端：
+  - `admin-panel/vite.config.ts`
+  - `admin-panel/src/main.ts`
+  - `admin-panel/src/views/*`
+- 后端：
+  - `backend/app/api/v1/admin/dashboard.py`
+  - `backend/app/api/v1/admin/posts.py`
+  - `backend/app/api/v1/admin/shop.py`
+  - `backend/app/api/v1/admin/services.py`
+  - `backend/app/api/v1/admin/system.py`
+  - `backend/tests/test_admin_panel_contract.py`
+
+### 变更 2026-04-02（去除明显假数据）
+- Dashboard：使用 `/api/v1/admin/dashboard/stats` 的真实统计替换“累计点赞/评论”等硬编码数字；无法提供的“分享”显示为 `—`。
+- 用户管理/商品管理/管理员：将“42/1420/4组”等硬编码数字改为来自接口 `total` 或由列表派生；无法精确统计的指标显示为 `—`。
+
+---
+
+## 商城/管理端：图片 URL 归一化与统计口径修复
+
+**目的**
+- 解决真机调试图片不显示、管理端部分商品图 404、以及管理端库存/看板统计口径不一致导致的“数据不对/看起来没数据”问题。
+
+**入口**
+- 小程序下单预览：`POST /api/v1/shop/order/preview` → 页面 `pages/shop/order/checkout`
+- 管理端商品列表：`GET /api/v1/admin/shop/products`
+- 管理端商品汇总：`GET /api/v1/admin/shop/products/summary`
+- 管理端数据看板：`GET /api/v1/admin/dashboard/overview`、`GET /api/v1/admin/dashboard/stats`
+
+**数据流/状态**
+- 小程序侧在组装 checkout 预览数据时，对 `items[].product.imageUrl` 做“绝对化 + 下载缓存 + 兜底”，避免后端返回 `localhost/127.0.0.1` 或裸路径时真机无法访问。
+- 管理端侧在渲染 `<img>` 时，将 `/media/...`、`/assets/...` 等相对路径统一补齐为后端 origin（当 `VITE_API_BASE_URL` 为绝对地址且管理端与后端不同域时）。
+- 管理端 dev 环境 Vite proxy 补齐 `/assets` → 后端，保证历史 `/assets/...` 图片在开发态也能加载。
+- 后端新增 `/assets/images/shop/*` 静态映射，兼容历史数据里写入的 `/assets/images/shop/商品*.jpg`。
+- 后端上传接口优先返回相对路径 `/media/<name>`，避免把请求时的 host（如 127.0.0.1）固化进数据库。
+
+**关键分支**
+- 商品汇总统计口径：仅统计 `is_active=true && stock>0` 的库存件数与库存价值，避免下架/缺货/异常库存影响“总库存价值”。
+- 数据看板趋势切日：按北京时间自然日切分近 7 天；营收口径在保留“已支付状态集合”的同时，兼容演示场景下 `pending_pay + pay_method in {wx,alipay}` 计入营收，避免图表全为 0 导致“看起来没数据”。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/services/shop.ts`
+- 管理端：
+  - `admin-panel/src/utils/format.ts`
+  - `admin-panel/vite.config.ts`
+- 后端：
+  - `backend/app/__init__.py`
+  - `backend/app/api/v1/uploads.py`
+  - `backend/app/api/v1/admin/shop.py`
+  - `backend/app/api/v1/admin/dashboard.py`
+
+### 变更 2026-04-02：禁用自动初始化数据库（保护已还原数据）
+
+**目的**
+- 避免后端启动时自动执行 `create_all/ensure_*` 之类的初始化逻辑，对已还原的数据库产生结构或数据写入。
+
+**实现要点**
+- 后端启动时仅在“数据库文件不存在/为空”或显式打开开关时才执行自动初始化。
+- 环境变量 `PAWHOME_DB_AUTO_INIT`：
+  - `true/1`：强制启用自动初始化
+  - `false/0`：强制禁用自动初始化
+  - 未设置：SQLite 且 db 文件已存在且非空时默认禁用
+
+**相关文件**
+- `backend/app/__init__.py`
+
+### 变更 2026-04-02：数据看板趋势图空数据提示与曲线叠加
+
+**目的**
+- 近 7 天订单/营收全为 0 时，柱状高度为 0 会导致图表看起来“空白”；同时补齐趋势曲线用于表达“曲线增长”。
+
+**实现要点**
+- 订单用柱状图（始终展示 `orderTrend` 柱子），金额用曲线（始终展示 `revenueTrend` 折线），两者叠在同一张图上。
+- 点击“订单/金额”仅切换高亮：选中的更醒目，未选中的淡化（不会把另一条完全隐藏）。
+- 若对应系列近 7 天全为 0：显示“近7天暂无订单/营收数据”提示，避免误以为图表没渲染。
+
+**相关文件**
+- `admin-panel/src/views/Dashboard.vue`
+
+---
+
+## 管理端页面精简（移除统计卡片与按钮入口）
+
+**目的**
+- 删除管理端若干页面中用于演示/占位的统计卡片与操作按钮，保持界面更干净。
+
+**入口**
+- 用户管理：`admin-panel/src/views/users/UserList.vue`
+- 帖子管理：`admin-panel/src/views/content/PostList.vue`
+- 评论管理：`admin-panel/src/views/content/CommentList.vue`
+- 订单中心：`admin-panel/src/views/shop/OrderList.vue`
+- 预约概览：`admin-panel/src/views/services/AppointmentList.vue`
+
+**数据流/状态**
+- 用户管理页移除用户统计卡片后，不再请求 `GET /api/v1/admin/dashboard/stats`（仅保留用户列表分页请求）。
+- 其余页面仅移除按钮渲染，不改变列表数据请求与分页逻辑。
+
+**关键分支**
+- 无（纯 UI 精简，不改变业务操作能力的后端接口）。
+
+**边界条件**
+- 若后续需要恢复入口，优先以真实可用的功能/接口为基础再加回按钮，避免出现“点击无效果”的占位交互。
+
+**相关文件**
+- `admin-panel/src/views/users/UserList.vue`
+- `admin-panel/src/views/content/PostList.vue`
+- `admin-panel/src/views/content/CommentList.vue`
+- `admin-panel/src/views/shop/OrderList.vue`
+- `admin-panel/src/views/services/AppointmentList.vue`
+
+### 变更 2026-04-02：用户性别显示兼容
+
+**问题现象**
+- 用户管理列表“性别”列大量显示问号图标。
+
+**根因**
+- 后端 `User.gender` 为自由字符串，历史数据来自小程序侧写入的 `男/女`，而管理端仅识别 `male/female`。
+
+**修复方案**
+- 管理端展示侧对 `male/female/unknown` 与 `男/女/未知` 做兼容归一化，正确渲染性别图标。
+- 管理端保存用户资料时，将 `male/female` 写回为 `男/女`，避免继续扩大数据口径不一致。
+
+**相关文件**
+- `admin-panel/src/views/users/UserList.vue`
+
+---
+
+## 用户管理：编辑与删除
+
+**目的**
+- 实现对注册用户的资料编辑（昵称、手机号、性别）及物理/逻辑删除能力，并移除“封禁”占位功能。
+
+**入口**
+- 管理后台 -> 用户管理列表 -> 操作列：编辑按钮（edit）、删除按钮（delete）。
+
+**数据流/状态**
+- **编辑**：
+  - 点击编辑，将当前行 `UserItem` 数据克隆到 `editForm`。
+  - 调用 `PUT /api/v1/admin/users/<id>`，Payload 包含 `nickname`, `phone`, `gender`。
+  - 后端 Flask 接口通过 SQLAlchemy 更新 `users` 表。
+- **删除**：
+  - 点击删除，触发二次确认。
+  - 调用 `DELETE /api/v1/admin/users/<id>`。
+  - 后端 Flask 接口：优先尝试 `db.session.delete(user)` 硬删除；若因外键约束失败（例如有关联订单/预约），则自动回退并设置 `status='deleted'` 进行软删除。
+  - 用户列表 `GET /api/v1/admin/users` 接口已增加 `User.status != 'deleted'` 过滤条件。
+
+**关键分支**
+- 性别处理：前端显示映射为 `male/female/unknown` 以适配图标，保存时通过 `genderToStorage` 映射回“男/女”以保持 DB 历史数据一致性。
+- 软硬删除切换：自动捕获硬删除异常，优雅降级为软删除，确保 admin 操作不因数据完整性约束而报错阻断。
+
+**相关文件**
+- [UserList.vue](file:///f:/PAWHome/admin-panel/src/views/users/UserList.vue)
+- [users.py](file:///f:/PAWHome/backend/app/api/v1/admin/users.py)
+- [models.py](file:///f:/PAWHome/backend/app/models.py)
+
+---
+
+## 预约管理-服务类型筛选
+
+**目的**
+- 管理端预约管理页面支持按“全部、美容、洗澡、医疗、寄养”五种服务类型对预约记录进行实时筛选。
+
+**入口**
+- 管理端页面：`/services/appointments`（预约概览）
+
+**数据流/状态**
+- **前端状态**:
+    - `selectedServiceType`: 存储当前选中的服务类型（默认为 `all`）。
+    - 列表视图与日历视图均响应此状态。切换类型时，自动重置分页 `page=1` 并重新触发数据加载。
+- **后端接口**:
+    - `GET /api/v1/admin/services/appointments` 增加 `service_type` 查询参数。
+    - 后端根据参数对 `ServiceAppointment.service_type` 字段执行 `filter_by` 过滤。
+- **UI 交互**:
+    - 筛选按钮组通过 `v-for` 渲染，根据 `selectedServiceType` 动态切换激活样式（`bg-primary-fixed`）。
+    - 点击按钮调用 `updateServiceType(type)` 触发异步加载逻辑。
+
+**关键分支**
+- **全部 (all)**: 发起请求时不携带 `service_type` 参数，返回所有类型的预约。
+- **特定类型**: 携带对应的 `service_type` 字符串（如 `beauty`, `bath` 等）进行精确匹配。
+- **视图同步**: 在列表视图或日历视图下切换筛选条件，都会立即刷新当前视图对应的数据。
+
+**相关文件**
+- 管理端：[AppointmentList.vue](file:///f:/PAWHome/admin-panel/src/views/services/AppointmentList.vue)
+- 后端：[services.py](file:///f:/PAWHome/backend/app/api/v1/admin/services.py)
+- 模型：[models.py](file:///f:/PAWHome/backend/app/models.py)
+
+---
+
+## 预约管理-导出报表
+
+**目的**
+- 支持管理人员将当前筛选条件下的预约记录导出为 CSV 格式的报表，以便进行线下统计与分析。
+
+**入口**
+- 预约管理页面右上角“导出报表”按钮。
+
+**数据流/状态**
+- **前端发起**: 调用 `GET /api/v1/admin/services/appointments/export`，透传当前选中的 `service_type`。
+- **后端生成**:
+    - 根据筛选条件查询 `ServiceAppointment` 记录。
+    - 动态拼接 CSV 字符串，包含 UTF-8 BOM (`\uFEFF`) 以确保 Excel 打开不乱码。
+    - 包含字段：预约编号、创建时间、状态、宠物名称、宠物品种、服务项目、主人姓名、预约时间、预计时长。
+- **浏览器下载**: 前端接收 `blob` 响应后，通过 `URL.createObjectURL` 创建临时下载链接并自动触发。
+
+**相关文件**
+- 管理端：[AppointmentList.vue](file:///f:/PAWHome/admin-panel/src/views/services/AppointmentList.vue)
+- 后端：[services.py](file:///f:/PAWHome/backend/app/api/v1/admin/services.py)
+
+
 

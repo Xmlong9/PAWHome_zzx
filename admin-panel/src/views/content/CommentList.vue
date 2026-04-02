@@ -113,8 +113,8 @@
                   <button class="p-2 bg-secondary-container/40 text-on-secondary-container hover:bg-on-secondary-container hover:text-white rounded-lg transition-all" title="回复" @click="reply(c)">
                     <span class="material-symbols-outlined text-sm" data-icon="reply">reply</span>
                   </button>
-                  <button class="p-2 bg-error-container/40 text-error hover:bg-error hover:text-white rounded-lg transition-all" title="隐藏" @click="hideComment(c)">
-                    <span class="material-symbols-outlined text-sm" data-icon="visibility_off">visibility_off</span>
+                  <button class="p-2 bg-error-container/40 text-error hover:bg-error hover:text-white rounded-lg transition-all" title="删除" @click="deleteComment(c)">
+                    <span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
                   </button>
                 </div>
               </td>
@@ -301,15 +301,15 @@ function reply(_c?: CommentItem) {
   ElMessage.info('暂不支持回复')
 }
 
-async function hideComment(c: CommentItem) {
+async function deleteComment(c: CommentItem) {
   try {
-    await ElMessageBox.confirm('确认隐藏该评论？（当前实现为删除）', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认删除该评论？', '提示', { type: 'warning' })
   } catch {
     return
   }
   try {
     await axios.delete(`/api/v1/admin/comments/${c.id}`)
-    ElMessage.success('已隐藏')
+    ElMessage.success('已删除')
     await load()
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.message || '操作失败')

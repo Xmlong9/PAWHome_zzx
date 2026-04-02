@@ -1,7 +1,18 @@
 from flask import request
 import json
 from ....extensions import db
-from ....models import Post, User, Comment
+from ....models import (
+    Post,
+    User,
+    Comment,
+    PostLike,
+    PostFavorite,
+    PostHistory,
+    PostPin,
+    CommentLike,
+    CommentPin,
+    Notification,
+)
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 
@@ -163,11 +174,79 @@ def register_admin_posts_routes(bp):
         if not post:
             return fail(code="NOT_FOUND", message="Post not found", status_code=404)
             
-        db.session.delete(post)
-        db.session.commit()
-        log_admin_action("delete_post", "post", post_id)
+        # Clean up all related tables to avoid foreign key constraint violations
+        try:
+            # Post interactions
+            PostLike.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            PostFavorite.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            PostHistory.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            PostPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            
+            # Comment interactions and pins
+            CommentPin.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            
+            # Find all comment IDs to clean up comment likes and notifications
+            comment_ids = [c.id for c in Comment.query.filter_by(post_id=post_id).all()]
+            if comment_ids:
+                CommentLike.query.filter(CommentLike.comment_id.in_(comment_ids)).delete(synchronize_session=False)
+                Notification.query.filter(Notification.comment_id.in_(comment_ids)).delete(synchronize_session=False)
+                Comment.query.filter(Comment.id.in_(comment_ids)).delete(synchronize_session=False)
+            
+            # Post notifications
+            Notification.query.filter_by(post_id=post_id).delete(synchronize_session=False)
+            
+            # Finally delete the post itself
+            db.session.delete(post)
+            db.session.commit()
+            
+            log_admin_action("delete_post", "post", post_id)
+            return ok({"message": "Post deleted successfully"})
+            
+        except Exception as e:
+            db.session.rollback()
+            return fail(code="INTERNAL_ERROR", message=str(e), status_code=500)
+
+    @bp.get("/admin/posts/<post_id>")
+    @admin_required
+    def get_admin_post_detail(post_id):
+        post = Post.query.get(post_id)
+        if not post:
+            return fail(code="NOT_FOUND", message="Post not found", status_code=404)
         
-        return ok({"message": "Post deleted successfully"})
+        author = User.query.get(post.author_id)
+        img_cnt, vid_cnt, text_type = _parse_media_stats(post.media_json)
+        
+        return ok({
+            "id": post.id,
+            "author": {
+                "id": post.author_id,
+                "name": author.nickname if author else "Unknown",
+                "avatarUrl": author.avatar_url if author else None,
+            },
+            "contentPreview": post.content,
+            "mediaStats": {"imageCount": img_cnt, "videoCount": vid_cnt, "textType": text_type},
+            "engagement": {
+                "likeCount": post.like_count,
+                "commentCount": post.comment_count,
+            },
+            "publishedAt": _iso(post.created_at),
+        })
+
+    @bp.put("/admin/posts/<post_id>")
+    @admin_required
+    def update_admin_post(post_id):
+        post = Post.query.get(post_id)
+        if not post:
+            return fail(code="NOT_FOUND", message="Post not found", status_code=404)
+        
+        data = request.json or {}
+        if "contentPreview" in data:
+            post.content = data["contentPreview"]
+        
+        db.session.commit()
+        log_admin_action("update_post", "post", post_id)
+        
+        return ok({"message": "Post updated successfully"})
 
     @bp.get("/admin/comments")
     @admin_required
@@ -205,12 +284,33 @@ def register_admin_posts_routes(bp):
         if not comment:
             return fail(code="NOT_FOUND", message="Comment not found", status_code=404)
             
-        post = Post.query.get(comment.post_id)
-        if post and post.comment_count > 0:
-            post.comment_count -= 1
+        try:
+            # Clean up related interactions
+            CommentLike.query.filter_by(comment_id=comment_id).delete(synchronize_session=False)
+            Notification.query.filter_by(comment_id=comment_id).delete(synchronize_session=False)
+            CommentPin.query.filter_by(comment_id=comment_id).delete(synchronize_session=False)
             
-        db.session.delete(comment)
-        db.session.commit()
-        log_admin_action("delete_comment", "comment", comment_id)
-        
-        return ok({"message": "Comment deleted successfully"})
+            # Handle sub-comments (recursive cleanup if needed, but simple one-level for now)
+            # Find all sub-comments to clean them up too
+            sub_comment_ids = [c.id for c in Comment.query.filter_by(parent_id=comment_id).all()]
+            if sub_comment_ids:
+                CommentLike.query.filter(CommentLike.comment_id.in_(sub_comment_ids)).delete(synchronize_session=False)
+                Notification.query.filter(Notification.comment_id.in_(sub_comment_ids)).delete(synchronize_session=False)
+                Comment.query.filter(Comment.id.in_(sub_comment_ids)).delete(synchronize_session=False)
+
+            # Update post comment count
+            post = Post.query.get(comment.post_id)
+            if post:
+                # Count current comments for this post to be accurate
+                actual_count = Comment.query.filter_by(post_id=comment.post_id).count()
+                post.comment_count = max(0, actual_count - 1 - len(sub_comment_ids))
+                
+            db.session.delete(comment)
+            db.session.commit()
+            
+            log_admin_action("delete_comment", "comment", comment_id)
+            return ok({"message": "Comment deleted successfully"})
+            
+        except Exception as e:
+            db.session.rollback()
+            return fail(code="INTERNAL_ERROR", message=str(e), status_code=500)

@@ -177,6 +177,47 @@
         </div>
       </div>
     </div>
+
+    <!-- View Post Dialog -->
+    <el-dialog v-model="viewVisible" title="帖子详情" width="600px" border-radius="20px">
+      <div v-if="selectedPost" class="space-y-4">
+        <div class="flex items-center gap-3 mb-4">
+          <img :src="normalizeMediaUrl(selectedPost.author.avatarUrl) || fallbackAvatarImg" class="w-12 h-12 rounded-full object-cover" />
+          <div>
+            <p class="font-bold text-lg">{{ selectedPost.author.name }}</p>
+            <p class="text-xs text-on-surface-variant">{{ formatDateTime(selectedPost.publishedAt) }}</p>
+          </div>
+        </div>
+        <div class="p-4 bg-surface-container-low rounded-xl">
+          <p class="text-on-surface whitespace-pre-wrap leading-relaxed">{{ selectedPost.contentPreview }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-3 bg-primary/5 rounded-xl flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">favorite</span>
+            <span class="font-bold">{{ selectedPost.engagement.likeCount }} 赞</span>
+          </div>
+          <div class="p-3 bg-secondary/5 rounded-xl flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">chat_bubble</span>
+            <span class="font-bold">{{ selectedPost.engagement.commentCount }} 评论</span>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- Edit Post Dialog -->
+    <el-dialog v-model="editVisible" title="编辑帖子" width="500px">
+      <el-form v-if="editForm" label-position="top">
+        <el-form-item label="帖子内容">
+          <el-input v-model="editForm.contentPreview" type="textarea" :rows="6" placeholder="请输入帖子内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="editVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitEdit">保存修改</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -203,6 +244,12 @@ const pageSize = ref(10)
 const stats = ref<any>(null)
 const fallbackAvatarImg =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBIvxHKmr7So5dzh74C3QDP_wm6ScBxEEmIZESJ-KMlch-N0WlhPN21rQSCTYur5RiGQiq99fT-QGXoE8DLsKwei17IqjbGCjHNWqNmn0wxkKJC2bniAS-EdCWgb1jllMMa5hwNEO3aWFz3LYDGnb8er0SH89BN8_eJSBo70gJeDfW49ZuO2YcuXIivbhkdPVUo0fed34ldPQuVcB8qQwB9BxsQKjD0MCFqB_WP4p6jp9RiGbFZo3B5IHOzjqUW4GTaEI0HzHMhKdY'
+
+const viewVisible = ref(false)
+const selectedPost = ref<PostItem | null>(null)
+const editVisible = ref(false)
+const submitting = ref(false)
+const editForm = ref<{ id: string; contentPreview: string } | null>(null)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 const pageItems = computed(() => {
@@ -273,12 +320,41 @@ function onImgError(e: Event, fallback: string) {
   el.src = fallback
 }
 
-function viewPost(_p: PostItem) {
-  ElMessage.info('暂未提供帖子详情页')
+async function viewPost(p: PostItem) {
+  loading.value = true
+  try {
+    const res = await axios.get(`/api/v1/admin/posts/${p.id}`)
+    if (res.data?.ok || res.data?.code === 0) {
+      selectedPost.value = res.data.data
+      viewVisible.value = true
+    }
+  } catch (e: any) {
+    ElMessage.error('获取详情失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-function editPost(_p: PostItem) {
-  ElMessage.info('暂未提供帖子编辑功能')
+function editPost(p: PostItem) {
+  editForm.value = { id: p.id, contentPreview: p.contentPreview }
+  editVisible.value = true
+}
+
+async function submitEdit() {
+  if (!editForm.value) return
+  submitting.value = true
+  try {
+    await axios.put(`/api/v1/admin/posts/${editForm.value.id}`, {
+      contentPreview: editForm.value.contentPreview
+    })
+    ElMessage.success('修改成功')
+    editVisible.value = false
+    await load()
+  } catch (e: any) {
+    ElMessage.error('修改失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function deletePost(p: PostItem) {

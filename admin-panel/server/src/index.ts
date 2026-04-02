@@ -354,6 +354,46 @@ async function main() {
     )
   })
 
+  app.get('/api/v1/admin/posts/:id', requireAuth, async (req, res) => {
+    const db = await getDb()
+    const { id } = req.params
+    const r = await db.get<{
+      id: string
+      content_preview: string
+      text_type: string
+      image_count: number
+      video_count: number
+      like_count: number
+      comment_count: number
+      published_at: string
+      author_user_id: string
+      author_nickname: string
+      author_avatar_url: string | null
+    }>(
+      `SELECT p.id, p.content_preview, p.text_type, p.image_count, p.video_count, p.like_count, p.comment_count, p.published_at,
+              u.id as author_user_id, u.nickname as author_nickname, u.avatar_url as author_avatar_url
+       FROM posts p
+       JOIN users u ON u.id = p.author_user_id
+       WHERE p.id = ?`,
+      [id]
+    )
+
+    if (!r) {
+      return res.status(404).json(fail(404, '帖子不存在'))
+    }
+
+    res.json(
+      ok({
+        id: r.id,
+        author: { id: r.author_user_id, name: r.author_nickname, avatarUrl: r.author_avatar_url },
+        contentPreview: r.content_preview,
+        mediaStats: { imageCount: r.image_count, videoCount: r.video_count, textType: r.text_type },
+        engagement: { likeCount: r.like_count, commentCount: r.comment_count },
+        publishedAt: r.published_at
+      })
+    )
+  })
+
   app.put('/api/v1/admin/posts/:id', requireAuth, async (req, res) => {
     const db = await getDb()
     const { id } = req.params

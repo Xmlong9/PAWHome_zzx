@@ -49,9 +49,19 @@
 - 没有宠物的用户不会显示“认真宠主”标签，没有互动数据的用户不会显示“活跃用户”标签。
 - 考虑到数据的一致性，SQLite 配置了 `PRAGMA foreign_keys = ON;`，所以需要级联删除或手动先删子表记录。
 
+### 变更 2026-04-03
+- 完善帖子管理：
+  - 新增后端接口 `GET /api/v1/admin/posts/:id` 用于获取帖子完整详情。
+  - 前端 `PostList.vue` 实现“查看详情”弹窗，展示作者、发布时间、全文内容及点赞/评论数。
+  - 前端 `PostList.vue` 实现“编辑帖子”弹窗，支持修改 `contentPreview` 内容并同步到后端。
+  - **修复删除失败**：由于数据库外键约束，完善了删除帖子的级联清理逻辑，删除前会先清理所有关联的点赞（PostLike/CommentLike）、收藏（PostFavorite）、历史（PostHistory）、置顶（PostPin/CommentPin）以及通知（Notification）数据。
+- 完善评论管理：
+  - 前端 `CommentList.vue` 将原有的“隐藏”操作统一更名为“删除”，并更新图标与交互逻辑，直接物理删除评论记录。
+  - **修复删除失败**：针对部分评论无法删除的问题，完善了级联删除逻辑。删除评论前会先清理其关联的点赞（CommentLike）、通知（Notification）、置顶（CommentPin），并且会递归删除该评论下的所有二级子评论（及其对应的互动数据），确保外键约束不会导致删除失败。同时，删减帖子对应的 `comment_count` 时也会考虑子评论的数量。
+
 相关文件
-- 后端：`server/src/index.ts`、`server/src/migrate.ts`、`server/src/seed.ts`
-- 前端：`src/views/users/UserList.vue`、`src/views/content/PostList.vue`、`src/views/content/CommentList.vue`
+- 后端：`server/src/index.ts`
+- 前端：`src/views/content/PostList.vue`、`src/views/content/CommentList.vue`
 
 ## 管理端商品管理功能完善
 

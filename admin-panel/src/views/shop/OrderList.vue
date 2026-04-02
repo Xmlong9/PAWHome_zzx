@@ -11,10 +11,6 @@
           <span class="material-symbols-outlined text-lg">download</span>
           导出数据
         </button>
-        <button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
-          <span class="material-symbols-outlined text-lg">add</span>
-          手动录单
-        </button>
       </div>
     </div>
 

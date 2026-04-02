@@ -13,12 +13,6 @@
           <span class="px-2.5 py-0.5 bg-orange-100 text-primary text-xs rounded-full">{{ todayComments }} 条新评论</span>
         </h2>
       </div>
-      <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl">
-        <button class="px-5 py-2 text-sm font-bold rounded-lg bg-white text-primary shadow-sm transition-all">全部</button>
-        <button class="px-5 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:bg-white/60 transition-all">待审核</button>
-        <button class="px-5 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:bg-white/60 transition-all">已通过</button>
-        <button class="px-5 py-2 text-sm font-medium rounded-lg text-on-surface-variant hover:bg-white/60 transition-all">已隐藏</button>
-      </div>
     </div>
 
     <!-- Bento Stats Grid -->

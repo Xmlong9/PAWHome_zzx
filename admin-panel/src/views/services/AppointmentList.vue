@@ -11,10 +11,6 @@
           <span class="material-symbols-outlined">download</span>
           导出报表
         </button>
-        <button class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 transition-all active:scale-95">
-          <span class="material-symbols-outlined">add</span>
-          新增预约
-        </button>
       </div>
     </div>
 

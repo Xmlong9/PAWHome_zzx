@@ -2305,3 +2305,34 @@
 **相关文件**
 - `admin-panel/src/views/Dashboard.vue`
 
+---
+
+## 管理端页面精简（移除统计卡片与按钮入口）
+
+**目的**
+- 删除管理端若干页面中用于演示/占位的统计卡片与操作按钮，保持界面更干净。
+
+**入口**
+- 用户管理：`admin-panel/src/views/users/UserList.vue`
+- 帖子管理：`admin-panel/src/views/content/PostList.vue`
+- 评论管理：`admin-panel/src/views/content/CommentList.vue`
+- 订单中心：`admin-panel/src/views/shop/OrderList.vue`
+- 预约概览：`admin-panel/src/views/services/AppointmentList.vue`
+
+**数据流/状态**
+- 用户管理页移除用户统计卡片后，不再请求 `GET /api/v1/admin/dashboard/stats`（仅保留用户列表分页请求）。
+- 其余页面仅移除按钮渲染，不改变列表数据请求与分页逻辑。
+
+**关键分支**
+- 无（纯 UI 精简，不改变业务操作能力的后端接口）。
+
+**边界条件**
+- 若后续需要恢复入口，优先以真实可用的功能/接口为基础再加回按钮，避免出现“点击无效果”的占位交互。
+
+**相关文件**
+- `admin-panel/src/views/users/UserList.vue`
+- `admin-panel/src/views/content/PostList.vue`
+- `admin-panel/src/views/content/CommentList.vue`
+- `admin-panel/src/views/shop/OrderList.vue`
+- `admin-panel/src/views/services/AppointmentList.vue`
+

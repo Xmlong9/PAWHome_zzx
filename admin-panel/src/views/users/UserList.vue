@@ -20,46 +20,6 @@
       </button>
     </div>
 
-    <!-- Bento Stats Grid -->
-    <div class="grid grid-cols-4 gap-6 mb-8">
-      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-primary">
-          <span class="material-symbols-outlined">trending_up</span>
-        </div>
-        <div>
-          <p class="text-xs text-on-surface-variant font-medium">今日新增</p>
-          <p class="text-2xl font-black text-on-surface">{{ todayNewText }}</p>
-        </div>
-      </div>
-      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-secondary">
-          <span class="material-symbols-outlined">verified_user</span>
-        </div>
-        <div>
-          <p class="text-xs text-on-surface-variant font-medium">活跃用户</p>
-          <p class="text-2xl font-black text-on-surface">—</p>
-        </div>
-      </div>
-      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-[#eff4f8] flex items-center justify-center text-tertiary">
-          <span class="material-symbols-outlined">pets</span>
-        </div>
-        <div>
-          <p class="text-xs text-on-surface-variant font-medium">认证宠主</p>
-          <p class="text-2xl font-black text-on-surface">—</p>
-        </div>
-      </div>
-      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-none flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-error-container/20 flex items-center justify-center text-error">
-          <span class="material-symbols-outlined">block</span>
-        </div>
-        <div>
-          <p class="text-xs text-on-surface-variant font-medium">已封禁</p>
-          <p class="text-2xl font-black text-on-surface">—</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Table Container -->
     <div class="bg-surface-container-low rounded-xl shadow-[0px_8px_24px_rgba(86,67,55,0.08)] overflow-hidden">
       <div class="overflow-x-auto">
@@ -91,8 +51,12 @@
                 />
               </td>
               <td class="px-6 py-4">
-                <div class="max-w-[14rem]">
+                  <div class="max-w-[14rem]">
                   <span class="block font-bold text-on-surface truncate whitespace-nowrap">{{ u.nickname }}</span>
+                  <div class="flex gap-1 mt-1">
+                    <span v-if="u.tags?.isActive" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">活跃用户</span>
+                    <span v-if="u.tags?.isSeriousOwner" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-tertiary-container text-on-tertiary-container">认证宠主</span>
+                  </div>
                 </div>
               </td>
               <td class="px-6 py-4 text-sm text-on-surface-variant">{{ u.phoneMasked }}</td>
@@ -161,6 +125,31 @@
     <!-- Organic Graphic Element (Editorial Asymmetry) -->
     <div class="fixed -bottom-12 -right-12 w-64 h-64 bg-primary-fixed-dim/20 rounded-full blur-3xl -z-10"></div>
     <div class="fixed top-1/2 -right-20 w-40 h-40 bg-tertiary-fixed-dim/10 rounded-full blur-2xl -z-10"></div>
+
+    <!-- Edit Dialog -->
+    <el-dialog v-model="editDialogVisible" title="编辑用户" width="400px" class="rounded-2xl">
+      <el-form :model="editForm" label-width="80px">
+        <el-form-item label="昵称">
+          <el-input v-model="editForm.nickname"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="editForm.phone"></el-input>
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-radio-group v-model="editForm.gender">
+            <el-radio label="male">男</el-radio>
+            <el-radio label="female">女</el-radio>
+            <el-radio label="unknown">未知</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveUser">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -173,11 +162,16 @@ import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
 type UserItem = {
   id: string
   nickname: string
+  phone: string | null
   phoneMasked: string
   gender: string
   avatarUrl: string | null
   status: string
   registeredAt: string
+  tags?: {
+    isActive: boolean
+    isSeriousOwner: boolean
+  }
 }
 
 const loading = ref(false)
@@ -185,11 +179,17 @@ const users = ref<UserItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
-const todayNew = ref<number | null>(null)
 const fallbackAvatarImg =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDVx8-nnebgD57B6CL10HZbymdP_ggMeNIAf-YsMfXpR33oqmJKn1sDJrPpXTPmUZGf0mks_Figmbsgs0CQH4NiG2c6sWoAZZt14adP3g8E-FBw-bMoE1HCVOeTWPgL8GLSiDpM3ZSJ5iyYMfoQej30-RQKXmbdyoclIySzOf5qYKxFNSUEi0OWRBH05GNJwxCmDGopNTxRIva9TRXz41ck8YJ9alwqsr_Xx_JyhQx-uBdMXlxT54oOaduk2ejdWTjHHoy-ABzuqRE'
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlMGUwZTAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzk5OSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5VPC90ZXh0Pjwvc3ZnPg=='
 
-const todayNewText = computed(() => (todayNew.value === null ? '—' : String(todayNew.value)))
+const editDialogVisible = ref(false)
+const editForm = ref({
+  id: '',
+  nickname: '',
+  phone: '',
+  gender: 'unknown'
+})
+
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 const pageItems = computed(() => {
   const tp = totalPages.value
@@ -213,17 +213,11 @@ const end = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const [u, s] = await Promise.all([
-      axios.get('/api/v1/admin/users', { params: { page: page.value, pageSize: pageSize.value } }),
-      axios.get('/api/v1/admin/dashboard/stats')
-    ])
+    const u = await axios.get('/api/v1/admin/users', { params: { page: page.value, pageSize: pageSize.value } })
 
     if (u.data?.ok || u.data?.code === 0) {
       users.value = u.data.data.items
       total.value = u.data.data.total
-    }
-    if (s.data?.ok || s.data?.code === 0) {
-      todayNew.value = s.data.data?.users?.today ?? null
     }
   } finally {
     loading.value = false
@@ -244,8 +238,23 @@ function onImgError(e: Event, fallback: string) {
   el.src = fallback
 }
 
-function editUser(_u: UserItem) {
-  ElMessage.info('暂未提供用户编辑功能')
+function editUser(u: UserItem) {
+  editForm.value.id = u.id
+  editForm.value.nickname = u.nickname
+  editForm.value.phone = u.phone || ''
+  editForm.value.gender = u.gender || 'unknown'
+  editDialogVisible.value = true
+}
+
+async function saveUser() {
+  try {
+    await axios.put(`/api/v1/admin/users/${editForm.value.id}`, editForm.value)
+    ElMessage.success('保存成功')
+    editDialogVisible.value = false
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '保存失败')
+  }
 }
 
 async function toggleBan(u: UserItem) {

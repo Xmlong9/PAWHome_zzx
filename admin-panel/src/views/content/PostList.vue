@@ -1,18 +1,10 @@
 <template>
   <div class="p-8 space-y-8">
     <!-- Header Section -->
-    <div class="flex justify-between items-end">
+    <div class="flex items-end">
       <div>
         <h2 class="text-3xl font-extrabold text-primary mb-2 tracking-tight">帖子管理</h2>
         <p class="text-on-surface-variant">监控社区活力，筛选优质萌宠内容。</p>
-      </div>
-      <div class="flex gap-3">
-        <button class="px-5 py-2.5 bg-surface-container-highest text-on-surface-variant font-semibold rounded-xl hover:bg-surface-container-high transition-colors flex items-center gap-2">
-          <span class="material-symbols-outlined text-lg">filter_list</span> 筛选
-        </button>
-        <button class="px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-white font-semibold rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-md flex items-center gap-2">
-          <span class="material-symbols-outlined text-lg">add</span> 发布官方公告
-        </button>
       </div>
     </div>
     

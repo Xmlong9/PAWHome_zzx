@@ -2381,3 +2381,58 @@
 - [users.py](file:///f:/PAWHome/backend/app/api/v1/admin/users.py)
 - [models.py](file:///f:/PAWHome/backend/app/models.py)
 
+---
+
+## 预约管理-服务类型筛选
+
+**目的**
+- 管理端预约管理页面支持按“全部、美容、洗澡、医疗、寄养”五种服务类型对预约记录进行实时筛选。
+
+**入口**
+- 管理端页面：`/services/appointments`（预约概览）
+
+**数据流/状态**
+- **前端状态**:
+    - `selectedServiceType`: 存储当前选中的服务类型（默认为 `all`）。
+    - 列表视图与日历视图均响应此状态。切换类型时，自动重置分页 `page=1` 并重新触发数据加载。
+- **后端接口**:
+    - `GET /api/v1/admin/services/appointments` 增加 `service_type` 查询参数。
+    - 后端根据参数对 `ServiceAppointment.service_type` 字段执行 `filter_by` 过滤。
+- **UI 交互**:
+    - 筛选按钮组通过 `v-for` 渲染，根据 `selectedServiceType` 动态切换激活样式（`bg-primary-fixed`）。
+    - 点击按钮调用 `updateServiceType(type)` 触发异步加载逻辑。
+
+**关键分支**
+- **全部 (all)**: 发起请求时不携带 `service_type` 参数，返回所有类型的预约。
+- **特定类型**: 携带对应的 `service_type` 字符串（如 `beauty`, `bath` 等）进行精确匹配。
+- **视图同步**: 在列表视图或日历视图下切换筛选条件，都会立即刷新当前视图对应的数据。
+
+**相关文件**
+- 管理端：[AppointmentList.vue](file:///f:/PAWHome/admin-panel/src/views/services/AppointmentList.vue)
+- 后端：[services.py](file:///f:/PAWHome/backend/app/api/v1/admin/services.py)
+- 模型：[models.py](file:///f:/PAWHome/backend/app/models.py)
+
+---
+
+## 预约管理-导出报表
+
+**目的**
+- 支持管理人员将当前筛选条件下的预约记录导出为 CSV 格式的报表，以便进行线下统计与分析。
+
+**入口**
+- 预约管理页面右上角“导出报表”按钮。
+
+**数据流/状态**
+- **前端发起**: 调用 `GET /api/v1/admin/services/appointments/export`，透传当前选中的 `service_type`。
+- **后端生成**:
+    - 根据筛选条件查询 `ServiceAppointment` 记录。
+    - 动态拼接 CSV 字符串，包含 UTF-8 BOM (`\uFEFF`) 以确保 Excel 打开不乱码。
+    - 包含字段：预约编号、创建时间、状态、宠物名称、宠物品种、服务项目、主人姓名、预约时间、预计时长。
+- **浏览器下载**: 前端接收 `blob` 响应后，通过 `URL.createObjectURL` 创建临时下载链接并自动触发。
+
+**相关文件**
+- 管理端：[AppointmentList.vue](file:///f:/PAWHome/admin-panel/src/views/services/AppointmentList.vue)
+- 后端：[services.py](file:///f:/PAWHome/backend/app/api/v1/admin/services.py)
+
+
+

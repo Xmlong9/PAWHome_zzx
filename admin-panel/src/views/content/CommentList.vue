@@ -156,11 +156,6 @@
       </div>
     </div>
   </section>
-  
-  <!-- Floating Action Button -->
-  <button class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-xl shadow-orange-300 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
-    <span class="material-symbols-outlined text-2xl" data-icon="add_comment" style="font-variation-settings: 'FILL' 1;">add_comment</span>
-  </button>
 </template>
 
 <script setup lang="ts">

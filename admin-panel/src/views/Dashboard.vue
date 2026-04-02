@@ -6,9 +6,13 @@
         <h2 class="text-3xl font-extrabold text-primary mb-2">欢迎回来，管理员！</h2>
         <p class="text-on-surface-variant max-w-md">这是您爱宠家社区的今日概览。今日新增 {{ stats?.orders?.today ?? 0 }} 笔订单。</p>
       </div>
-      <div class="hidden lg:block absolute -right-4 -bottom-4 z-0">
+      <div class="hidden lg:block absolute -right-4 -bottom-12 z-0">
         <div class="w-64 h-64 bg-primary-container/20 rounded-full blur-3xl absolute -right-10 -bottom-10"></div>
-        <img alt="Pet mascot" class="w-56 h-56 object-cover rounded-2xl rotate-3 shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCex6QzbRWzD2LM1Lmt2vbf7L7Vc2D5yjRYEjDYSDRNtBbBqVWAHaNmnT8l3KyjGcFLncuE90mX0PhXUbx3amEQ466sRFTxMGmRXok0gdXr8LwKYlpV9S6W4YV5fx4OSToYk71GLPpJ-LPX0YW_I8OUxOxsS6R6NIauTQMawUhV0MGpvkxZqcfgaCsvtN_TEQVxj90UjGjZWMaijFaL9gTv_-qiByoyBrxh5V2b3M0OOU-PJGqFqBY_32lCcZAMIk6z4RDuHsvSQO8"/>
+        <img
+          alt="Pet mascot"
+          class="w-56 h-56 object-cover rounded-2xl rotate-3 shadow-xl"
+          :src="normalizeMediaUrl('/media/推送2.jpg')"
+        />
       </div>
     </div>
 
@@ -155,17 +159,13 @@
       </div>
     </section>
 
-    <!-- FAB for quick action -->
-    <button class="fixed bottom-8 right-8 w-14 h-14 metric-gradient text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
-      <span class="material-symbols-outlined">add</span>
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatMoney } from '@/utils/format'
+import { formatMoney, normalizeMediaUrl } from '@/utils/format'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'

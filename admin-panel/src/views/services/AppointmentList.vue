@@ -7,7 +7,10 @@
         <p class="text-on-surface-variant mt-1">欢迎回来，今日共有 <span class="font-bold text-primary">{{ pendingCount }}</span> 个待处理预约。</p>
       </div>
       <div class="flex gap-3">
-        <button class="flex items-center gap-2 px-5 py-2.5 bg-white border-none shadow-sm hover:shadow-md rounded-xl text-on-surface-variant font-semibold transition-all">
+        <button
+          class="flex items-center gap-2 px-5 py-2.5 bg-white border-none shadow-sm hover:shadow-md rounded-xl text-on-surface-variant font-semibold transition-all"
+          @click="exportAppointments"
+        >
           <span class="material-symbols-outlined">download</span>
           导出报表
         </button>
@@ -61,11 +64,19 @@
     <!-- Filter & View Controls -->
     <div class="bg-surface-container-low rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-2 bg-surface-container-lowest p-1 rounded-xl shadow-inner">
-        <button class="px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-lg font-bold text-sm flex items-center gap-2">
+        <button
+          class="px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all"
+          :class="viewType === 'list' ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-sm' : 'text-on-surface-variant hover:bg-orange-50'"
+          @click="viewType = 'list'"
+        >
           <span class="material-symbols-outlined text-sm">list</span>
           列表视图
         </button>
-        <button class="px-6 py-2 text-on-surface-variant hover:bg-orange-50 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors">
+        <button
+          class="px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all"
+          :class="viewType === 'calendar' ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-sm' : 'text-on-surface-variant hover:bg-orange-50'"
+          @click="viewType = 'calendar'"
+        >
           <span class="material-symbols-outlined text-sm">calendar_month</span>
           日历视图
         </button>
@@ -74,11 +85,15 @@
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">服务类型:</span>
           <div class="flex gap-2">
-            <button class="px-3 py-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold">全部</button>
-            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">美容</button>
-            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">洗澡</button>
-            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">医疗</button>
-            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">寄养</button>
+            <button
+              v-for="type in ['all', 'beauty', 'bath', 'medical', 'foster']"
+              :key="type"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+              :class="selectedServiceType === type ? 'bg-primary-fixed text-on-primary-fixed-variant' : 'bg-surface-container-highest text-on-surface-variant hover:bg-primary-fixed/50'"
+              @click="updateServiceType(type)"
+            >
+              {{ { all: '全部', beauty: '美容', bath: '洗澡', medical: '医疗', foster: '寄养' }[type] }}
+            </button>
           </div>
         </div>
         <div class="h-6 w-[1px] bg-slate-300"></div>
@@ -89,7 +104,7 @@
     </div>
 
     <!-- Appointment Table Container -->
-    <div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
+    <div v-if="viewType === 'list'" class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-surface-container-low/50">
@@ -210,6 +225,87 @@
       </div>
     </div>
 
+    <!-- Calendar View Container -->
+    <div v-if="viewType === 'calendar'" class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] p-6">
+      <el-calendar v-model="calendarDate">
+        <template #date-cell="{ data }">
+          <div class="h-full flex flex-col gap-1 p-1">
+            <span class="text-sm font-bold" :class="data.isSelected ? 'text-primary' : 'text-on-surface-variant'">
+              {{ data.day.split('-').slice(-1)[0] }}
+            </span>
+            <div class="flex-1 overflow-y-auto space-y-1 mt-1 custom-scrollbar">
+              <div
+                v-for="a in getAppointmentsForDay(data.day)"
+                :key="a.id"
+                class="px-2 py-1 rounded bg-primary/5 border-l-2 border-primary group cursor-pointer hover:bg-primary/10 transition-colors"
+                @click.stop="showAppointmentDetail(a)"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[10px] font-bold text-primary truncate">{{ a.pet.nameCn || '未知宠物' }}</span>
+                  <span class="text-[8px] text-on-surface-variant shrink-0">{{ formatTime(a.schedule.startAt) }}</span>
+                </div>
+                <div class="text-[8px] text-on-surface-variant truncate">{{ a.service.name }}</div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </el-calendar>
+    </div>
+
+    <!-- Appointment Detail Dialog -->
+    <el-dialog v-model="detailVisible" title="预约详情" width="400px" custom-class="rounded-2xl">
+      <div v-if="selectedAppointment" class="space-y-6">
+        <div class="flex items-center gap-4">
+          <img
+            :src="normalizeMediaUrl(selectedAppointment.pet.avatarUrl) || fallbackPetImg"
+            class="w-16 h-16 rounded-2xl object-cover bg-orange-50 shadow-sm"
+          />
+          <div>
+            <h4 class="text-xl font-black text-on-surface">{{ selectedAppointment.pet.nameCn || '未知宠物' }}</h4>
+            <p class="text-sm text-on-surface-variant">{{ selectedAppointment.pet.breed || '-' }}</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-surface-container-low">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">服务项目</p>
+            <p class="font-bold text-on-surface">{{ selectedAppointment.service.name }}</p>
+          </div>
+          <div class="p-4 rounded-xl bg-surface-container-low">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">预约时段</p>
+            <p class="font-bold text-on-surface">{{ scheduleText(selectedAppointment) }}</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-container-low">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">主人信息</p>
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-on-surface">{{ selectedAppointment.owner.name }}</span>
+            <span class="text-xs text-on-surface-variant">{{ selectedAppointment.owner.phoneMasked }}</span>
+          </div>
+        </div>
+
+        <div class="flex justify-center gap-3 pt-2">
+          <el-button
+            v-if="selectedAppointment.status === 'pending_service'"
+            type="primary"
+            class="flex-1 !rounded-xl !h-10 font-bold"
+            @click="updateStatus(selectedAppointment, 'arrived')"
+          >
+            到店
+          </el-button>
+          <el-button
+            v-if="selectedAppointment.status === 'arrived'"
+            type="success"
+            class="flex-1 !rounded-xl !h-10 font-bold"
+            @click="updateStatus(selectedAppointment, 'completed')"
+          >
+            完成
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- Secondary Information Cards (Asymmetric Layout) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
       <!-- Promotion / Announcement Card -->
@@ -278,7 +374,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
@@ -296,9 +392,16 @@ type AppointmentItem = {
 
 const loading = ref(false)
 const appointments = ref<AppointmentItem[]>([])
+const calendarAppointments = ref<AppointmentItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const viewType = ref<'list' | 'calendar'>('list')
+const selectedServiceType = ref('all')
+const calendarDate = ref(new Date())
+const detailVisible = ref(false)
+const selectedAppointment = ref<AppointmentItem | null>(null)
+
 const fallbackPetImg =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuAmDUm175YZBeiBAHZklM_l0qb3v9vLz0VoKRv3RoHCKTwl2KXVgnHAh86rOIoKx_D22E9V2HQ1afvuNobpYivHILk6p-nE5TvDMn1L7ghuiOWXvU1wEWV5h-sQFH04uDRstuGZFLxgcz-UX5C2n2Tm4ZZaYq8Edqeh8hn6mG4UjcMMFq1EsAEzIaCmBiYXNWirz0-_4PGfR6Sh7sxCZgpLu6BXnIcp_1CTi5h7Iaca4nUxw_FTrfmW1jt4SqkfevzD13TPrNB0oRM'
 
@@ -368,7 +471,13 @@ function statusDotClass(status: string) {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/services/appointments', { params: { page: page.value, pageSize: pageSize.value } })
+    const res = await axios.get('/api/v1/admin/services/appointments', {
+      params: {
+        page: page.value,
+        pageSize: pageSize.value,
+        service_type: selectedServiceType.value === 'all' ? '' : selectedServiceType.value
+      }
+    })
     if (res.data?.ok || res.data?.code === 0) {
       appointments.value = res.data.data.items
       total.value = res.data.data.total
@@ -378,11 +487,87 @@ async function load() {
   }
 }
 
+async function loadCalendarData() {
+  const year = calendarDate.value.getFullYear()
+  const month = calendarDate.value.getMonth()
+  const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const endStr = `${year}-${String(month + 1).padStart(2, '0')}-31`
+
+  loading.value = true
+  try {
+    const res = await axios.get('/api/v1/admin/services/appointments', {
+      params: {
+        start_date: startStr,
+        end_date: endStr,
+        no_pagination: 'true',
+        service_type: selectedServiceType.value === 'all' ? '' : selectedServiceType.value
+      }
+    })
+    if (res.data?.ok || res.data?.code === 0) {
+      calendarAppointments.value = res.data.data.items
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(viewType, (val) => {
+  if (val === 'calendar' && calendarAppointments.value.length === 0) {
+    loadCalendarData()
+  }
+})
+
+watch(calendarDate, loadCalendarData)
+
+function getAppointmentsForDay(day: string) {
+  return calendarAppointments.value.filter((a) => {
+    if (!a.schedule.startAt) return false
+    return a.schedule.startAt.startsWith(day)
+  })
+}
+
+function showAppointmentDetail(a: AppointmentItem) {
+  selectedAppointment.value = a
+  detailVisible.value = true
+}
+
 async function goPage(next: number) {
   const p = Math.min(Math.max(1, next), totalPages.value)
   if (p === page.value) return
   page.value = p
   await load()
+}
+
+async function updateServiceType(type: string) {
+  if (selectedServiceType.value === type) return
+  selectedServiceType.value = type
+  page.value = 1
+  if (viewType.value === 'list') {
+    await load()
+  } else {
+    await loadCalendarData()
+  }
+}
+
+async function exportAppointments() {
+  try {
+    const res = await axios.get('/api/v1/admin/services/appointments/export', {
+      params: {
+        service_type: selectedServiceType.value === 'all' ? '' : selectedServiceType.value
+      },
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `预约报表_${new Date().toLocaleDateString()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (e: any) {
+    ElMessage.error('导出失败')
+  }
 }
 
 function onImgError(e: Event, fallback: string) {
@@ -412,4 +597,37 @@ onMounted(load)
 </script>
 
 <style scoped>
+:deep(.el-calendar-table .el-calendar-day) {
+  padding: 0;
+  height: 120px;
+}
+
+:deep(.el-calendar-table .el-calendar-day:hover) {
+  background-color: transparent;
+}
+
+:deep(.el-calendar__header) {
+  padding: 0 0 20px 0;
+  border-bottom: none;
+}
+
+:deep(.el-calendar__title) {
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: var(--el-text-color-primary);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
 </style>

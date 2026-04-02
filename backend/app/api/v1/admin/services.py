@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, Response
 from ....models import Pet, ServiceOffering, User
 from ....extensions import db
 from ....models import ServiceProvider, ServiceAppointment
@@ -47,13 +47,32 @@ def register_admin_services_routes(bp):
     def get_appointments():
         page, size = _pagination_args()
         status = request.args.get("status", "")
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+        service_type = request.args.get("service_type", "")
         
         query = ServiceAppointment.query
 
         if status:
             query = query.filter_by(status=status)
+            
+        if service_type:
+            query = query.filter_by(service_type=service_type)
+            
+        if start_date:
+            query = query.filter(ServiceAppointment.service_date >= start_date)
+        if end_date:
+            query = query.filter(ServiceAppointment.service_date <= end_date)
 
-        pagination = query.order_by(ServiceAppointment.created_at.desc()).paginate(page=page, per_page=size, error_out=False)
+        # If we have start_date/end_date, we might want to skip pagination to get all for the calendar
+        if (start_date or end_date) and request.args.get("no_pagination") == "true":
+            items = query.order_by(ServiceAppointment.appointment_at.asc()).all()
+            total = len(items)
+            pagination_items = items
+        else:
+            pagination = query.order_by(ServiceAppointment.created_at.desc()).paginate(page=page, per_page=size, error_out=False)
+            total = pagination.total
+            pagination_items = pagination.items
 
         status_map = {
             "scheduled": "pending_service",
@@ -64,7 +83,7 @@ def register_admin_services_routes(bp):
         }
 
         appointments = []
-        for appt in pagination.items:
+        for appt in pagination_items:
             u = User.query.get(appt.user_id)
             pet = Pet.query.get(appt.pet_id) if appt.pet_id else None
             offering = ServiceOffering.query.get(appt.offering_id) if appt.offering_id else None
@@ -97,11 +116,68 @@ def register_admin_services_routes(bp):
 
         return ok({
             "items": appointments,
-            "total": pagination.total,
+            "total": total,
             "page": page,
             "size": size
         })
+
+    @bp.get("/admin/services/appointments/export")
+    @admin_required
+    def export_appointments():
+        status = request.args.get("status", "")
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+        service_type = request.args.get("service_type", "")
         
+        query = ServiceAppointment.query
+
+        if status:
+            query = query.filter_by(status=status)
+        if service_type:
+            query = query.filter_by(service_type=service_type)
+        if start_date:
+            query = query.filter(ServiceAppointment.service_date >= start_date)
+        if end_date:
+            query = query.filter(ServiceAppointment.service_date <= end_date)
+
+        items = query.order_by(ServiceAppointment.created_at.desc()).all()
+
+        csv_content = "\uFEFF预约编号,创建时间,状态,宠物名称,宠物品种,服务项目,主人姓名,预约时间,预计时长(min)\n"
+        
+        status_map = {
+            "scheduled": "待服务",
+            "arrived": "已到店",
+            "completed": "已完成",
+            "cancelled": "已取消",
+            "unpaid": "待支付",
+        }
+
+        for appt in items:
+            u = User.query.get(appt.user_id)
+            pet = Pet.query.get(appt.pet_id) if appt.pet_id else None
+            offering = ServiceOffering.query.get(appt.offering_id) if appt.offering_id else None
+            
+            booking_no = (appt.id or "")[:8]
+            created_at = appt.created_at.strftime("%Y-%m-%d %H:%M") if appt.created_at else "-"
+            status_text = status_map.get(appt.status, appt.status)
+            status_label = status_text
+            if status_text == "pending_service": status_label = "待服务"
+            
+            pet_name = pet.name if pet else "-"
+            pet_breed = pet.breed if pet else "-"
+            service_name = offering.name if offering else appt.service_type
+            owner_name = u.nickname if u else "Unknown"
+            appt_time = appt.appointment_at.strftime("%Y-%m-%d %H:%M") if appt.appointment_at else "-"
+            duration = offering.duration_minutes if offering else "-"
+
+            csv_content += f"{booking_no},{created_at},{status_label},{pet_name},{pet_breed},{service_name},{owner_name},{appt_time},{duration}\n"
+
+        return Response(
+            csv_content,
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=appointments.csv"}
+        )
+
     @bp.put("/admin/services/appointments/<appt_id>/status")
     @admin_required
     def update_appointment_status(appt_id):

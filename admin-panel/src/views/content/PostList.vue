@@ -35,8 +35,10 @@
               <td class="px-6 py-5 font-mono text-xs text-on-surface-variant">#{{ p.id.slice(0, 8) }}</td>
               <td class="px-6 py-5">
                 <div class="flex items-center gap-3">
-                  <img :alt="p.author.name" class="w-8 h-8 rounded-full object-cover" :src="p.author.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBIvxHKmr7So5dzh74C3QDP_wm6ScBxEEmIZESJ-KMlch-N0WlhPN21rQSCTYur5RiGQiq99fT-QGXoE8DLsKwei17IqjbGCjHNWqNmn0wxkKJC2bniAS-EdCWgb1jllMMa5hwNEO3aWFz3LYDGnb8er0SH89BN8_eJSBo70gJeDfW49ZuO2YcuXIivbhkdPVUo0fed34ldPQuVcB8qQwB9BxsQKjD0MCFqB_WP4p6jp9RiGbFZo3B5IHOzjqUW4GTaEI0HzHMhKdY'"/>
-                  <span class="font-medium">{{ p.author.name }}</span>
+                  <img :alt="p.author.name" class="w-8 h-8 rounded-full object-cover" :src="normalizeMediaUrl(p.author.avatarUrl) || fallbackAvatarImg" @error="(e) => onImgError(e, fallbackAvatarImg)"/>
+                  <div class="max-w-[10rem]">
+                    <span class="block font-medium truncate whitespace-nowrap">{{ p.author.name }}</span>
+                  </div>
                 </div>
               </td>
               <td class="px-6 py-5 max-w-xs">
@@ -64,9 +66,9 @@
               <td class="px-6 py-5 text-sm text-on-surface-variant">{{ formatDateTime(p.publishedAt) }}</td>
               <td class="px-6 py-5">
                 <div class="flex justify-center gap-2">
-                  <button class="p-2 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">visibility</span></button>
-                  <button class="p-2 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">edit</span></button>
-                  <button class="p-2 text-on-surface-variant hover:text-error transition-colors"><span class="material-symbols-outlined">delete</span></button>
+                  <button class="p-2 text-on-surface-variant hover:text-primary transition-colors" @click="viewPost(p)"><span class="material-symbols-outlined">visibility</span></button>
+                  <button class="p-2 text-on-surface-variant hover:text-primary transition-colors" @click="editPost(p)"><span class="material-symbols-outlined">edit</span></button>
+                  <button class="p-2 text-on-surface-variant hover:text-error transition-colors" @click="deletePost(p)"><span class="material-symbols-outlined">delete</span></button>
                 </div>
               </td>
             </tr>
@@ -79,11 +81,29 @@
       <div class="mt-4 flex justify-between items-center px-4">
         <p class="text-xs text-on-surface-variant">显示 {{ start }} 到 {{ end }}，共 {{ total }} 条内容</p>
         <div class="flex gap-2">
-          <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-highest text-on-surface-variant"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
-          <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-white font-bold text-xs">1</button>
-          <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-highest transition-colors font-bold text-xs">2</button>
-          <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-highest transition-colors font-bold text-xs">3</button>
-          <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-highest text-on-surface-variant"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-highest text-on-surface-variant disabled:opacity-40"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
+            <span class="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-colors"
+            :class="p === page ? 'bg-primary text-white' : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-highest'"
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-container-highest text-on-surface-variant disabled:opacity-40"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
         </div>
       </div>
     </section>
@@ -97,8 +117,8 @@
         </div>
         <h4 class="text-sm font-bold text-on-surface-variant mb-4 uppercase tracking-wider">今日新增帖子</h4>
         <div class="flex items-baseline gap-2">
-          <span class="text-4xl font-black text-on-surface tracking-tighter">1,024</span>
-          <span class="text-sm font-bold text-tertiary bg-tertiary-container/10 px-2 py-0.5 rounded-full">+24 增长</span>
+          <span class="text-4xl font-black text-on-surface tracking-tighter">{{ todayPosts }}</span>
+          <span class="text-sm font-bold text-tertiary bg-tertiary-container/10 px-2 py-0.5 rounded-full">实时</span>
         </div>
         <div class="mt-6 flex items-end gap-1 h-12">
           <div class="flex-1 bg-primary/10 rounded-t-sm h-[40%]"></div>
@@ -118,28 +138,28 @@
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-bold mb-1">
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> 图片帖子</span>
-              <span>65%</span>
+              <span>{{ pctOf('图文') }}%</span>
             </div>
             <div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
-              <div class="bg-primary h-full rounded-full" style="width: 65%"></div>
+              <div class="bg-primary h-full rounded-full" :style="{ width: `${pctOf('图文')}%` }"></div>
             </div>
           </div>
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-bold mb-1">
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> 视频帖子</span>
-              <span>25%</span>
+              <span>{{ pctOf('视频') }}%</span>
             </div>
             <div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
-              <div class="bg-tertiary h-full rounded-full" style="width: 25%"></div>
+              <div class="bg-tertiary h-full rounded-full" :style="{ width: `${pctOf('视频')}%` }"></div>
             </div>
           </div>
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-bold mb-1">
               <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span> 纯文字</span>
-              <span>10%</span>
+              <span>{{ pctOf('纯文本') }}%</span>
             </div>
             <div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
-              <div class="bg-secondary h-full rounded-full" style="width: 10%"></div>
+              <div class="bg-secondary h-full rounded-full" :style="{ width: `${pctOf('纯文本')}%` }"></div>
             </div>
           </div>
         </div>
@@ -171,7 +191,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
 
 type PostItem = {
   id: string
@@ -187,6 +208,30 @@ const posts = ref<PostItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const stats = ref<any>(null)
+const fallbackAvatarImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBIvxHKmr7So5dzh74C3QDP_wm6ScBxEEmIZESJ-KMlch-N0WlhPN21rQSCTYur5RiGQiq99fT-QGXoE8DLsKwei17IqjbGCjHNWqNmn0wxkKJC2bniAS-EdCWgb1jllMMa5hwNEO3aWFz3LYDGnb8er0SH89BN8_eJSBo70gJeDfW49ZuO2YcuXIivbhkdPVUo0fed34ldPQuVcB8qQwB9BxsQKjD0MCFqB_WP4p6jp9RiGbFZo3B5IHOzjqUW4GTaEI0HzHMhKdY'
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
+
+const todayPosts = computed(() => Number(stats.value?.posts?.today ?? 0))
+
+function pctOf(name: string) {
+  const dist = stats.value?.charts?.contentFormDistribution || []
+  const total = dist.reduce((sum: number, it: any) => sum + (Number(it.value) || 0), 0)
+  const row = dist.find((it: any) => String(it.name) === name)
+  const v = Number(row?.value) || 0
+  if (total === 0) return 0
+  return Math.round((v / total) * 100)
+}
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -206,13 +251,56 @@ function formatCount(n: number) {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/content/posts', { params: { page: page.value, pageSize: pageSize.value } })
-    if (res.data?.ok || res.data?.code === 0) {
-      posts.value = res.data.data.items
-      total.value = res.data.data.total
+    const [listRes, statsRes] = await Promise.all([
+      axios.get('/api/v1/admin/content/posts', { params: { page: page.value, pageSize: pageSize.value } }),
+      axios.get('/api/v1/admin/dashboard/stats')
+    ])
+    if (listRes.data?.ok || listRes.data?.code === 0) {
+      posts.value = listRes.data.data.items
+      total.value = listRes.data.data.total
+    }
+    if (statsRes.data?.ok || statsRes.data?.code === 0) {
+      stats.value = statsRes.data.data
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+function viewPost(_p: PostItem) {
+  ElMessage.info('暂未提供帖子详情页')
+}
+
+function editPost(_p: PostItem) {
+  ElMessage.info('暂未提供帖子编辑功能')
+}
+
+async function deletePost(p: PostItem) {
+  try {
+    await ElMessageBox.confirm('确认删除该帖子？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.delete(`/api/v1/admin/posts/${p.id}`)
+    ElMessage.success('已删除')
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '删除失败')
   }
 }
 

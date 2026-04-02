@@ -2241,3 +2241,67 @@
 - Dashboard：使用 `/api/v1/admin/dashboard/stats` 的真实统计替换“累计点赞/评论”等硬编码数字；无法提供的“分享”显示为 `—`。
 - 用户管理/商品管理/管理员：将“42/1420/4组”等硬编码数字改为来自接口 `total` 或由列表派生；无法精确统计的指标显示为 `—`。
 
+---
+
+## 商城/管理端：图片 URL 归一化与统计口径修复
+
+**目的**
+- 解决真机调试图片不显示、管理端部分商品图 404、以及管理端库存/看板统计口径不一致导致的“数据不对/看起来没数据”问题。
+
+**入口**
+- 小程序下单预览：`POST /api/v1/shop/order/preview` → 页面 `pages/shop/order/checkout`
+- 管理端商品列表：`GET /api/v1/admin/shop/products`
+- 管理端商品汇总：`GET /api/v1/admin/shop/products/summary`
+- 管理端数据看板：`GET /api/v1/admin/dashboard/overview`、`GET /api/v1/admin/dashboard/stats`
+
+**数据流/状态**
+- 小程序侧在组装 checkout 预览数据时，对 `items[].product.imageUrl` 做“绝对化 + 下载缓存 + 兜底”，避免后端返回 `localhost/127.0.0.1` 或裸路径时真机无法访问。
+- 管理端侧在渲染 `<img>` 时，将 `/media/...`、`/assets/...` 等相对路径统一补齐为后端 origin（当 `VITE_API_BASE_URL` 为绝对地址且管理端与后端不同域时）。
+- 管理端 dev 环境 Vite proxy 补齐 `/assets` → 后端，保证历史 `/assets/...` 图片在开发态也能加载。
+- 后端新增 `/assets/images/shop/*` 静态映射，兼容历史数据里写入的 `/assets/images/shop/商品*.jpg`。
+- 后端上传接口优先返回相对路径 `/media/<name>`，避免把请求时的 host（如 127.0.0.1）固化进数据库。
+
+**关键分支**
+- 商品汇总统计口径：仅统计 `is_active=true && stock>0` 的库存件数与库存价值，避免下架/缺货/异常库存影响“总库存价值”。
+- 数据看板趋势切日：按北京时间自然日切分近 7 天；营收口径在保留“已支付状态集合”的同时，兼容演示场景下 `pending_pay + pay_method in {wx,alipay}` 计入营收，避免图表全为 0 导致“看起来没数据”。
+
+**相关文件**
+- 小程序：
+  - `PawHome/miniprogram/services/shop.ts`
+- 管理端：
+  - `admin-panel/src/utils/format.ts`
+  - `admin-panel/vite.config.ts`
+- 后端：
+  - `backend/app/__init__.py`
+  - `backend/app/api/v1/uploads.py`
+  - `backend/app/api/v1/admin/shop.py`
+  - `backend/app/api/v1/admin/dashboard.py`
+
+### 变更 2026-04-02：禁用自动初始化数据库（保护已还原数据）
+
+**目的**
+- 避免后端启动时自动执行 `create_all/ensure_*` 之类的初始化逻辑，对已还原的数据库产生结构或数据写入。
+
+**实现要点**
+- 后端启动时仅在“数据库文件不存在/为空”或显式打开开关时才执行自动初始化。
+- 环境变量 `PAWHOME_DB_AUTO_INIT`：
+  - `true/1`：强制启用自动初始化
+  - `false/0`：强制禁用自动初始化
+  - 未设置：SQLite 且 db 文件已存在且非空时默认禁用
+
+**相关文件**
+- `backend/app/__init__.py`
+
+### 变更 2026-04-02：数据看板趋势图空数据提示与曲线叠加
+
+**目的**
+- 近 7 天订单/营收全为 0 时，柱状高度为 0 会导致图表看起来“空白”；同时补齐趋势曲线用于表达“曲线增长”。
+
+**实现要点**
+- 订单用柱状图（始终展示 `orderTrend` 柱子），金额用曲线（始终展示 `revenueTrend` 折线），两者叠在同一张图上。
+- 点击“订单/金额”仅切换高亮：选中的更醒目，未选中的淡化（不会把另一条完全隐藏）。
+- 若对应系列近 7 天全为 0：显示“近7天暂无订单/营收数据”提示，避免误以为图表没渲染。
+
+**相关文件**
+- `admin-panel/src/views/Dashboard.vue`
+

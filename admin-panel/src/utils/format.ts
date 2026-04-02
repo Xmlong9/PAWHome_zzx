@@ -16,3 +16,19 @@ export function statusText(map: Record<string, string>, key?: string | null) {
   return map[key] || key
 }
 
+export function normalizeMediaUrl(input?: string | null) {
+  if (!input) return ''
+  const url = String(input).trim()
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url
+  const base = (import.meta as any)?.env?.VITE_API_BASE_URL || ''
+  let origin = ''
+  try {
+    if (typeof base === 'string' && (base.startsWith('http://') || base.startsWith('https://'))) {
+      origin = new URL(base).origin
+    }
+  } catch {}
+  if (url.startsWith('/')) return origin ? `${origin}${url}` : url
+  if (url.startsWith('media/')) return origin ? `${origin}/${url}` : `/${url}`
+  return origin ? `${origin}/media/${url}` : `/media/${url}`
+}

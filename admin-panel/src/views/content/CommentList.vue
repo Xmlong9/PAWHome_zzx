@@ -10,7 +10,7 @@
         </div>
         <h2 class="text-3xl font-extrabold text-on-surface flex items-center gap-3 tracking-tight">
           互动社区反馈
-          <span class="px-2.5 py-0.5 bg-orange-100 text-primary text-xs rounded-full">128 条新评论</span>
+          <span class="px-2.5 py-0.5 bg-orange-100 text-primary text-xs rounded-full">{{ todayComments }} 条新评论</span>
         </h2>
       </div>
       <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl">
@@ -26,10 +26,10 @@
       <div class="md:col-span-2 p-6 bg-gradient-to-br from-primary to-primary-container rounded-3xl text-white relative overflow-hidden shadow-xl shadow-orange-200/40">
         <div class="relative z-10 space-y-4">
           <p class="text-white/80 font-medium tracking-wide">今日总计互动</p>
-          <h3 class="text-5xl font-black tabular-nums">+1,429</h3>
+          <h3 class="text-5xl font-black tabular-nums">+{{ todayInteractions }}</h3>
           <div class="flex items-center gap-4 text-xs font-bold">
             <span class="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-lg">
-              <span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span> 12%
+              <span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span> {{ interactionChangeText }}
             </span>
             <span class="text-white/60">较昨日活跃度提升</span>
           </div>
@@ -42,7 +42,7 @@
         </div>
         <div>
           <p class="text-on-surface-variant text-sm font-medium">待处理审核</p>
-          <h4 class="text-2xl font-extrabold text-on-surface group-hover:text-primary transition-colors">43 条</h4>
+          <h4 class="text-2xl font-extrabold text-on-surface group-hover:text-primary transition-colors">0 条</h4>
         </div>
       </div>
       <div class="p-6 bg-surface-container-lowest rounded-3xl space-y-4 shadow-sm group hover:shadow-md transition-shadow">
@@ -51,7 +51,7 @@
         </div>
         <div>
           <p class="text-on-surface-variant text-sm font-medium">今日获赞总数</p>
-          <h4 class="text-2xl font-extrabold text-on-surface group-hover:text-primary transition-colors">8.2k</h4>
+          <h4 class="text-2xl font-extrabold text-on-surface group-hover:text-primary transition-colors">{{ todayLikes }}</h4>
         </div>
       </div>
     </div>
@@ -73,9 +73,18 @@
             <tr v-for="c in comments" :key="c.id" class="hover:bg-orange-50/30 transition-colors">
               <td class="px-6 py-6">
                 <div class="flex items-center gap-3">
-                  <img class="w-10 h-10 rounded-full bg-orange-100 object-cover" :src="c.user.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmGhYNR97SFhMraNhoU8-wAKnrfhdaEKdiIIytW8NrPJaBqGHsa94zygtIDIbwi6A7dz24PcRu-DnpGSVq7d6vlrdarp9w6xg_RrP5CRe_Jtc0vtF3QODJTtqaOuzh-yzc9pdiiUzrHmeo4mDVKoB5Af-E3KoBF6YFwK3dzvDjvyWHr7TZMDzUSACzt4cFAecyZShR7o7v6yftZmYguW3YakNFC2wyugXC8FMtNu8OqisGzFzpHDZlA6EVaBVKpLquFw2eh3Izyis'"/>
+                  <img
+                    class="w-10 h-10 rounded-full bg-orange-100 object-cover"
+                    :src="
+                      normalizeMediaUrl(c.user.avatarUrl) ||
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBmGhYNR97SFhMraNhoU8-wAKnrfhdaEKdiIIytW8NrPJaBqGHsa94zygtIDIbwi6A7dz24PcRu-DnpGSVq7d6vlrdarp9w6xg_RrP5CRe_Jtc0vtF3QODJTtqaOuzh-yzc9pdiiUzrHmeo4mDVKoB5Af-E3KoBF6YFwK3dzvDjvyWHr7TZMDzUSACzt4cFAecyZShR7o7v6yftZmYguW3YakNFC2wyugXC8FMtNu8OqisGzFzpHDZlA6EVaBVKpLquFw2eh3Izyis'
+                    "
+                    @error="(e) => onImgError(e, fallbackAvatarImg)"
+                  />
                   <div>
-                    <p class="text-sm font-bold text-on-surface">{{ c.user.name }}</p>
+                    <div class="max-w-[12rem]">
+                      <p class="text-sm font-bold text-on-surface truncate whitespace-nowrap">{{ c.user.name }}</p>
+                    </div>
                     <p class="text-[10px] text-outline font-medium">{{ c.user.levelText || '-' }}</p>
                   </div>
                 </div>
@@ -104,13 +113,13 @@
               </td>
               <td class="px-6 py-6 text-right">
                 <div class="flex items-center justify-end gap-2">
-                  <button class="p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-all" title="通过">
+                  <button class="p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-all" title="通过" @click="approve(c)">
                     <span class="material-symbols-outlined text-sm" data-icon="done">done</span>
                   </button>
-                  <button class="p-2 bg-secondary-container/40 text-on-secondary-container hover:bg-on-secondary-container hover:text-white rounded-lg transition-all" title="回复">
+                  <button class="p-2 bg-secondary-container/40 text-on-secondary-container hover:bg-on-secondary-container hover:text-white rounded-lg transition-all" title="回复" @click="reply(c)">
                     <span class="material-symbols-outlined text-sm" data-icon="reply">reply</span>
                   </button>
-                  <button class="p-2 bg-error-container/40 text-error hover:bg-error hover:text-white rounded-lg transition-all" title="隐藏">
+                  <button class="p-2 bg-error-container/40 text-error hover:bg-error hover:text-white rounded-lg transition-all" title="隐藏" @click="hideComment(c)">
                     <span class="material-symbols-outlined text-sm" data-icon="visibility_off">visibility_off</span>
                   </button>
                 </div>
@@ -125,15 +134,27 @@
         <div class="px-6 py-6 border-t border-orange-100/20 flex items-center justify-between">
           <p class="text-xs font-medium text-outline">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条评论</p>
           <div class="flex items-center gap-2">
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-outline hover:bg-orange-50 transition-colors">
+            <button
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-outline hover:bg-orange-50 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+              :disabled="page <= 1"
+              @click="goPage(page - 1)"
+            >
               <span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
             </button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-orange-50 text-xs font-medium">2</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-orange-50 text-xs font-medium">3</button>
-            <span class="text-outline">...</span>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-orange-50 text-xs font-medium">13</button>
-            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-outline hover:bg-orange-50 transition-colors">
+            <button
+              v-for="p in pageItems"
+              :key="p"
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+              :class="p === page ? 'bg-primary text-white' : 'text-on-surface-variant hover:bg-orange-50'"
+              @click="goPage(p)"
+            >
+              {{ p }}
+            </button>
+            <button
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-outline hover:bg-orange-50 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+              :disabled="page >= totalPages"
+              @click="goPage(page + 1)"
+            >
               <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
             </button>
           </div>
@@ -151,7 +172,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
 
 type CommentItem = {
   id: string
@@ -163,11 +185,55 @@ type CommentItem = {
   createdAt: string
 }
 
+type DashboardStats = {
+  charts: {
+    likesTrend: number[]
+    commentsTrend: number[]
+  }
+}
+
 const loading = ref(false)
 const comments = ref<CommentItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const stats = ref<DashboardStats | null>(null)
+const fallbackAvatarImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBmGhYNR97SFhMraNhoU8-wAKnrfhdaEKdiIIytW8NrPJaBqGHsa94zygtIDIbwi6A7dz24PcRu-DnpGSVq7d6vlrdarp9w6xg_RrP5CRe_Jtc0vtF3QODJTtqaOuzh-yzc9pdiiUzrHmeo4mDVKoB5Af-E3KoBF6YFwK3dzvDjvyWHr7TZMDzUSACzt4cFAecyZShR7o7v6yftZmYguW3YakNFC2wyugXC8FMtNu8OqisGzFzpHDZlA6EVaBVKpLquFw2eh3Izyis'
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
+
+const todayLikes = computed(() => {
+  const arr = stats.value?.charts?.likesTrend || []
+  return Number(arr[arr.length - 1] || 0)
+})
+
+const todayComments = computed(() => {
+  const arr = stats.value?.charts?.commentsTrend || []
+  return Number(arr[arr.length - 1] || 0)
+})
+
+const todayInteractions = computed(() => todayLikes.value + todayComments.value)
+const interactionChangeText = computed(() => {
+  const likes = stats.value?.charts?.likesTrend || []
+  const commentsArr = stats.value?.charts?.commentsTrend || []
+  if (likes.length < 2 || commentsArr.length < 2) return '—'
+  const prev = Number(likes[likes.length - 2] || 0) + Number(commentsArr[commentsArr.length - 2] || 0)
+  const cur = Number(likes[likes.length - 1] || 0) + Number(commentsArr[commentsArr.length - 1] || 0)
+  if (prev === 0 && cur === 0) return '0%'
+  if (prev === 0) return '+100%'
+  const pct = Math.round(((cur - prev) / prev) * 100)
+  const sign = pct > 0 ? '+' : ''
+  return `${sign}${pct}%`
+})
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -203,13 +269,56 @@ function statusDotClass(status: string) {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/content/comments', { params: { page: page.value, pageSize: pageSize.value } })
-    if (res.data?.ok || res.data?.code === 0) {
-      comments.value = res.data.data.items
-      total.value = res.data.data.total
+    const [listRes, statsRes] = await Promise.all([
+      axios.get('/api/v1/admin/content/comments', { params: { page: page.value, pageSize: pageSize.value } }),
+      axios.get('/api/v1/admin/dashboard/stats')
+    ])
+    if (listRes.data?.ok || listRes.data?.code === 0) {
+      comments.value = listRes.data.data.items
+      total.value = listRes.data.data.total
+    }
+    if (statsRes.data?.ok || statsRes.data?.code === 0) {
+      stats.value = statsRes.data.data
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+function approve(_c?: CommentItem) {
+  ElMessage.success('当前接口默认已通过')
+}
+
+function reply(_c?: CommentItem) {
+  ElMessage.info('暂不支持回复')
+}
+
+async function hideComment(c: CommentItem) {
+  try {
+    await ElMessageBox.confirm('确认隐藏该评论？（当前实现为删除）', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.delete(`/api/v1/admin/comments/${c.id}`)
+    ElMessage.success('已隐藏')
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
   }
 }
 

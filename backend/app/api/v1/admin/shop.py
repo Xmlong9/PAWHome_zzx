@@ -1,5 +1,7 @@
 from flask import request
 import json
+from datetime import datetime
+from sqlalchemy import func
 from ....extensions import db
 from ....models import ShopProduct, ShopOrder, ShopOrderItem, User
 from ....responses import ok, fail
@@ -41,6 +43,55 @@ def _product_status(is_active: bool, stock: int):
     return "on_sale"
 
 def register_admin_shop_routes(bp):
+    @bp.get("/admin/shop/products/summary")
+    @admin_required
+    def get_products_summary():
+        now = datetime.utcnow()
+        month_start = datetime(now.year, now.month, 1)
+        total_products = db.session.query(func.count(ShopProduct.id)).scalar() or 0
+        active_products = (
+            db.session.query(func.count(ShopProduct.id))
+            .filter(ShopProduct.is_active.is_(True))
+            .scalar()
+            or 0
+        )
+        month_new_products = (
+            db.session.query(func.count(ShopProduct.id))
+            .filter(ShopProduct.created_at >= month_start)
+            .scalar()
+            or 0
+        )
+        total_stock_qty = (
+            db.session.query(func.coalesce(func.sum(ShopProduct.stock), 0))
+            .filter(ShopProduct.is_active.is_(True), ShopProduct.stock > 0)
+            .scalar()
+            or 0
+        )
+        stock_value_cents = (
+            db.session.query(func.coalesce(func.sum(ShopProduct.stock * ShopProduct.price_cents), 0))
+            .filter(ShopProduct.is_active.is_(True), ShopProduct.stock > 0)
+            .scalar()
+            or 0
+        )
+        out_of_stock_products = (
+            db.session.query(func.count(ShopProduct.id))
+            .filter(ShopProduct.is_active.is_(True), ShopProduct.stock <= 0)
+            .scalar()
+            or 0
+        )
+
+        return ok(
+            {
+                "totalProducts": int(total_products),
+                "activeProducts": int(active_products),
+                "monthNewProducts": int(month_new_products),
+                "outOfStockProducts": int(out_of_stock_products),
+                "totalStockQty": int(total_stock_qty),
+                "totalStockValue": float(stock_value_cents) / 100,
+                "totalStockValueCents": int(stock_value_cents),
+            }
+        )
+
     @bp.get("/admin/shop/products")
     @admin_required
     def get_products():
@@ -61,6 +112,7 @@ def register_admin_shop_routes(bp):
                     "price": product.price_cents / 100,
                     "stockQty": product.stock,
                     "status": _product_status(bool(product.is_active), int(product.stock or 0)),
+                    "isActive": bool(product.is_active),
                     "imageUrl": _first_image(product.images_json),
                     "createdAt": _iso(product.created_at),
                 }

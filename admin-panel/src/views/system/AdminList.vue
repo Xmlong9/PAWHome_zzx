@@ -88,8 +88,10 @@
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{{ initials(a.name) }}</div>
                   <div>
-                    <p class="text-sm font-bold text-on-surface">{{ a.name }}</p>
-                    <p class="text-xs text-slate-400">{{ a.username }}</p>
+                    <div class="max-w-[14rem]">
+                      <p class="text-sm font-bold text-on-surface truncate whitespace-nowrap">{{ a.name }}</p>
+                      <p class="text-xs text-slate-400 truncate whitespace-nowrap">{{ a.username }}</p>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -127,13 +129,27 @@
       <div class="px-6 py-4 flex items-center justify-between border-t border-slate-50">
         <p class="text-xs text-slate-400 font-medium">显示 {{ start }} 到 {{ end }}，共 {{ total }} 条记录</p>
         <div class="flex gap-1">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
             <span class="material-symbols-outlined text-lg" data-icon="chevron_left">chevron_left</span>
           </button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-medium">2</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 text-xs font-medium">3</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold"
+            :class="p === page ? 'bg-primary text-white' : 'hover:bg-slate-100 text-slate-600'"
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
             <span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
           </button>
         </div>
@@ -194,6 +210,16 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
+
 const start = computed(() => {
   if (total.value === 0) return 0
   return (page.value - 1) * pageSize.value + 1
@@ -231,6 +257,13 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
 }
 
 onMounted(load)

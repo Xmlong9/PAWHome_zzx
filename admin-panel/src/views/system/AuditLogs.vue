@@ -117,15 +117,27 @@
       <div class="px-6 py-4 flex items-center justify-between border-t border-orange-50">
         <p class="text-xs text-on-surface-variant/60">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条记录</p>
         <div class="flex items-center gap-1">
-          <button class="p-1.5 rounded-lg hover:bg-orange-50 text-on-surface-variant disabled:opacity-30" disabled>
+          <button
+            class="p-1.5 rounded-lg hover:bg-orange-50 text-on-surface-variant disabled:opacity-30"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
             <span class="material-symbols-outlined text-lg" data-icon="chevron_left">chevron_left</span>
           </button>
-          <button class="w-8 h-8 rounded-lg bg-primary text-white text-xs font-bold">1</button>
-          <button class="w-8 h-8 rounded-lg hover:bg-orange-50 text-on-surface-variant text-xs font-medium">2</button>
-          <button class="w-8 h-8 rounded-lg hover:bg-orange-50 text-on-surface-variant text-xs font-medium">3</button>
-          <span class="text-on-surface-variant/30 px-1">...</span>
-          <button class="w-8 h-8 rounded-lg hover:bg-orange-50 text-on-surface-variant text-xs font-medium">125</button>
-          <button class="p-1.5 rounded-lg hover:bg-orange-50 text-on-surface-variant">
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 rounded-lg text-xs font-bold"
+            :class="p === page ? 'bg-primary text-white' : 'hover:bg-orange-50 text-on-surface-variant'"
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="p-1.5 rounded-lg hover:bg-orange-50 text-on-surface-variant disabled:opacity-30"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
             <span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
           </button>
         </div>
@@ -199,6 +211,16 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
+
 const start = computed(() => {
   if (total.value === 0) return 0
   return (page.value - 1) * pageSize.value + 1
@@ -240,6 +262,13 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
 }
 
 onMounted(load)

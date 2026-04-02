@@ -80,10 +80,20 @@
             <tr v-for="u in users" :key="u.id" class="bg-surface-container-lowest hover:bg-surface-container/50 transition-colors">
               <td class="px-6 py-4 text-xs font-mono text-on-surface-variant">{{ u.id.slice(0, 18) }}</td>
               <td class="px-6 py-4">
-                <img :alt="u.nickname" class="w-10 h-10 rounded-xl bg-surface-container-high object-cover" :src="u.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVx8-nnebgD57B6CL10HZbymdP_ggMeNIAf-YsMfXpR33oqmJKn1sDJrPpXTPmUZGf0mks_Figmbsgs0CQH4NiG2c6sWoAZZt14adP3g8E-FBw-bMoE1HCVOeTWPgL8GLSiDpM3ZSJ5iyYMfoQej30-RQKXmbdyoclIySzOf5qYKxFNSUEi0OWRBH05GNJwxCmDGopNTxRIva9TRXz41ck8YJ9alwqsr_Xx_JyhQx-uBdMXlxT54oOaduk2ejdWTjHHoy-ABzuqRE'"/>
+                <img
+                  :alt="u.nickname"
+                  class="w-10 h-10 rounded-xl bg-surface-container-high object-cover"
+                  :src="
+                    normalizeMediaUrl(u.avatarUrl) ||
+                    fallbackAvatarImg
+                  "
+                  @error="(e) => onImgError(e, fallbackAvatarImg)"
+                />
               </td>
               <td class="px-6 py-4">
-                <span class="font-bold text-on-surface">{{ u.nickname }}</span>
+                <div class="max-w-[14rem]">
+                  <span class="block font-bold text-on-surface truncate whitespace-nowrap">{{ u.nickname }}</span>
+                </div>
               </td>
               <td class="px-6 py-4 text-sm text-on-surface-variant">{{ u.phoneMasked }}</td>
               <td class="px-6 py-4 text-center">
@@ -98,10 +108,10 @@
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors">
+                  <button class="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors" @click="editUser(u)">
                     <span class="material-symbols-outlined text-xl">edit</span>
                   </button>
-                  <button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors">
+                  <button class="p-2 rounded-lg text-error hover:bg-error/10 transition-colors" @click="toggleBan(u)">
                     <span class="material-symbols-outlined text-xl">block</span>
                   </button>
                 </div>
@@ -117,12 +127,31 @@
       <div class="px-6 py-4 bg-surface-container-high/30 flex items-center justify-between">
         <span class="text-xs text-on-surface-variant font-medium">显示 {{ start }}-{{ end }} 条，共 {{ total }} 条用户</span>
         <div class="flex items-center gap-1">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors">
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
             <span class="material-symbols-outlined text-sm">chevron_left</span>
           </button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors text-xs font-bold">2</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors">
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+            :class="
+              p === page
+                ? 'bg-primary text-white'
+                : 'border border-outline-variant/30 text-on-surface-variant hover:bg-white'
+            "
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
             <span class="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         </div>
@@ -138,7 +167,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
 
 type UserItem = {
   id: string
@@ -156,8 +186,19 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 const todayNew = ref<number | null>(null)
+const fallbackAvatarImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDVx8-nnebgD57B6CL10HZbymdP_ggMeNIAf-YsMfXpR33oqmJKn1sDJrPpXTPmUZGf0mks_Figmbsgs0CQH4NiG2c6sWoAZZt14adP3g8E-FBw-bMoE1HCVOeTWPgL8GLSiDpM3ZSJ5iyYMfoQej30-RQKXmbdyoclIySzOf5qYKxFNSUEi0OWRBH05GNJwxCmDGopNTxRIva9TRXz41ck8YJ9alwqsr_Xx_JyhQx-uBdMXlxT54oOaduk2ejdWTjHHoy-ABzuqRE'
 
 const todayNewText = computed(() => (todayNew.value === null ? '—' : String(todayNew.value)))
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -186,6 +227,41 @@ async function load() {
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+function editUser(_u: UserItem) {
+  ElMessage.info('暂未提供用户编辑功能')
+}
+
+async function toggleBan(u: UserItem) {
+  const next = u.status === 'active' ? 'banned' : 'active'
+  const label = next === 'banned' ? '封禁' : '解除封禁'
+  try {
+    await ElMessageBox.confirm(`确认${label}该用户？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.put(`/api/v1/admin/users/${u.id}/status`, { status: next })
+    ElMessage.success(`${label}成功`)
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || `${label}失败`)
   }
 }
 

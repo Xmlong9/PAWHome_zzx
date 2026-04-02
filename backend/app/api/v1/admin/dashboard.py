@@ -1,14 +1,24 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from sqlalchemy import func
 from ....extensions import db
 from ....models import Comment, Post, PostLike, ServiceAppointment, ShopOrder, User
 from ....responses import ok
+from ....timeutil import BJ_TZ
 from .auth import admin_required
 
 def _today_start():
-    now = datetime.utcnow()
-    return datetime(now.year, now.month, now.day)
+    # 查找最新的订单日期，以确保在演示数据（2024年）中也能看到图表
+    latest = db.session.query(func.max(ShopOrder.created_at)).scalar()
+    if latest:
+        # 如果有订单，将“今天”设定为最新订单的北京时间所在日期
+        now_bj = latest + timedelta(hours=8)
+    else:
+        now_bj = datetime.utcnow() + timedelta(hours=8)
+    
+    bj_midnight = datetime(now_bj.year, now_bj.month, now_bj.day)
+    # 还原为 UTC
+    return bj_midnight - timedelta(hours=8)
 
 def _get_last_7_days():
     today = _today_start()
@@ -24,8 +34,12 @@ def register_admin_dashboard_routes(bp):
         total_posts = Post.query.count()
         total_orders = ShopOrder.query.count()
 
-        paid_orders = ShopOrder.query.filter(ShopOrder.status.in_(paid_statuses)).all()
-        total_revenue_cents = sum(o.total_cents for o in paid_orders)
+        orders = ShopOrder.query.all()
+        total_revenue_cents = sum(
+            o.total_cents
+            for o in orders
+            if o.status in paid_statuses or (o.status == "pending_pay" and o.pay_method in {"wx", "alipay"})
+        )
 
         return ok(
             {
@@ -54,15 +68,20 @@ def register_admin_dashboard_routes(bp):
         total_orders = ShopOrder.query.count()
         today_orders = ShopOrder.query.filter(ShopOrder.created_at >= today).count()
         
-        # Revenue stats (paid orders)
-        paid_orders = ShopOrder.query.filter(ShopOrder.status.in_(paid_statuses)).all()
-        total_revenue = sum(o.total_cents for o in paid_orders)
-        
-        today_paid_orders = ShopOrder.query.filter(
-            ShopOrder.status.in_(paid_statuses),
-            ShopOrder.created_at >= today
-        ).all()
-        today_revenue = sum(o.total_cents for o in today_paid_orders)
+        # Revenue stats
+        orders = ShopOrder.query.all()
+        total_revenue = sum(
+            o.total_cents
+            for o in orders
+            if o.status in paid_statuses or (o.status == "pending_pay" and o.pay_method in {"wx", "alipay"})
+        )
+
+        today_orders_list = ShopOrder.query.filter(ShopOrder.created_at >= today).all()
+        today_revenue = sum(
+            o.total_cents
+            for o in today_orders_list
+            if o.status in paid_statuses or (o.status == "pending_pay" and o.pay_method in {"wx", "alipay"})
+        )
         
         # Appointment stats
         total_appointments = ServiceAppointment.query.count()
@@ -83,7 +102,11 @@ def register_admin_dashboard_routes(bp):
             ).all()
             
             order_trend.append(len(day_orders))
-            day_revenue = sum(o.total_cents for o in day_orders if o.status in paid_statuses)
+            day_revenue = sum(
+                o.total_cents
+                for o in day_orders
+                if o.status in paid_statuses or (o.status == "pending_pay" and o.pay_method in {"wx", "alipay"})
+            )
             revenue_trend.append(day_revenue / 100)
 
         # 2. Service Type Distribution

@@ -33,7 +33,7 @@
             <span class="text-4xl font-black text-on-surface tracking-tighter">{{ todayOrders }}</span>
             <span class="text-green-600 text-xs font-bold flex items-center gap-1">
               <span class="material-symbols-outlined text-xs">trending_up</span>
-              +12%
+              实时
             </span>
           </div>
         </div>
@@ -130,7 +130,15 @@
               <td class="px-6 py-5">
                 <div class="flex items-center gap-3">
                   <div class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
-                    <img :alt="firstItem(o)?.product.name || '商品'" class="w-full h-full object-cover" :src="firstItem(o)?.product.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'"/>
+                    <img
+                      :alt="firstItem(o)?.product.name || '商品'"
+                      class="w-full h-full object-cover"
+                      :src="
+                        normalizeMediaUrl(firstItem(o)?.product.imageUrl) ||
+                        'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'
+                      "
+                      @error="(e) => onImgError(e, fallbackProductImg)"
+                    />
                   </div>
                   <div>
                     <p class="text-sm font-bold text-on-surface line-clamp-1">{{ firstItem(o)?.product.name || '-' }}</p>
@@ -139,7 +147,9 @@
                 </div>
               </td>
               <td class="px-6 py-5">
-                <p class="text-sm font-bold text-on-surface">{{ o.buyer.name }}</p>
+                <div class="max-w-[10rem]">
+                  <p class="text-sm font-bold text-on-surface truncate whitespace-nowrap">{{ o.buyer.name }}</p>
+                </div>
                 <p class="text-xs text-slate-500">{{ o.buyer.phoneMasked }}</p>
               </td>
               <td class="px-6 py-5">
@@ -151,13 +161,13 @@
               </td>
               <td class="px-6 py-5">
                 <div class="flex justify-end gap-2">
-                  <button v-if="o.status === 'to_ship'" class="p-2 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors group relative" title="立即发货">
+                  <button v-if="o.status === 'to_ship'" class="p-2 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors group relative" title="立即发货" @click="ship(o)">
                     <span class="material-symbols-outlined text-lg">local_shipping</span>
                   </button>
-                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="订单详情">
+                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="订单详情" @click="viewOrder(o)">
                     <span class="material-symbols-outlined text-lg">visibility</span>
                   </button>
-                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="修改价格">
+                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="修改价格" @click="editPrice(o)">
                     <span class="material-symbols-outlined text-lg">edit_note</span>
                   </button>
                 </div>
@@ -174,15 +184,27 @@
       <div class="px-6 py-4 bg-slate-50/50 flex items-center justify-between">
         <p class="text-xs font-bold text-slate-400">显示第 {{ start }} 至 {{ end }} 条，共 {{ total }} 条记录</p>
         <div class="flex items-center gap-1">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
             <span class="material-symbols-outlined text-lg">chevron_left</span>
           </button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shadow-md shadow-orange-200">1</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">2</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">3</button>
-          <span class="px-1 text-slate-400">...</span>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">124</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm transition-colors"
+            :class="p === page ? 'bg-primary text-white shadow-md shadow-orange-200' : 'hover:bg-white text-slate-600'"
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
             <span class="material-symbols-outlined text-lg">chevron_right</span>
           </button>
         </div>
@@ -194,7 +216,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime, formatMoney } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, formatMoney, normalizeMediaUrl } from '@/utils/format'
 
 type OrderItem = {
   id: string
@@ -218,6 +241,19 @@ const orders = ref<Order[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const stats = ref<any>(null)
+const fallbackProductImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -229,19 +265,10 @@ const end = computed(() => {
   return Math.min(total.value, page.value * pageSize.value)
 })
 
-const todayOrders = computed(() => {
-  const today = new Date()
-  const y = today.getFullYear()
-  const m = today.getMonth()
-  const d = today.getDate()
-  return orders.value.filter((o) => {
-    const dt = new Date(o.createdAt)
-    return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
-  }).length
-})
+const todayOrders = computed(() => Number(stats.value?.orders?.today ?? 0))
 
 const toShipCount = computed(() => orders.value.filter((o) => o.status === 'to_ship').length)
-const totalPaid = computed(() => orders.value.reduce((sum, o) => sum + (o.pay.amountPaid || 0), 0))
+const totalPaid = computed(() => Number(stats.value?.revenue?.total_cents ?? 0) / 100)
 
 function firstItem(o: Order) {
   return o.items?.[0]
@@ -266,6 +293,43 @@ function statusLabel(status: string) {
   return status
 }
 
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+function viewOrder(_o: Order) {
+  ElMessage.info('暂未提供订单详情页')
+}
+
+function editPrice(_o: Order) {
+  ElMessage.info('暂未提供改价功能')
+}
+
+async function ship(o: Order) {
+  try {
+    await ElMessageBox.confirm('确认将该订单标记为已发货？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.put(`/api/v1/admin/shop/orders/${o.id}/ship`)
+    ElMessage.success('已发货')
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
+  }
+}
+
 function statusClass(status: string) {
   if (status === 'to_ship') return 'bg-blue-100 text-blue-700'
   if (status === 'completed') return 'bg-green-100 text-green-700'
@@ -277,10 +341,16 @@ function statusClass(status: string) {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/shop/orders', { params: { page: page.value, pageSize: pageSize.value } })
-    if (res.data?.ok || res.data?.code === 0) {
-      orders.value = res.data.data.items
-      total.value = res.data.data.total
+    const [listRes, statsRes] = await Promise.all([
+      axios.get('/api/v1/admin/shop/orders', { params: { page: page.value, pageSize: pageSize.value } }),
+      axios.get('/api/v1/admin/dashboard/stats')
+    ])
+    if (listRes.data?.ok || listRes.data?.code === 0) {
+      orders.value = listRes.data.data.items
+      total.value = listRes.data.data.total
+    }
+    if (statsRes.data?.ok || statsRes.data?.code === 0) {
+      stats.value = statsRes.data.data
     }
   } finally {
     loading.value = false

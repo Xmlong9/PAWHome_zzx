@@ -32,10 +32,20 @@
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-high shrink-0">
-                      <img class="w-full h-full object-cover" :alt="p.name" :src="p.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'"/>
+                      <img
+                        class="w-full h-full object-cover"
+                        :alt="p.name"
+                        :src="
+                          normalizeMediaUrl(p.imageUrl) ||
+                          'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'
+                        "
+                        @error="(e) => onImgError(e, fallbackProductImg)"
+                      />
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-on-surface">{{ p.name }}</p>
+                      <div class="max-w-[16rem]">
+                        <p class="text-sm font-bold text-on-surface truncate whitespace-nowrap">{{ p.name }}</p>
+                      </div>
                       <p class="text-[10px] text-on-surface-variant">分类: {{ p.categoryText || '-' }}</p>
                     </div>
                   </div>
@@ -55,8 +65,26 @@
                 <td class="px-6 py-4 text-xs text-on-surface-variant">{{ formatDateTime(p.createdAt) }}</td>
                 <td class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-1">
-                    <button class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
-                    <button class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    <button
+                      class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"
+                      @click="openEdit(p)"
+                    >
+                      <span class="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                    <button
+                      class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"
+                      :title="p.isActive ? '下架' : '上架'"
+                      @click="toggleActive(p)"
+                    >
+                      <span class="material-symbols-outlined text-sm">{{ p.isActive ? 'visibility_off' : 'visibility' }}</span>
+                    </button>
+                    <button
+                      class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"
+                      title="删除(下架)"
+                      @click="forceOffSale(p)"
+                    >
+                      <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -69,11 +97,29 @@
         <div class="p-6 border-t border-surface-variant/30 flex justify-between items-center">
           <span class="text-xs text-on-surface-variant">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条商品</span>
           <div class="flex gap-1">
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-white text-xs font-bold">1</button>
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">2</button>
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">3</button>
-            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+            <button
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+              :disabled="page <= 1"
+              @click="goPage(page - 1)"
+            >
+              <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <button
+              v-for="p in pageItems"
+              :key="p"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors"
+              :class="p === page ? 'bg-primary text-white' : 'text-on-surface-variant hover:bg-surface-container-high'"
+              @click="goPage(p)"
+            >
+              {{ p }}
+            </button>
+            <button
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+              :disabled="page >= totalPages"
+              @click="goPage(page + 1)"
+            >
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
           </div>
         </div>
       </div>
@@ -88,11 +134,11 @@
           <div class="w-12 h-12 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary">
             <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
           </div>
-          <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.5%</span>
+          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full">实时</span>
         </div>
         <p class="text-on-surface-variant text-sm font-medium">总库存价值</p>
-        <h3 class="text-3xl font-black text-on-surface mt-1">¥ 1,245,800</h3>
-        <p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">截止今日 08:00</p>
+        <h3 class="text-3xl font-black text-on-surface mt-1">¥ {{ summary?.totalStockValue != null ? formatMoney(summary.totalStockValue) : '—' }}</h3>
+        <p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">按后台实时统计</p>
       </div>
       
       <!-- Active Products -->
@@ -120,7 +166,7 @@
           </div>
         </div>
         <p class="text-white/80 text-sm font-medium">本月新增</p>
-        <h3 class="text-3xl font-black text-white mt-1">— <span class="text-sm font-normal text-white/70">款</span></h3>
+        <h3 class="text-3xl font-black text-white mt-1">{{ summary?.monthNewProducts ?? '—' }} <span class="text-sm font-normal text-white/70">款</span></h3>
         <div class="mt-4 flex items-center gap-2">
           <div class="flex -space-x-2">
             <div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMFM0JINixvEka4hgitxuTp9YHihV7r7Gg8u9VLIxTyAW0N2jMxVNuquAO0ZkfwXXtv5KR_-LPjaNyk7G6-_-IiAl45Ey1Ll04OJ_9YdgYadlTqJVx-EVa7EA8U9Gqaw0jnDDUVm1kXY5QTPZl4hsWuh48cz03FlNdg4JxGtfspTLnoEk2Xm2zTIk7biu9Q66c6CwINOi0I6GfNTz0QPo2P5bt8pykcKqCVqoJFAInwmlK9IrHSGGJWcEjh-jfF-RMZVEoTFCF6n0"/></div>
@@ -132,12 +178,36 @@
       </div>
     </section>
   </div>
+
+  <el-dialog v-model="editVisible" title="编辑商品" width="520">
+    <el-form label-position="top">
+      <el-form-item label="商品名称">
+        <el-input v-model="editForm.title" />
+      </el-form-item>
+      <el-form-item label="价格(元)">
+        <el-input v-model="editForm.priceYuan" inputmode="decimal" />
+      </el-form-item>
+      <el-form-item label="库存">
+        <el-input v-model="editForm.stock" inputmode="numeric" />
+      </el-form-item>
+      <el-form-item label="图片(一行一个，支持 /media/... 或完整 URL)">
+        <el-input v-model="editForm.imagesText" type="textarea" :rows="4" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveEdit">保存</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime, formatMoney } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, formatMoney, normalizeMediaUrl } from '@/utils/format'
 
 type ProductItem = {
   id: string
@@ -147,8 +217,18 @@ type ProductItem = {
   price: number
   stockQty: number
   status: string
+  isActive: boolean
   imageUrl: string | null
   createdAt: string
+}
+
+type ProductSummary = {
+  totalProducts: number
+  activeProducts: number
+  monthNewProducts: number
+  outOfStockProducts: number
+  totalStockQty: number
+  totalStockValue: number
 }
 
 const loading = ref(false)
@@ -156,6 +236,24 @@ const products = ref<ProductItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const summary = ref<ProductSummary | null>(null)
+
+const editVisible = ref(false)
+const saving = ref(false)
+const editingId = ref<string | null>(null)
+const editForm = ref({ title: '', priceYuan: '', stock: '', imagesText: '' })
+const fallbackProductImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -177,13 +275,115 @@ function stockBarWidth(stockQty: number) {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/shop/products', { params: { page: page.value, pageSize: pageSize.value } })
-    if (res.data?.ok || res.data?.code === 0) {
-      products.value = res.data.data.items
-      total.value = res.data.data.total
+    const [listRes, sumRes] = await Promise.all([
+      axios.get('/api/v1/admin/shop/products', { params: { page: page.value, pageSize: pageSize.value } }),
+      axios.get('/api/v1/admin/shop/products/summary')
+    ])
+    if (listRes.data?.ok || listRes.data?.code === 0) {
+      products.value = listRes.data.data.items
+      total.value = listRes.data.data.total
+    }
+    if (sumRes.data?.ok || sumRes.data?.code === 0) {
+      summary.value = sumRes.data.data
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+function openEdit(p: ProductItem) {
+  editingId.value = p.id
+  editForm.value = {
+    title: p.name || '',
+    priceYuan: String(p.price ?? ''),
+    stock: String(p.stockQty ?? ''),
+    imagesText: p.imageUrl ? String(p.imageUrl) : ''
+  }
+  editVisible.value = true
+}
+
+async function saveEdit() {
+  if (!editingId.value) return
+  const title = editForm.value.title.trim()
+  if (!title) {
+    ElMessage.error('请输入商品名称')
+    return
+  }
+  const price = Number(editForm.value.priceYuan)
+  const stock = Number(editForm.value.stock)
+  if (!Number.isFinite(price) || price < 0) {
+    ElMessage.error('价格格式不正确')
+    return
+  }
+  if (!Number.isFinite(stock) || stock < 0) {
+    ElMessage.error('库存格式不正确')
+    return
+  }
+  const images = editForm.value.imagesText
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  saving.value = true
+  try {
+    await axios.put(`/api/v1/admin/shop/products/${editingId.value}`, {
+      title,
+      price_cents: Math.round(price * 100),
+      stock: Math.round(stock),
+      images_json: JSON.stringify(images, null, 0)
+    })
+    ElMessage.success('已保存')
+    editVisible.value = false
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function toggleActive(p: ProductItem) {
+  const nextActive = !p.isActive
+  const action = nextActive ? '上架' : '下架'
+  try {
+    await ElMessageBox.confirm(`确认${action}该商品？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.put(`/api/v1/admin/shop/products/${p.id}/status`, { is_active: nextActive })
+    ElMessage.success(`${action}成功`)
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || `${action}失败`)
+  }
+}
+
+async function forceOffSale(p: ProductItem) {
+  try {
+    await ElMessageBox.confirm('确认下架该商品？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.put(`/api/v1/admin/shop/products/${p.id}/status`, { is_active: false })
+    ElMessage.success('已下架')
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
   }
 }
 

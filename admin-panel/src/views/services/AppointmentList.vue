@@ -114,9 +114,19 @@
             </td>
             <td class="px-6 py-5">
               <div class="flex items-center gap-3">
-                <img :alt="a.pet.nameCn || '宠物'" class="w-10 h-10 rounded-lg bg-orange-100 object-cover" :src="a.pet.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmDUm175YZBeiBAHZklM_l0qb3v9vLz0VoKRv3RoHCKTwl2KXVgnHAh86rOIoKx_D22E9V2HQ1afvuNobpYivHILk6p-nE5TvDMn1L7ghuiOWXvU1wEWV5h-sQFH04uDRstuGZFLxgcz-UX5C2n2Tm4ZZaYq8Edqeh8hn6mG4UjcMMFq1EsAEzIaCmBiYXNWirz0-_4PGfR6Sh7sxCZgpLu6BXnIcp_1CTi5h7Iaca4nUxw_FTrfmW1jt4SqkfevzD13TPrNB0oRM'"/>
+                <img
+                  :alt="a.pet.nameCn || '宠物'"
+                  class="w-10 h-10 rounded-lg bg-orange-100 object-cover"
+                  :src="
+                    normalizeMediaUrl(a.pet.avatarUrl) ||
+                    fallbackPetImg
+                  "
+                  @error="(e) => onImgError(e, fallbackPetImg)"
+                />
                 <div>
-                  <span class="block font-bold text-on-surface">{{ a.pet.nameCn || '-' }}</span>
+                  <div class="max-w-[10rem]">
+                    <span class="block font-bold text-on-surface truncate whitespace-nowrap">{{ a.pet.nameCn || '-' }}</span>
+                  </div>
                   <span class="text-xs text-on-surface-variant">{{ a.pet.breed || '-' }}</span>
                 </div>
               </div>
@@ -125,7 +135,9 @@
               <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold">{{ a.service.name }}</span>
             </td>
             <td class="px-6 py-5">
-              <span class="block font-medium text-on-surface">{{ a.owner.name }}</span>
+              <div class="max-w-[10rem]">
+                <span class="block font-medium text-on-surface truncate whitespace-nowrap">{{ a.owner.name }}</span>
+              </div>
               <span class="text-xs text-on-surface-variant">{{ a.owner.phoneMasked }}</span>
             </td>
             <td class="px-6 py-5">
@@ -141,9 +153,29 @@
               </span>
             </td>
             <td class="px-6 py-5 text-right">
-              <button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
-                <span class="material-symbols-outlined">more_vert</span>
-              </button>
+              <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  v-if="a.status === 'pending_service'"
+                  class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-colors"
+                  @click="updateStatus(a, 'arrived')"
+                >
+                  到店
+                </button>
+                <button
+                  v-if="a.status === 'arrived'"
+                  class="px-3 py-1.5 rounded-lg bg-green-100 text-green-700 text-xs font-bold hover:bg-green-600 hover:text-white transition-colors"
+                  @click="updateStatus(a, 'completed')"
+                >
+                  完成
+                </button>
+                <button
+                  v-if="a.status !== 'completed' && a.status !== 'cancelled'"
+                  class="px-3 py-1.5 rounded-lg bg-error-container/40 text-error text-xs font-bold hover:bg-error hover:text-white transition-colors"
+                  @click="updateStatus(a, 'cancelled')"
+                >
+                  取消
+                </button>
+              </div>
             </td>
           </tr>
           <tr v-if="!loading && appointments.length === 0" class="bg-surface-container-lowest">
@@ -155,14 +187,27 @@
       <div class="px-6 py-4 bg-surface-container-low/30 flex items-center justify-between">
         <span class="text-xs font-bold text-on-surface-variant">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条预约记录</span>
         <div class="flex gap-1">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors disabled:opacity-30" disabled>
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors disabled:opacity-30"
+            :disabled="page <= 1"
+            @click="goPage(page - 1)"
+          >
             <span class="material-symbols-outlined text-sm">chevron_left</span>
           </button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">2</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">3</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">...</button>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors">
+          <button
+            v-for="p in pageItems"
+            :key="p"
+            class="w-8 h-8 flex items-center justify-center rounded-lg font-bold text-xs transition-colors"
+            :class="p === page ? 'bg-primary text-white' : 'hover:bg-white text-on-surface-variant'"
+            @click="goPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors disabled:opacity-30"
+            :disabled="page >= totalPages"
+            @click="goPage(page + 1)"
+          >
             <span class="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         </div>
@@ -239,7 +284,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { formatDateTime } from '@/utils/format'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDateTime, normalizeMediaUrl } from '@/utils/format'
 
 type AppointmentItem = {
   id: string
@@ -257,6 +303,18 @@ const appointments = ref<AppointmentItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+const fallbackPetImg =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAmDUm175YZBeiBAHZklM_l0qb3v9vLz0VoKRv3RoHCKTwl2KXVgnHAh86rOIoKx_D22E9V2HQ1afvuNobpYivHILk6p-nE5TvDMn1L7ghuiOWXvU1wEWV5h-sQFH04uDRstuGZFLxgcz-UX5C2n2Tm4ZZaYq8Edqeh8hn6mG4UjcMMFq1EsAEzIaCmBiYXNWirz0-_4PGfR6Sh7sxCZgpLu6BXnIcp_1CTi5h7Iaca4nUxw_FTrfmW1jt4SqkfevzD13TPrNB0oRM'
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const tp = totalPages.value
+  const cur = page.value
+  if (tp <= 5) return Array.from({ length: tp }, (_, i) => i + 1)
+  if (cur <= 3) return [1, 2, 3, 4, tp]
+  if (cur >= tp - 2) return [1, tp - 3, tp - 2, tp - 1, tp]
+  return [1, cur - 1, cur, cur + 1, tp]
+})
 
 const start = computed(() => {
   if (total.value === 0) return 0
@@ -321,6 +379,36 @@ async function load() {
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  const p = Math.min(Math.max(1, next), totalPages.value)
+  if (p === page.value) return
+  page.value = p
+  await load()
+}
+
+function onImgError(e: Event, fallback: string) {
+  const el = e.target as HTMLImageElement | null
+  if (!el) return
+  if (el.src === fallback) return
+  el.src = fallback
+}
+
+async function updateStatus(a: AppointmentItem, status: string) {
+  const label = statusLabel(status)
+  try {
+    await ElMessageBox.confirm(`确认将该预约更新为「${label}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await axios.put(`/api/v1/admin/services/appointments/${a.id}/status`, { status })
+    ElMessage.success('已更新')
+    await load()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
   }
 }
 

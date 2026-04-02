@@ -18,6 +18,32 @@ from .schema_ensure import (
 )
 
 
+def _truthy_env(name: str) -> bool | None:
+    v = os.getenv(name)
+    if v is None:
+        return None
+    s = str(v).strip().lower()
+    if s in {"1", "true", "yes", "y", "on"}:
+        return True
+    if s in {"0", "false", "no", "n", "off"}:
+        return False
+    return None
+
+
+def _should_auto_init_db(app: Flask) -> bool:
+    flag = _truthy_env("PAWHOME_DB_AUTO_INIT")
+    if flag is not None:
+        return flag
+    uri = str(app.config.get("SQLALCHEMY_DATABASE_URI") or "")
+    if uri.startswith("sqlite:///"):
+        path = uri.replace("sqlite:///", "", 1)
+        try:
+            return not (os.path.exists(path) and os.path.getsize(path) > 0)
+        except OSError:
+            return True
+    return True
+
+
 def create_app(config_name: str | None = None) -> Flask:
     load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"), override=False)
 
@@ -31,11 +57,12 @@ def create_app(config_name: str | None = None) -> Flask:
     register_error_handlers(app)
 
     with app.app_context():
-        db.create_all()
-        ensure_shop_product_pinyin_columns()
-        ensure_service_booking_schema()
-        ensure_vaccine_module_schema()
-        ensure_ai_page_banners()
+        if _should_auto_init_db(app):
+            db.create_all()
+            ensure_shop_product_pinyin_columns()
+            ensure_service_booking_schema()
+            ensure_vaccine_module_schema()
+            ensure_ai_page_banners()
 
     @app.before_request
     def _attach_request_id():
@@ -58,6 +85,13 @@ def create_app(config_name: str | None = None) -> Flask:
         upload_dir = os.path.join(app.instance_path, "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         return send_from_directory(upload_dir, filename)
+
+    @app.get("/assets/images/shop/<path:filename>")
+    def shop_assets(filename: str):
+        assets_dir = os.path.abspath(
+            os.path.join(app.root_path, "..", "..", "PawHome", "miniprogram", "assets", "images", "shop")
+        )
+        return send_from_directory(assets_dir, filename)
 
     @app.before_request
     def _ensure_instance_upload_dir():

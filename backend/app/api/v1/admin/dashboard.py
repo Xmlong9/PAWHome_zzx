@@ -15,6 +15,27 @@ def _get_last_7_days():
     return [(today - timedelta(days=i)) for i in range(6, -1, -1)]
 
 def register_admin_dashboard_routes(bp):
+    @bp.get("/admin/dashboard/overview")
+    @admin_required
+    def get_dashboard_overview():
+        paid_statuses = {"completed", "done", "shipping", "shipped", "pending_ship"}
+
+        total_users = User.query.count()
+        total_posts = Post.query.count()
+        total_orders = ShopOrder.query.count()
+
+        paid_orders = ShopOrder.query.filter(ShopOrder.status.in_(paid_statuses)).all()
+        total_revenue_cents = sum(o.total_cents for o in paid_orders)
+
+        return ok(
+            {
+                "userCount": total_users,
+                "postCount": total_posts,
+                "orderCount": total_orders,
+                "revenue": total_revenue_cents / 100,
+            }
+        )
+
     @bp.get("/admin/dashboard/stats")
     @admin_required
     def get_dashboard_stats():

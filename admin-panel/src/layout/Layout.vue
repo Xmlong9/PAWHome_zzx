@@ -1,102 +1,170 @@
 <template>
-  <el-container class="layout-container" :class="{ 'is-dark': isDark }">
-    <el-aside width="240px" class="aside">
-      <div class="logo">
-        <span class="logo-text">爱宠家管理后台</span>
-      </div>
-      <el-menu
-        :default-active="$route.path"
-        class="el-menu-vertical"
-        background-color="#0f172a"
-        text-color="#94a3b8"
-        active-text-color="#38bdf8"
-        router
-      >
-        <el-menu-item index="/dashboard">
-          <el-icon><DataLine /></el-icon>
-          <span>数据看板</span>
-        </el-menu-item>
-        <el-menu-item index="/users">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-sub-menu index="/content">
-          <template #title>
-            <el-icon><Document /></el-icon>
-            <span>内容管理</span>
-          </template>
-          <el-menu-item index="/posts">帖子管理</el-menu-item>
-          <el-menu-item index="/comments">评论管理</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/shop">
-          <template #title>
-            <el-icon><Goods /></el-icon>
-            <span>商城管理</span>
-          </template>
-          <el-menu-item index="/products">商品管理</el-menu-item>
-          <el-menu-item index="/orders">订单管理</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/services">
-          <template #title>
-            <el-icon><Service /></el-icon>
-            <span>服务管理</span>
-          </template>
-          <el-menu-item index="/appointments">预约管理</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/system">
-          <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>系统设置</span>
-          </template>
-          <el-menu-item index="/system/admins">管理员账号</el-menu-item>
-          <el-menu-item index="/system/logs">操作日志</el-menu-item>
-        </el-sub-menu>
-      </el-menu>
-    </el-aside>
-    <el-container>
-      <el-header class="header">
-        <div class="header-right">
-          <el-switch
-            v-model="isDark"
-            class="theme-switch"
-            inline-prompt
-            active-icon="Moon"
-            inactive-icon="Sunny"
-            @change="toggleTheme"
-          />
-          <span class="admin-name">{{ adminName }}</span>
-          <el-button type="danger" size="small" @click="handleLogout">退出登录</el-button>
+  <div class="bg-background text-on-background min-h-screen">
+    <!-- SideNavBar -->
+    <aside class="fixed left-0 top-0 h-full w-64 bg-[#f4fafe] flex flex-col p-4 gap-2 z-50 border-r border-outline-variant/10">
+      <div class="flex items-center gap-3 px-4 py-6 mb-4 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#944a00] to-[#e67e22] flex items-center justify-center text-white">
+          <span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>pets</span>
         </div>
-      </el-header>
-      <el-main class="main">
+        <div>
+          <h1 class="text-2xl font-black bg-gradient-to-br from-[#944a00] to-[#e67e22] bg-clip-text text-transparent leading-none">爱宠家</h1>
+          <p class="text-xs text-on-surface-variant/70 mt-1">社区管理门户</p>
+        </div>
+      </div>
+      <nav class="flex flex-col gap-1 flex-1 overflow-y-auto sidebar-scroll pr-2">
+        <!-- Dashboard -->
+        <router-link 
+          to="/dashboard" 
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150"
+          :class="route.path === '/dashboard' ? 'bg-gradient-to-r from-[#944a00] to-[#e67e22] text-white shadow-sm' : 'text-[#564337] hover:bg-[#eff4f8]'"
+        >
+          <span class="material-symbols-outlined">dashboard</span>
+          <span class="font-medium">数据看板</span>
+        </router-link>
+        
+        <!-- User Management -->
+        <router-link 
+          to="/users" 
+          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150"
+          :class="route.path.startsWith('/users') ? 'bg-gradient-to-r from-[#944a00] to-[#e67e22] text-white shadow-sm' : 'text-[#564337] hover:bg-[#eff4f8]'"
+        >
+          <span class="material-symbols-outlined">group</span>
+          <span class="font-medium">用户管理</span>
+        </router-link>
+
+        <!-- Content Management -->
+        <div class="flex flex-col gap-1">
+          <div 
+            class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150 cursor-pointer"
+            @click="contentMenuOpen = !contentMenuOpen"
+          >
+            <span class="material-symbols-outlined">description</span>
+            <span class="font-medium" :class="{ 'text-primary': route.path.includes('/posts') || route.path.includes('/comments') }">内容管理</span>
+            <span class="material-symbols-outlined ml-auto text-sm transition-transform duration-200" :class="{ 'rotate-180': contentMenuOpen }">expand_more</span>
+          </div>
+          <div v-show="contentMenuOpen" class="flex flex-col gap-1 ml-9 border-l border-outline-variant/30 pl-3">
+            <router-link to="/posts" class="py-2 text-sm transition-colors" :class="route.path === '/posts' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">帖子管理</router-link>
+            <router-link to="/comments" class="py-2 text-sm transition-colors" :class="route.path === '/comments' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">评论管理</router-link>
+          </div>
+        </div>
+
+        <!-- Store Management -->
+        <div class="flex flex-col gap-1">
+          <div 
+            class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150 cursor-pointer"
+            @click="storeMenuOpen = !storeMenuOpen"
+          >
+            <span class="material-symbols-outlined">storefront</span>
+            <span class="font-medium" :class="{ 'text-primary': route.path.includes('/products') || route.path.includes('/orders') }">商城管理</span>
+            <span class="material-symbols-outlined ml-auto text-sm transition-transform duration-200" :class="{ 'rotate-180': storeMenuOpen }">expand_more</span>
+          </div>
+          <div v-show="storeMenuOpen" class="flex flex-col gap-1 ml-9 border-l border-outline-variant/30 pl-3">
+            <router-link to="/products" class="py-2 text-sm transition-colors" :class="route.path === '/products' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">商品管理</router-link>
+            <router-link to="/orders" class="py-2 text-sm transition-colors" :class="route.path === '/orders' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">订单管理</router-link>
+          </div>
+        </div>
+
+        <!-- Service Management -->
+        <div class="flex flex-col gap-1">
+          <div 
+            class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150 cursor-pointer"
+            @click="serviceMenuOpen = !serviceMenuOpen"
+          >
+            <span class="material-symbols-outlined">medical_services</span>
+            <span class="font-medium" :class="{ 'text-primary': route.path.includes('/appointments') }">服务管理</span>
+            <span class="material-symbols-outlined ml-auto text-sm transition-transform duration-200" :class="{ 'rotate-180': serviceMenuOpen }">expand_more</span>
+          </div>
+          <div v-show="serviceMenuOpen" class="flex flex-col gap-1 ml-9 border-l border-outline-variant/30 pl-3">
+            <router-link to="/appointments" class="py-2 text-sm transition-colors" :class="route.path === '/appointments' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">预约管理</router-link>
+          </div>
+        </div>
+
+        <!-- System Settings -->
+        <div class="flex flex-col gap-1">
+          <div 
+            class="flex items-center gap-3 px-4 py-3 text-[#564337] hover:bg-[#eff4f8] rounded-xl transition-transform hover:scale-[1.02] active:scale-98 duration-150 cursor-pointer"
+            @click="systemMenuOpen = !systemMenuOpen"
+          >
+            <span class="material-symbols-outlined">settings</span>
+            <span class="font-medium" :class="{ 'text-primary': route.path.includes('/system') }">系统设置</span>
+            <span class="material-symbols-outlined ml-auto text-sm transition-transform duration-200" :class="{ 'rotate-180': systemMenuOpen }">expand_more</span>
+          </div>
+          <div v-show="systemMenuOpen" class="flex flex-col gap-1 ml-9 border-l border-outline-variant/30 pl-3">
+            <router-link to="/system/admins" class="py-2 text-sm transition-colors" :class="route.path === '/system/admins' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">管理员账号</router-link>
+            <router-link to="/system/logs" class="py-2 text-sm transition-colors" :class="route.path === '/system/logs' ? 'text-primary font-bold' : 'text-[#564337]/80 hover:text-primary'">操作日志</router-link>
+          </div>
+        </div>
+      </nav>
+
+      <div class="mt-auto p-4 bg-surface-container-low rounded-xl shrink-0">
+        <div class="flex items-center gap-3 mb-3">
+          <img alt="Admin" class="w-10 h-10 rounded-full bg-white object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVx8-nnebgD57B6CL10HZbymdP_ggMeNIAf-YsMfXpR33oqmJKn1sDJrPpXTPmUZGf0mks_Figmbsgs0CQH4NiG2c6sWoAZZt14adP3g8E-FBw-bMoE1HCVOeTWPgL8GLSiDpM3ZSJ5iyYMfoQej30-RQKXmbdyoclIySzOf5qYKxFNSUEi0OWRBH05GNJwxCmDGopNTxRIva9TRXz41ck8YJ9alwqsr_Xx_JyhQx-uBdMXlxT54oOaduk2ejdWTjHHoy-ABzuqRE"/>
+          <div class="overflow-hidden">
+            <p class="text-sm font-bold text-on-surface truncate">{{ adminName }}</p>
+            <p class="text-xs text-on-surface-variant flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              在线
+            </p>
+          </div>
+        </div>
+        <button @click="handleLogout" class="w-full py-2 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors">退出登录</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="ml-64 min-h-screen flex flex-col bg-surface-container-lowest">
+      <!-- TopNavBar -->
+      <header class="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-md px-8 py-4 flex justify-between items-center shadow-[0px_8px_24px_rgba(86,67,55,0.08)]">
+        <div class="flex items-center bg-surface-container-highest px-4 py-2 rounded-xl w-96">
+          <span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+          <input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-on-surface-variant/50 outline-none" placeholder="搜索订单、用户或文章..." type="text"/>
+        </div>
+        <div class="flex items-center gap-4">
+          <button class="w-10 h-10 flex items-center justify-center text-[#564337] hover:bg-[#dde3e7] rounded-xl transition-colors active:scale-95">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <div class="h-8 w-[1px] bg-outline-variant/30"></div>
+          <div class="flex items-center gap-3 pl-2">
+            <span class="text-sm font-medium text-on-surface-variant">{{ currentDate }}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Router View -->
+      <div class="flex-1">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </div>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
-import { useDark, useToggle } from '@vueuse/core'
-
-const isDark = useDark()
-const toggleTheme = useToggle(isDark)
 
 const router = useRouter()
 const route = useRoute()
-const adminName = ref('Admin')
+const adminName = ref('超级管理员')
+
+const contentMenuOpen = ref(true)
+const storeMenuOpen = ref(true)
+const serviceMenuOpen = ref(true)
+const systemMenuOpen = ref(true)
+
+const currentDate = ref('')
 
 onMounted(() => {
   const info = localStorage.getItem('admin_info')
   if (info) {
     try {
       const parsed = JSON.parse(info)
-      adminName.value = parsed.name || parsed.username || 'Admin'
+      adminName.value = parsed.name || parsed.username || '超级管理员'
     } catch (e) {}
   }
+  
+  const date = new Date()
+  currentDate.value = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 })
 
 const handleLogout = async () => {
@@ -107,113 +175,6 @@ const handleLogout = async () => {
   } catch (e) {}
   localStorage.removeItem('admin_token')
   localStorage.removeItem('admin_info')
-  ElMessage.success('Logged out successfully')
   router.push('/login')
 }
 </script>
-
-<style scoped>
-.layout-container {
-  height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-.aside {
-  background-color: #0f172a;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s;
-  box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
-  z-index: 10;
-}
-.logo {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #0f172a;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.logo-text {
-  font-size: 20px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: 0.5px;
-}
-.el-menu-vertical {
-  border-right: none;
-  flex: 1;
-  padding-top: 16px;
-}
-:deep(.el-menu-item), :deep(.el-sub-menu__title) {
-  margin: 4px 12px;
-  border-radius: 8px;
-  height: 44px;
-  line-height: 44px;
-}
-:deep(.el-menu-item.is-active) {
-  background-color: rgba(56, 189, 248, 0.1) !important;
-  color: #38bdf8 !important;
-  font-weight: 600;
-}
-:deep(.el-menu-item:hover), :deep(.el-sub-menu__title:hover) {
-  background-color: rgba(255,255,255,0.05) !important;
-}
-.header {
-  background-color: var(--el-bg-color);
-  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0 24px;
-  height: 64px;
-  border-bottom: none;
-  z-index: 9;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.theme-switch {
-  --el-switch-on-color: #334155;
-  --el-switch-off-color: #e2e8f0;
-}
-.admin-name {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--el-text-color-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.admin-name::before {
-  content: '';
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  border: 1px solid #e2e8f0;
-}
-html.dark .admin-name::before {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  border-color: #475569;
-}
-.main {
-  background-color: #f1f5f9;
-  padding: 24px;
-  transition: background-color 0.3s;
-}
-
-/* 覆盖 Element Plus 默认样式以支持暗黑模式的无缝切换 */
-html.dark .header {
-  background-color: #1e293b;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
-}
-html.dark .main {
-  background-color: #0f172a;
-}
-</style>

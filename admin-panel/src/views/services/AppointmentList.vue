@@ -1,155 +1,331 @@
 <template>
-  <div class="appointment-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>预约管理</span>
-          <el-button type="primary" icon="Refresh" @click="fetchAppointments">刷新</el-button>
-        </div>
-      </template>
-
-      <el-table :data="appointments" v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="280" />
-        <el-table-column prop="service_type" label="服务类型" width="150" />
-        <el-table-column label="预约日期" width="150">
-          <template #default="{ row }">
-            {{ row.service_date || '无' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ formatStatus(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.created_at).toLocaleString() }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'scheduled'"
-              size="small"
-              type="success"
-              @click="handleStatusChange(row, 'completed')"
-            >
-              完成
-            </el-button>
-            <el-button
-              v-if="row.status === 'scheduled'"
-              size="small"
-              type="danger"
-              @click="handleStatusChange(row, 'cancelled')"
-            >
-              取消
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="size"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchAppointments"
-          @current-change="fetchAppointments"
-        />
+  <div class="p-8 min-h-screen">
+    <!-- Header Section -->
+    <div class="flex justify-between items-end mb-8">
+      <div>
+        <h2 class="text-3xl font-black text-on-surface tracking-tight">预约概览</h2>
+        <p class="text-on-surface-variant mt-1">欢迎回来，今日共有 <span class="font-bold text-primary">{{ pendingCount }}</span> 个待处理预约。</p>
       </div>
-    </el-card>
+      <div class="flex gap-3">
+        <button class="flex items-center gap-2 px-5 py-2.5 bg-white border-none shadow-sm hover:shadow-md rounded-xl text-on-surface-variant font-semibold transition-all">
+          <span class="material-symbols-outlined">download</span>
+          导出报表
+        </button>
+        <button class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 transition-all active:scale-95">
+          <span class="material-symbols-outlined">add</span>
+          新增预约
+        </button>
+      </div>
+    </div>
+
+    <!-- Bento Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-primary/20">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+          </div>
+          <span class="text-xs font-bold text-primary bg-primary-fixed px-2 py-1 rounded-full">+12%</span>
+        </div>
+        <p class="text-sm font-medium text-on-surface-variant">待服务</p>
+        <h3 class="text-2xl font-black mt-1">{{ pendingCount }}</h3>
+      </div>
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-tertiary/20">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">location_home</span>
+          </div>
+          <span class="text-xs font-bold text-tertiary bg-tertiary-fixed-dim px-2 py-1 rounded-full">进行中</span>
+        </div>
+        <p class="text-sm font-medium text-on-surface-variant">已到店</p>
+        <h3 class="text-2xl font-black mt-1">{{ arrivedCount }}</h3>
+      </div>
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-green-200">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+          </div>
+          <span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">今日完成</span>
+        </div>
+        <p class="text-sm font-medium text-on-surface-variant">已完成</p>
+        <h3 class="text-2xl font-black mt-1">{{ completedCount }}</h3>
+      </div>
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-b-4 border-error-container">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 rounded-xl bg-error-container/20 flex items-center justify-center text-error">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cancel</span>
+          </div>
+          <span class="text-xs font-bold text-error bg-error-container px-2 py-1 rounded-full">-3%</span>
+        </div>
+        <p class="text-sm font-medium text-on-surface-variant">已取消</p>
+        <h3 class="text-2xl font-black mt-1">{{ cancelledCount }}</h3>
+      </div>
+    </div>
+
+    <!-- Filter & View Controls -->
+    <div class="bg-surface-container-low rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-2 bg-surface-container-lowest p-1 rounded-xl shadow-inner">
+        <button class="px-6 py-2 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-lg font-bold text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">list</span>
+          列表视图
+        </button>
+        <button class="px-6 py-2 text-on-surface-variant hover:bg-orange-50 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors">
+          <span class="material-symbols-outlined text-sm">calendar_month</span>
+          日历视图
+        </button>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">服务类型:</span>
+          <div class="flex gap-2">
+            <button class="px-3 py-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold">全部</button>
+            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">美容</button>
+            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">洗澡</button>
+            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">医疗</button>
+            <button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant text-xs font-bold hover:bg-primary-fixed/50 transition-colors">寄养</button>
+          </div>
+        </div>
+        <div class="h-6 w-[1px] bg-slate-300"></div>
+        <button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors">
+          <span class="material-symbols-outlined">filter_alt</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Appointment Table Container -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/50">
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">预约详情</th>
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">宠物信息</th>
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">服务项目</th>
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">主人信息</th>
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">预约时段</th>
+            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">当前状态</th>
+            <th class="px-6 py-4 text-right"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-orange-50">
+          <tr v-for="a in appointments" :key="a.id" class="hover:bg-orange-50/30 transition-colors group">
+            <td class="px-6 py-5">
+              <span class="block text-xs font-mono font-bold text-primary">#{{ a.bookingNo }}</span>
+              <span class="text-[10px] text-slate-400">下单时间: {{ formatTime(a.createdAt) }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <div class="flex items-center gap-3">
+                <img :alt="a.pet.nameCn || '宠物'" class="w-10 h-10 rounded-lg bg-orange-100 object-cover" :src="a.pet.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmDUm175YZBeiBAHZklM_l0qb3v9vLz0VoKRv3RoHCKTwl2KXVgnHAh86rOIoKx_D22E9V2HQ1afvuNobpYivHILk6p-nE5TvDMn1L7ghuiOWXvU1wEWV5h-sQFH04uDRstuGZFLxgcz-UX5C2n2Tm4ZZaYq8Edqeh8hn6mG4UjcMMFq1EsAEzIaCmBiYXNWirz0-_4PGfR6Sh7sxCZgpLu6BXnIcp_1CTi5h7Iaca4nUxw_FTrfmW1jt4SqkfevzD13TPrNB0oRM'"/>
+                <div>
+                  <span class="block font-bold text-on-surface">{{ a.pet.nameCn || '-' }}</span>
+                  <span class="text-xs text-on-surface-variant">{{ a.pet.breed || '-' }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold">{{ a.service.name }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <span class="block font-medium text-on-surface">{{ a.owner.name }}</span>
+              <span class="text-xs text-on-surface-variant">{{ a.owner.phoneMasked }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <div class="flex flex-col">
+                <span class="font-bold text-on-surface">{{ scheduleText(a) }}</span>
+                <span v-if="a.schedule.durationMinutes" class="text-[10px] text-orange-600 font-bold">预计时长 {{ a.schedule.durationMinutes }}min</span>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" :class="statusClass(a.status)">
+                <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(a.status)"></span>
+                {{ statusLabel(a.status) }}
+              </span>
+            </td>
+            <td class="px-6 py-5 text-right">
+              <button class="p-2 text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                <span class="material-symbols-outlined">more_vert</span>
+              </button>
+            </td>
+          </tr>
+          <tr v-if="!loading && appointments.length === 0" class="bg-surface-container-lowest">
+            <td colspan="7" class="px-6 py-10 text-center text-sm text-on-surface-variant">暂无数据</td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- Pagination -->
+      <div class="px-6 py-4 bg-surface-container-low/30 flex items-center justify-between">
+        <span class="text-xs font-bold text-on-surface-variant">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条预约记录</span>
+        <div class="flex gap-1">
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors disabled:opacity-30" disabled>
+            <span class="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">2</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">3</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant font-bold text-xs transition-colors">...</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-on-surface-variant transition-colors">
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Information Cards (Asymmetric Layout) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+      <!-- Promotion / Announcement Card -->
+      <div class="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 to-primary-container p-8 text-white shadow-xl">
+        <div class="relative z-10 flex flex-col h-full justify-between">
+          <div>
+            <h4 class="text-2xl font-black mb-2">春季驱虫季特别提醒</h4>
+            <p class="text-orange-100 max-w-md">本周寄养与医疗预约量激增，请各门店店长合理调配美容师排班。由于近期流感频发，请务必核实进店宠物的疫苗情况。</p>
+          </div>
+          <div class="mt-8 flex items-center gap-4">
+            <button class="px-6 py-2 bg-white text-primary font-bold rounded-xl shadow-lg transition-transform active:scale-95">查看详情</button>
+            <span class="text-xs text-orange-100 font-medium">截止日期: 2024年4月1日</span>
+          </div>
+        </div>
+        <div class="absolute -right-8 -bottom-8 opacity-20 transform rotate-12">
+          <span class="material-symbols-outlined text-[200px]" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+        </div>
+      </div>
+      
+      <!-- Shop Efficiency Widget -->
+      <div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm">
+        <h4 class="text-lg font-black mb-6 text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">analytics</span>
+          资源占用率
+        </h4>
+        <div class="space-y-6">
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-2">
+              <span class="text-on-surface-variant">美容间</span>
+              <span class="text-primary">85%</span>
+            </div>
+            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-2">
+              <span class="text-on-surface-variant">寄养仓</span>
+              <span class="text-tertiary">42%</span>
+            </div>
+            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+              <div class="h-full bg-tertiary rounded-full" style="width: 42%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-2">
+              <span class="text-on-surface-variant">医疗科室</span>
+              <span class="text-orange-400">60%</span>
+            </div>
+            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+              <div class="h-full bg-orange-400 rounded-full" style="width: 60%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-8 pt-6 border-t border-slate-100">
+          <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-4">今日值班店长</p>
+          <div class="flex items-center gap-3">
+            <img alt="店长头像" class="w-8 h-8 rounded-full border border-orange-200" data-alt="professional female shop manager avatar with auburn hair and a confident expression in vector illustration style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH1wCCQ2MygdcNvWhOArQ8fPpqIhdP4mg5bIrwWtn8DXnWHDSwGsVBqGCh9l38Pw6rQ4bjI5qkDDyw0_Uk-UUnzVNFqTYBuv3_5k_RlBU2PzVTnJMEwl43w0EbeVx1ktyPT3QkOpEc3JBhmsAr2nb834j_EXJzL6FvXgY24sL3ZNtgnIyWIgrEY2fUZYNfNcyYsk3A3yyeVxBW2yyBaX96IGaSjrSSYaw9wu7rvmmkk-E1ag-fXirz2C3qeQTZQukT-NnQ2JGajUI"/>
+            <span class="text-sm font-bold text-on-surface">Sara Chen</span>
+            <span class="ml-auto text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded-lg font-bold">在岗</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
+import { formatDateTime } from '@/utils/format'
 
-const appointments = ref([])
+type AppointmentItem = {
+  id: string
+  bookingNo: string
+  createdAt: string
+  status: string
+  pet: { id: string; nameCn: string | null; avatarUrl: string | null; breed: string | null }
+  service: { id: string; name: string }
+  owner: { id: string; name: string; phoneMasked: string }
+  schedule: { type: string; startAt: string | null; endAt: string | null; durationMinutes: number | null }
+}
+
 const loading = ref(false)
-const page = ref(1)
-const size = ref(10)
+const appointments = ref<AppointmentItem[]>([])
 const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
 
-const formatStatus = (status: string) => {
-  const map: Record<string, string> = {
-    'scheduled': '已预约',
-    'completed': '已完成',
-    'cancelled': '已取消'
-  }
-  return map[status] || status
+const start = computed(() => {
+  if (total.value === 0) return 0
+  return (page.value - 1) * pageSize.value + 1
+})
+
+const end = computed(() => {
+  if (total.value === 0) return 0
+  return Math.min(total.value, page.value * pageSize.value)
+})
+
+const pendingCount = computed(() => appointments.value.filter((a) => a.status === 'pending_service').length)
+const arrivedCount = computed(() => appointments.value.filter((a) => a.status === 'arrived').length)
+const completedCount = computed(() => appointments.value.filter((a) => a.status === 'completed').length)
+const cancelledCount = computed(() => appointments.value.filter((a) => a.status === 'cancelled').length)
+
+function formatTime(input: string) {
+  const d = new Date(input)
+  if (Number.isNaN(d.getTime())) return input
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-const getStatusType = (status: string) => {
-  const map: Record<string, string> = {
-    'scheduled': 'primary',
-    'completed': 'success',
-    'cancelled': 'info'
+function scheduleText(a: AppointmentItem) {
+  if (a.schedule.startAt && a.schedule.endAt) {
+    return `${formatDateTime(a.schedule.startAt)} - ${formatTime(a.schedule.endAt)}`
   }
-  return map[status] || 'info'
+  return '-'
 }
 
-const fetchAppointments = async () => {
+function statusLabel(status: string) {
+  if (status === 'pending_service') return '待服务'
+  if (status === 'arrived') return '已到店'
+  if (status === 'unpaid') return '待支付'
+  if (status === 'completed') return '已完成'
+  if (status === 'cancelled') return '已取消'
+  return status
+}
+
+function statusClass(status: string) {
+  if (status === 'pending_service') return 'bg-primary-fixed text-on-primary-fixed-variant'
+  if (status === 'arrived') return 'bg-tertiary-fixed text-on-tertiary-fixed-variant'
+  if (status === 'completed') return 'bg-green-100 text-green-700'
+  if (status === 'unpaid') return 'bg-surface-container text-on-surface-variant'
+  return 'bg-error-container/40 text-error'
+}
+
+function statusDotClass(status: string) {
+  if (status === 'pending_service') return 'bg-primary'
+  if (status === 'arrived') return 'bg-tertiary'
+  if (status === 'completed') return 'bg-green-600'
+  if (status === 'unpaid') return 'bg-slate-400'
+  return 'bg-error'
+}
+
+async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/services/appointments', {
-      params: { page: page.value, size: size.value },
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    if (res.data.ok || res.data.code === 0) {
+    const res = await axios.get('/api/v1/admin/services/appointments', { params: { page: page.value, pageSize: pageSize.value } })
+    if (res.data?.ok || res.data?.code === 0) {
       appointments.value = res.data.data.items
       total.value = res.data.data.total
-    } else {
-      ElMessage.error(res.data.message || '获取预约列表失败')
     }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '网络错误')
   } finally {
     loading.value = false
   }
 }
 
-const handleStatusChange = async (row: any, newStatus: string) => {
-  const statusLabel = formatStatus(newStatus)
-  try {
-    await ElMessageBox.confirm(
-      `确定将此预约标记为${statusLabel}吗？`,
-      '确认',
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: newStatus === 'cancelled' ? 'warning' : 'info' }
-    )
-    
-    await axios.put(`/api/v1/admin/services/appointments/${row.id}/status`, { status: newStatus }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    
-    ElMessage.success(`预约已成功标记为${statusLabel}`)
-    fetchAppointments()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.message || '操作失败')
-    }
-  }
-}
-
-onMounted(() => {
-  fetchAppointments()
-})
+onMounted(load)
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
 </style>

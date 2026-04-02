@@ -1,564 +1,248 @@
 <template>
-  <div class="dashboard-container" :class="{ 'is-dark': isDark }">
-    <div class="dashboard-header">
-      <h2>数据看板</h2>
-      <el-switch
-        v-model="isDark"
-        class="theme-switch"
-        inline-prompt
-        active-icon="Moon"
-        inactive-icon="Sunny"
-        @change="toggleTheme"
-      />
+  <div class="p-8 max-w-7xl mx-auto space-y-8 relative">
+    <!-- Hero Header -->
+    <div class="relative overflow-hidden bg-surface-container-low rounded-[2rem] p-8 flex justify-between items-end">
+      <div class="z-10">
+        <h2 class="text-3xl font-extrabold text-primary mb-2">欢迎回来，管理员！</h2>
+        <p class="text-on-surface-variant max-w-md">这是您爱宠家社区的今日概览。今日有 {{ overview?.orderCount ?? 0 }} 笔订单待处理。</p>
+      </div>
+      <div class="hidden lg:block absolute -right-4 -bottom-4 z-0">
+        <div class="w-64 h-64 bg-primary-container/20 rounded-full blur-3xl absolute -right-10 -bottom-10"></div>
+        <img alt="Pet mascot" class="w-56 h-56 object-cover rounded-2xl rotate-3 shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCex6QzbRWzD2LM1Lmt2vbf7L7Vc2D5yjRYEjDYSDRNtBbBqVWAHaNmnT8l3KyjGcFLncuE90mX0PhXUbx3amEQ466sRFTxMGmRXok0gdXr8LwKYlpV9S6W4YV5fx4OSToYk71GLPpJ-LPX0YW_I8OUxOxsS6R6NIauTQMawUhV0MGpvkxZqcfgaCsvtN_TEQVxj90UjGjZWMaijFaL9gTv_-qiByoyBrxh5V2b3M0OOU-PJGqFqBY_32lCcZAMIk6z4RDuHsvSQO8"/>
+      </div>
     </div>
-    
-    <!-- 顶部数据卡片 -->
-    <el-row :gutter="20" class="stat-cards" v-loading="loading">
-      <el-col :xs="24" :sm="12" :md="6" v-for="(stat, index) in statCards" :key="index">
-        <el-card shadow="hover" class="stat-card" :class="'card-' + index">
-          <div class="stat-icon-wrapper" :style="{ background: stat.bgColor, boxShadow: stat.shadow }">
-            <el-icon class="stat-icon" :style="{ color: stat.color }"><component :is="stat.icon" /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-title">{{ stat.title }}</div>
-            <div class="stat-value">
-              <span class="value-text">{{ stat.value }}</span>
-            </div>
-            <div class="stat-desc">
-              今日新增: <span class="today-value">+{{ stat.today }}</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
-    <!-- 中部图表：营收与订单趋势 -->
-    <el-row :gutter="20" class="chart-row">
-      <el-col :span="24">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>近 7 天营收与订单趋势</span>
-            </div>
-          </template>
-          <div class="chart-wrapper" ref="trendChartRef"></div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <!-- 底部图表：服务分布、内容形态、社区互动趋势 -->
-    <el-row :gutter="20" class="chart-row">
-      <el-col :xs="24" :md="8">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>内容形态分布</span>
+    <!-- Metric Cards (Bento Style) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-sm hover:translate-y-[-4px] transition-transform duration-300 group">
+        <div class="flex justify-between items-start mb-4">
+          <div class="p-3 bg-primary/10 text-primary rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+            <span class="material-symbols-outlined">person</span>
+          </div>
+          <span class="text-xs font-bold text-primary px-2 py-1 bg-primary/5 rounded-full">+2 今日</span>
+        </div>
+        <p class="text-on-surface-variant text-sm font-medium">总用户数</p>
+        <h3 class="text-3xl font-bold text-on-surface mt-1">{{ overview?.userCount ?? '-' }}</h3>
+      </div>
+      
+      <div class="bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-sm hover:translate-y-[-4px] transition-transform duration-300 group">
+        <div class="flex justify-between items-start mb-4">
+          <div class="p-3 bg-secondary-container/50 text-secondary rounded-xl group-hover:bg-secondary group-hover:text-white transition-colors">
+            <span class="material-symbols-outlined">article</span>
+          </div>
+          <span class="text-xs font-bold text-secondary px-2 py-1 bg-secondary/5 rounded-full">+5 今日</span>
+        </div>
+        <p class="text-on-surface-variant text-sm font-medium">总发帖数</p>
+        <h3 class="text-3xl font-bold text-on-surface mt-1">{{ overview?.postCount ?? '-' }}</h3>
+      </div>
+
+      <div class="bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-sm hover:translate-y-[-4px] transition-transform duration-300 group">
+        <div class="flex justify-between items-start mb-4">
+          <div class="p-3 bg-tertiary-container/20 text-tertiary rounded-xl group-hover:bg-tertiary group-hover:text-white transition-colors">
+            <span class="material-symbols-outlined">shopping_cart</span>
+          </div>
+          <span class="text-xs font-bold text-tertiary px-2 py-1 bg-tertiary/5 rounded-full">进行中</span>
+        </div>
+        <p class="text-on-surface-variant text-sm font-medium">总订单数</p>
+        <h3 class="text-3xl font-bold text-on-surface mt-1">{{ overview?.orderCount ?? '-' }}</h3>
+      </div>
+
+      <div class="metric-gradient p-6 rounded-[1.5rem] shadow-lg hover:translate-y-[-4px] transition-transform duration-300 text-white">
+        <div class="flex justify-between items-start mb-4">
+          <div class="p-3 bg-white/20 rounded-xl">
+            <span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>payments</span>
+          </div>
+          <span class="text-xs font-bold bg-white/20 px-2 py-1 rounded-full">较昨日 +12%</span>
+        </div>
+        <p class="text-white/80 text-sm font-medium">总营收额</p>
+        <h3 class="text-3xl font-bold mt-1">¥{{ overview?.revenue != null ? formatMoney(overview.revenue) : '-' }}</h3>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Revenue Trend -->
+      <div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-[2rem] shadow-sm">
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h4 class="text-lg font-bold text-on-surface">营收与订单趋势</h4>
+            <p class="text-sm text-on-surface-variant">过去7天的业务增长曲线</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="px-4 py-1.5 text-xs font-bold bg-surface-container-high rounded-full">订单</button>
+            <button class="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-full">金额</button>
+          </div>
+        </div>
+        <!-- Mock Chart Visualization -->
+        <div class="h-64 flex items-end justify-between gap-2 px-2 relative">
+          <div class="absolute inset-0 flex flex-col justify-between py-2 pointer-events-none opacity-20">
+            <div class="border-b border-outline"></div>
+            <div class="border-b border-outline"></div>
+            <div class="border-b border-outline"></div>
+            <div class="border-b border-outline"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[40%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-18</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[55%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-19</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[35%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-20</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[80%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-21</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[65%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-22</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary-container/20 rounded-t-lg h-[45%] group-hover:bg-primary-container transition-all"></div>
+            <span class="mt-4 text-[10px] text-on-surface-variant font-bold">10-23</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center group">
+            <div class="w-full max-w-[40px] bg-primary rounded-t-lg h-[95%] shadow-[0_0_15px_rgba(230,126,34,0.3)]"></div>
+            <span class="mt-4 text-[10px] text-primary font-bold">今天</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Distribution -->
+      <div class="bg-surface-container-lowest p-8 rounded-[2rem] shadow-sm">
+        <h4 class="text-lg font-bold text-on-surface mb-6">内容分布</h4>
+        <div class="space-y-6">
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-on-surface-variant">纯文本</span>
+              <span class="font-bold">45%</span>
             </div>
-          </template>
-          <div class="chart-wrapper small-chart" ref="contentPieRef"></div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="16">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>近 7 天社区互动趋势 (点赞/评论)</span>
+            <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full w-[45%]"></div>
             </div>
-          </template>
-          <div class="chart-wrapper small-chart" ref="engagementLineRef"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-on-surface-variant">图文</span>
+              <span class="font-bold">35%</span>
+            </div>
+            <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+              <div class="h-full bg-secondary rounded-full w-[35%]"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-on-surface-variant">视频</span>
+              <span class="font-bold">20%</span>
+            </div>
+            <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+              <div class="h-full bg-tertiary rounded-full w-[20%]"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-8 pt-6 border-t border-surface-container-high">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined">edit_note</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">内容形态占比最高</p>
+              <p class="font-bold text-on-surface">{{ topContentForm || '-' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interaction Performance -->
+    <section class="bg-surface-container-low p-8 rounded-[2rem] mt-8">
+      <div class="flex items-center justify-between mb-8">
+        <h4 class="text-xl font-bold text-on-surface">互动表现</h4>
+        <span class="text-sm text-primary font-medium cursor-pointer hover:underline">查看详细报表</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl flex items-center gap-6">
+          <div class="w-16 h-16 rounded-2xl bg-[#ffeee0] flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-3xl" style='font-variation-settings: "FILL" 1;'>favorite</span>
+          </div>
+          <div>
+            <p class="text-on-surface-variant text-sm font-medium">近7日点赞</p>
+            <h5 class="text-3xl font-black text-on-surface">{{ likes7d }}</h5>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl flex items-center gap-6">
+          <div class="w-16 h-16 rounded-2xl bg-[#e5f1ff] flex items-center justify-center text-blue-600">
+            <span class="material-symbols-outlined text-3xl" style='font-variation-settings: "FILL" 1;'>forum</span>
+          </div>
+          <div>
+            <p class="text-on-surface-variant text-sm font-medium">近7日评论</p>
+            <h5 class="text-3xl font-black text-on-surface">{{ comments7d }}</h5>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl flex items-center gap-6">
+          <div class="w-16 h-16 rounded-2xl bg-[#f0fff4] flex items-center justify-center text-green-600">
+            <span class="material-symbols-outlined text-3xl" style='font-variation-settings: "FILL" 1;'>share</span>
+          </div>
+          <div>
+            <p class="text-on-surface-variant text-sm font-medium">分享数据</p>
+            <h5 class="text-3xl font-black text-on-surface">—</h5>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAB for quick action -->
+    <button class="fixed bottom-8 right-8 w-14 h-14 metric-gradient text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+      <span class="material-symbols-outlined">add</span>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
-import { useDark, useToggle } from '@vueuse/core'
+import { formatMoney } from '@/utils/format'
 
-const isDark = useDark()
-const toggleTheme = useToggle(isDark)
+type Overview = {
+  userCount: number
+  postCount: number
+  orderCount: number
+  revenue: number
+}
 
-const stats = ref<any>(null)
-const loading = ref(false)
-
-const trendChartRef = ref<HTMLElement | null>(null)
-const contentPieRef = ref<HTMLElement | null>(null)
-const engagementLineRef = ref<HTMLElement | null>(null)
-
-let trendChart: echarts.ECharts | null = null
-let contentPie: echarts.ECharts | null = null
-let engagementLine: echarts.ECharts | null = null
-
-const statCards = computed(() => {
-  if (!stats.value) return []
-  return [
-    {
-      title: '总用户数',
-      value: stats.value.users.total,
-      today: stats.value.users.today,
-      icon: 'User',
-      color: '#38bdf8',
-      bgColor: 'linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(56,189,248,0.05) 100%)',
-      shadow: '0 4px 12px rgba(56,189,248,0.2)'
-    },
-    {
-      title: '总帖子数',
-      value: stats.value.posts.total,
-      today: stats.value.posts.today,
-      icon: 'Document',
-      color: '#818cf8',
-      bgColor: 'linear-gradient(135deg, rgba(129,140,248,0.15) 0%, rgba(129,140,248,0.05) 100%)',
-      shadow: '0 4px 12px rgba(129,140,248,0.2)'
-    },
-    {
-      title: '总订单数',
-      value: stats.value.orders.total,
-      today: stats.value.orders.today,
-      icon: 'ShoppingCart',
-      color: '#f472b6',
-      bgColor: 'linear-gradient(135deg, rgba(244,114,182,0.15) 0%, rgba(244,114,182,0.05) 100%)',
-      shadow: '0 4px 12px rgba(244,114,182,0.2)'
-    },
-    {
-      title: '总营收',
-      value: '￥' + (stats.value.revenue.total_cents / 100).toFixed(2),
-      today: '￥' + (stats.value.revenue.today_cents / 100).toFixed(2),
-      icon: 'Money',
-      color: '#34d399',
-      bgColor: 'linear-gradient(135deg, rgba(52,211,153,0.15) 0%, rgba(52,211,153,0.05) 100%)',
-      shadow: '0 4px 12px rgba(52,211,153,0.2)'
-    }
-  ]
-})
-
-const fetchStats = async () => {
-  loading.value = true
-  try {
-    const res = await axios.get('/api/v1/admin/dashboard/stats', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    if (res.data.ok || res.data.code === 0) {
-      stats.value = res.data.data
-      await nextTick()
-      initCharts()
-    } else {
-      ElMessage.error(res.data.message || '获取数据看板数据失败')
-    }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '网络错误')
-  } finally {
-    loading.value = false
+type DashboardStats = {
+  charts: {
+    likesTrend: number[]
+    commentsTrend: number[]
+    contentFormDistribution: { name: string; value: number }[]
   }
 }
 
-const getChartTheme = () => isDark.value ? 'dark' : 'light'
-const getTextColor = () => isDark.value ? '#E5EAF3' : '#333'
+const overview = ref<Overview | null>(null)
+const stats = ref<DashboardStats | null>(null)
 
-const initCharts = () => {
-  if (!stats.value || !stats.value.charts) return
-  const chartData = stats.value.charts
-
-  // 1. Trend Chart (Line + Bar)
-  if (trendChartRef.value) {
-    if (trendChart) trendChart.dispose()
-    trendChart = echarts.init(trendChartRef.value)
-    trendChart.setOption({
-      backgroundColor: 'transparent',
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        backgroundColor: isDark.value ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-        textStyle: { color: getTextColor() },
-        backdropFilter: 'blur(10px)',
-        padding: [12, 16],
-        borderRadius: 8
-      },
-      legend: {
-        data: ['营收 (元)', '订单数'],
-        textStyle: { color: getTextColor() },
-        top: '0%',
-        icon: 'circle'
-      },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
-      xAxis: [
-        {
-          type: 'category',
-          data: chartData.dates,
-          axisPointer: { type: 'shadow' },
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: '#94a3b8', margin: 16 }
-        }
-      ],
-      yAxis: [
-        {
-          type: 'value',
-          name: '营收',
-          nameTextStyle: { color: '#94a3b8', padding: [0, 0, 0, 20] },
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: '#94a3b8' },
-          splitLine: { lineStyle: { color: isDark.value ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', type: 'dashed' } }
-        },
-        {
-          type: 'value',
-          name: '订单数',
-          nameTextStyle: { color: '#94a3b8', padding: [0, 20, 0, 0] },
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: '#94a3b8' },
-          splitLine: { show: false }
-        }
-      ],
-      series: [
-        {
-          name: '营收 (元)',
-          type: 'bar',
-          data: chartData.revenueTrend,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#38bdf8' },
-              { offset: 1, color: '#818cf8' }
-            ]),
-            borderRadius: [6, 6, 0, 0]
-          },
-          barWidth: '35%',
-          animationEasing: 'elasticOut',
-          animationDelay: (idx: number) => idx * 10
-        },
-        {
-          name: '订单数',
-          type: 'line',
-          yAxisIndex: 1,
-          data: chartData.orderTrend,
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 8,
-          itemStyle: { 
-            color: '#f472b6',
-            borderWidth: 2,
-            borderColor: '#fff'
-          },
-          lineStyle: { width: 4, shadowColor: 'rgba(244,114,182,0.3)', shadowBlur: 10, shadowOffsetY: 5 },
-          animationEasing: 'cubicOut',
-          animationDelay: (idx: number) => idx * 100 + 100
-        }
-      ]
-    })
-  }
-
-  // 2. Content Form Pie Chart
-  if (contentPieRef.value) {
-    if (contentPie) contentPie.dispose()
-    contentPie = echarts.init(contentPieRef.value)
-    contentPie.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { 
-        trigger: 'item', 
-        formatter: '{b} : {c} ({d}%)',
-        backgroundColor: isDark.value ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-        textStyle: { color: getTextColor() },
-        padding: [12, 16],
-        borderRadius: 8
-      },
-      legend: { bottom: '0%', icon: 'circle', textStyle: { color: '#94a3b8' } },
-      color: ['#38bdf8', '#818cf8', '#34d399', '#f472b6'],
-      series: [
-        {
-          name: '内容形态',
-          type: 'pie',
-          radius: ['45%', '75%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 8,
-            borderColor: isDark.value ? '#1e293b' : '#fff',
-            borderWidth: 3
-          },
-          label: { show: false, position: 'center' },
-          emphasis: {
-            label: { show: true, fontSize: 18, fontWeight: 'bold' }
-          },
-          labelLine: { show: false },
-          data: chartData.contentFormDistribution,
-          animationType: 'scale',
-          animationEasing: 'elasticOut',
-          animationDelay: (idx: number) => Math.random() * 200
-        }
-      ]
-    })
-  }
-
-  // 3. Engagement Line Chart
-  if (engagementLineRef.value) {
-    if (engagementLine) engagementLine.dispose()
-    engagementLine = echarts.init(engagementLineRef.value)
-    engagementLine.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { 
-        trigger: 'axis',
-        backgroundColor: isDark.value ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-        textStyle: { color: getTextColor() },
-        padding: [12, 16],
-        borderRadius: 8
-      },
-      legend: {
-        data: ['点赞数', '评论数'],
-        textStyle: { color: getTextColor() },
-        top: '0%',
-        icon: 'circle'
-      },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: chartData.dates,
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: '#94a3b8', margin: 16 }
-      },
-      yAxis: {
-        type: 'value',
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: '#94a3b8' },
-        splitLine: { lineStyle: { color: isDark.value ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', type: 'dashed' } }
-      },
-      series: [
-        {
-          name: '点赞数',
-          type: 'line',
-          data: chartData.likesTrend,
-          smooth: true,
-          showSymbol: false,
-          itemStyle: { color: '#f472b6' },
-          lineStyle: { width: 3 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(244, 114, 182, 0.3)' },
-              { offset: 1, color: 'rgba(244, 114, 182, 0)' }
-            ])
-          },
-          animationEasing: 'cubicOut'
-        },
-        {
-          name: '评论数',
-          type: 'line',
-          data: chartData.commentsTrend,
-          smooth: true,
-          showSymbol: false,
-          itemStyle: { color: '#38bdf8' },
-          lineStyle: { width: 3 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(56, 189, 248, 0.3)' },
-              { offset: 1, color: 'rgba(56, 189, 248, 0)' }
-            ])
-          },
-          animationEasing: 'cubicOut'
-        }
-      ]
-    })
-  }
-}
-
-// 监听主题变化，重绘图表
-watch(isDark, () => {
-  initCharts()
+const likes7d = computed(() => (stats.value?.charts.likesTrend || []).reduce((a, b) => a + b, 0))
+const comments7d = computed(() => (stats.value?.charts.commentsTrend || []).reduce((a, b) => a + b, 0))
+const topContentForm = computed(() => {
+  const dist = stats.value?.charts.contentFormDistribution || []
+  if (dist.length === 0) return ''
+  const top = dist.reduce((best, cur) => (cur.value > best.value ? cur : best), dist[0])
+  return top?.name || ''
 })
 
-const handleResize = () => {
-  trendChart?.resize()
-  contentPie?.resize()
-  engagementLine?.resize()
-}
-
-onMounted(() => {
-  fetchStats()
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  trendChart?.dispose()
-  contentPie?.dispose()
-  engagementLine?.dispose()
+onMounted(async () => {
+  const [o, s] = await Promise.all([
+    axios.get('/api/v1/admin/dashboard/overview'),
+    axios.get('/api/v1/admin/dashboard/stats')
+  ])
+  if (o.data?.ok || o.data?.code === 0) overview.value = o.data.data
+  if (s.data?.ok || s.data?.code === 0) stats.value = s.data.data
 })
 </script>
 
 <style scoped>
-.dashboard-container {
-  padding: 10px;
-  transition: all 0.3s ease;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.dashboard-header h2 {
-  margin: 0;
-  color: var(--el-text-color-primary);
-}
-
-.stat-cards {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.02);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 20px;
-  background: #ffffff;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-.stat-card :deep(.el-card__body) {
-  display: flex;
-  align-items: center;
-  padding: 24px;
-}
-
-.stat-icon-wrapper {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 16px;
-  margin-right: 20px;
-  transition: all 0.3s ease;
-}
-
-.stat-icon {
-  font-size: 32px;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.15) rotate(5deg);
-}
-
-.stat-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.stat-title {
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-value {
-  color: #0f172a;
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-}
-
-.stat-desc {
-  color: #94a3b8;
-  font-size: 13px;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  font-weight: 500;
-}
-
-.today-value {
-  color: #10b981;
-  font-weight: 700;
-  margin-left: 6px;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.chart-row {
-  margin-bottom: 24px;
-}
-
-.chart-card {
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.02);
-  margin-bottom: 20px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transition: box-shadow 0.3s;
-}
-.chart-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-.chart-card .card-header {
-  font-weight: 700;
-  font-size: 16px;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-}
-.chart-card .card-header::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 16px;
-  background: linear-gradient(to bottom, #38bdf8, #818cf8);
-  border-radius: 2px;
-  margin-right: 10px;
-}
-
-.chart-wrapper {
-  height: 380px;
-  width: 100%;
-  position: relative;
-}
-
-.small-chart {
-  height: 320px;
-}
-
-/* Dark Mode Overrides */
-html.dark .stat-card {
-  background-color: #1e293b;
-  border-color: rgba(255,255,255,0.05);
-}
-html.dark .stat-title {
-  color: #94a3b8;
-}
-html.dark .stat-value {
-  color: #f8fafc;
-}
-html.dark .chart-card {
-  background-color: #1e293b;
-  border-color: rgba(255,255,255,0.05);
-}
-html.dark .chart-card .card-header {
-  color: #f8fafc;
-}
-html.dark .today-value {
-  color: #34d399;
-  background: rgba(52, 211, 153, 0.15);
-}
 </style>

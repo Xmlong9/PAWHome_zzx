@@ -1,15 +1,50 @@
 from flask import request
+import json
 from ....extensions import db
-from ....models import ShopProduct, ShopOrder
+from ....models import ShopProduct, ShopOrder, ShopOrderItem, User
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
+
+def _iso(dt):
+    return dt.isoformat() + "Z" if dt else None
+
+def _pagination_args():
+    page = request.args.get("page", 1, type=int)
+    size = request.args.get("pageSize", None, type=int)
+    if size is None:
+        size = request.args.get("size", 10, type=int)
+    return page, size
+
+def _first_image(images_json: str | None):
+    if isinstance(images_json, str) and images_json.strip():
+        try:
+            val = json.loads(images_json)
+            if isinstance(val, list) and val:
+                first = val[0]
+                if isinstance(first, (str, int, float)):
+                    return str(first)
+            if isinstance(val, dict):
+                url = val.get("url") or val.get("image") or val.get("cover")
+                if isinstance(url, str) and url:
+                    return url
+        except Exception:
+            return None
+    return None
+
+def _product_status(is_active: bool, stock: int):
+    if not is_active:
+        return "off_sale"
+    if stock <= 0:
+        return "off_sale"
+    if stock < 100:
+        return "low_stock"
+    return "on_sale"
 
 def register_admin_shop_routes(bp):
     @bp.get("/admin/shop/products")
     @admin_required
     def get_products():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = ShopProduct.query
 
@@ -17,16 +52,19 @@ def register_admin_shop_routes(bp):
 
         products = []
         for product in pagination.items:
-            products.append({
-                "id": product.id,
-                "title": product.title,
-                "description": product.description,
-                "price_cents": product.price_cents,
-                "stock": product.stock,
-                "is_active": product.is_active,
-                "images_json": product.images_json,
-                "created_at": product.created_at.isoformat() + "Z" if product.created_at else None,
-            })
+            products.append(
+                {
+                    "id": product.id,
+                    "productNo": (product.id or "")[:8],
+                    "name": product.title,
+                    "categoryText": None,
+                    "price": product.price_cents / 100,
+                    "stockQty": product.stock,
+                    "status": _product_status(bool(product.is_active), int(product.stock or 0)),
+                    "imageUrl": _first_image(product.images_json),
+                    "createdAt": _iso(product.created_at),
+                }
+            )
 
         return ok({
             "items": products,
@@ -109,8 +147,7 @@ def register_admin_shop_routes(bp):
     @bp.get("/admin/shop/orders")
     @admin_required
     def get_orders():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         status = request.args.get("status", "")
         
         query = ShopOrder.query
@@ -122,14 +159,48 @@ def register_admin_shop_routes(bp):
 
         orders = []
         for order in pagination.items:
-            orders.append({
-                "id": order.id,
-                "user_id": order.user_id,
-                "total_cents": order.total_cents,
-                "status": order.status,
-                "receiver_name": order.receiver_name,
-                "created_at": order.created_at.isoformat() + "Z" if order.created_at else None,
-            })
+            buyer = User.query.get(order.user_id)
+            items = []
+            for it in ShopOrderItem.query.filter_by(order_id=order.id).all():
+                prod = ShopProduct.query.get(it.product_id)
+                items.append(
+                    {
+                        "id": it.id,
+                        "skuText": None,
+                        "quantity": it.quantity,
+                        "product": {
+                            "id": it.product_id,
+                            "name": (prod.title if prod else it.title_snapshot),
+                            "imageUrl": _first_image(prod.images_json) if prod else None,
+                        },
+                    }
+                )
+
+            status_map = {
+                "pending_pay": "unpaid",
+                "pending_ship": "to_ship",
+                "shipped": "shipped",
+                "completed": "completed",
+                "cancelled": "cancelled",
+            }
+            orders.append(
+                {
+                    "id": order.id,
+                    "orderNo": (order.id or "")[:8],
+                    "createdAt": _iso(order.created_at),
+                    "buyer": {
+                        "id": order.user_id,
+                        "name": buyer.nickname if buyer else "Unknown",
+                        "phoneMasked": "",
+                    },
+                    "pay": {
+                        "amountPaid": order.total_cents / 100,
+                        "method": order.pay_method or "",
+                    },
+                    "status": status_map.get(order.status, order.status),
+                    "items": items,
+                }
+            )
 
         return ok({
             "items": orders,

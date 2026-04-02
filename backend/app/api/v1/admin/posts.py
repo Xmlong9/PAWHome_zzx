@@ -1,15 +1,135 @@
 from flask import request
+import json
 from ....extensions import db
 from ....models import Post, User, Comment
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 
+def _iso(dt):
+    return dt.isoformat() + "Z" if dt else None
+
+def _pagination_args():
+    page = request.args.get("page", 1, type=int)
+    size = request.args.get("pageSize", None, type=int)
+    if size is None:
+        size = request.args.get("size", 10, type=int)
+    return page, size
+
+def _parse_media_stats(media_json: str | None):
+    image_count = 0
+    video_count = 0
+    text_type = "text"
+    if isinstance(media_json, str) and media_json.strip():
+        try:
+            val = json.loads(media_json)
+            if isinstance(val, dict):
+                t = val.get("type")
+                if isinstance(t, str) and t == "video":
+                    video_url = val.get("url") or val.get("video") or val.get("videoUrl")
+                    if isinstance(video_url, str) and video_url:
+                        video_count = 1
+                        text_type = "video"
+                        return image_count, video_count, text_type
+                images = val.get("images")
+                if isinstance(images, list):
+                    image_count = len([x for x in images if isinstance(x, (str, int, float))])
+                    if image_count > 0:
+                        text_type = "image"
+            elif isinstance(val, list):
+                image_count = len([x for x in val if isinstance(x, (str, int, float))])
+                if image_count > 0:
+                    text_type = "image"
+        except Exception:
+            pass
+    return image_count, video_count, text_type
+
 def register_admin_posts_routes(bp):
+    @bp.get("/admin/content/posts")
+    @admin_required
+    def get_content_posts():
+        page, size = _pagination_args()
+        pagination = (
+            Post.query.order_by(Post.created_at.desc())
+            .paginate(page=page, per_page=size, error_out=False)
+        )
+
+        items = []
+        for post in pagination.items:
+            author = User.query.get(post.author_id)
+            img_cnt, vid_cnt, text_type = _parse_media_stats(post.media_json)
+            items.append(
+                {
+                    "id": post.id,
+                    "author": {
+                        "id": post.author_id,
+                        "name": author.nickname if author else "Unknown",
+                        "avatarUrl": author.avatar_url if author else None,
+                    },
+                    "contentPreview": (post.content or "")[:80],
+                    "mediaStats": {"imageCount": img_cnt, "videoCount": vid_cnt, "textType": text_type},
+                    "engagement": {
+                        "likeCount": post.like_count,
+                        "commentCount": post.comment_count,
+                    },
+                    "publishedAt": _iso(post.created_at),
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "total": pagination.total,
+                "page": page,
+                "pageSize": size,
+            }
+        )
+
+    @bp.get("/admin/content/comments")
+    @admin_required
+    def get_content_comments():
+        page, size = _pagination_args()
+        pagination = (
+            Comment.query.order_by(Comment.created_at.desc())
+            .paginate(page=page, per_page=size, error_out=False)
+        )
+
+        items = []
+        for c in pagination.items:
+            author = User.query.get(c.author_id)
+            post = Post.query.get(c.post_id)
+            title = ""
+            if post and isinstance(post.content, str):
+                title = post.content.strip().replace("\n", " ")[:24]
+            items.append(
+                {
+                    "id": c.id,
+                    "user": {
+                        "id": c.author_id,
+                        "name": author.nickname if author else "Unknown",
+                        "avatarUrl": author.avatar_url if author else None,
+                        "levelText": None,
+                    },
+                    "post": {"id": c.post_id, "title": title or "-"},
+                    "content": c.content,
+                    "likeCount": c.like_count,
+                    "status": "approved",
+                    "createdAt": _iso(c.created_at),
+                }
+            )
+
+        return ok(
+            {
+                "items": items,
+                "total": pagination.total,
+                "page": page,
+                "pageSize": size,
+            }
+        )
+
     @bp.get("/admin/posts")
     @admin_required
     def get_posts():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = Post.query
 
@@ -25,7 +145,7 @@ def register_admin_posts_routes(bp):
                 "author_name": author.nickname if author else "Unknown",
                 "like_count": post.like_count,
                 "comment_count": post.comment_count,
-                "created_at": post.created_at.isoformat() + "Z" if post.created_at else None,
+                "created_at": _iso(post.created_at),
                 "visibility": post.visibility
             })
 
@@ -52,8 +172,7 @@ def register_admin_posts_routes(bp):
     @bp.get("/admin/comments")
     @admin_required
     def get_comments():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = Comment.query
 
@@ -69,7 +188,7 @@ def register_admin_posts_routes(bp):
                 "author_id": comment.author_id,
                 "author_name": author.nickname if author else "Unknown",
                 "like_count": comment.like_count,
-                "created_at": comment.created_at.isoformat() + "Z" if comment.created_at else None,
+                "created_at": _iso(comment.created_at),
             })
 
         return ok({

@@ -1,157 +1,294 @@
 <template>
-  <div class="order-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>订单管理</span>
-          <el-select v-model="statusFilter" placeholder="按状态筛选" clearable @change="fetchOrders" style="width: 200px; margin-left: 20px;">
-            <el-option label="待支付" value="pending_pay" />
-            <el-option label="待发货" value="pending_ship" />
-            <el-option label="已发货" value="shipped" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已取消" value="cancelled" />
-          </el-select>
-          <el-button type="primary" icon="Refresh" @click="fetchOrders" style="margin-left: auto;">刷新</el-button>
-        </div>
-      </template>
-
-      <el-table :data="orders" v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="订单 ID" width="280" />
-        <el-table-column prop="receiver_name" label="收货人" width="150" />
-        <el-table-column label="总金额" width="120">
-          <template #default="{ row }">
-            ￥{{ (row.total_cents / 100).toFixed(2) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="150">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ formatStatus(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.created_at).toLocaleString() }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'pending_ship'"
-              size="small"
-              type="primary"
-              @click="handleShip(row)"
-            >
-              发货
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="size"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchOrders"
-          @current-change="fetchOrders"
-        />
+  <div class="flex-1 p-8 space-y-8">
+    <!-- Header Editorial Section -->
+    <div class="flex justify-between items-end">
+      <div>
+        <h2 class="text-3xl font-extrabold text-primary tracking-tight">订单中心</h2>
+        <p class="text-on-surface-variant mt-1">处理来自全球爱宠人士的每一份关怀与责任。</p>
       </div>
-    </el-card>
+      <div class="flex gap-3">
+        <button class="px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-xl font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-lg">download</span>
+          导出数据
+        </button>
+        <button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-lg shadow-orange-200 flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-lg">add</span>
+          手动录单
+        </button>
+      </div>
+    </div>
+
+    <!-- Bento Stats Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-orange-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-700"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">today</span>
+            </div>
+            <span class="font-bold text-on-surface-variant">今日订单</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-4xl font-black text-on-surface tracking-tighter">{{ todayOrders }}</span>
+            <span class="text-green-600 text-xs font-bold flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">trending_up</span>
+              +12%
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-700"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">local_shipping</span>
+            </div>
+            <span class="font-bold text-on-surface-variant">待发货订单</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-4xl font-black text-on-surface tracking-tighter">{{ toShipCount }}</span>
+            <span class="text-red-500 text-xs font-bold">需尽快处理</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-orange-50 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-tertiary-fixed rounded-full opacity-30 group-hover:scale-125 transition-transform duration-700"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">payments</span>
+            </div>
+            <span class="font-bold text-on-surface-variant">总订单额</span>
+          </div>
+          <div class="flex items-baseline gap-1">
+            <span class="text-sm font-bold text-on-surface-variant">¥</span>
+            <span class="text-4xl font-black text-on-surface tracking-tighter">{{ formatMoney(totalPaid) }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="bg-surface-container-low p-6 rounded-xl">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单号 / 手机号</label>
+          <div class="relative">
+            <input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="输入搜索内容..." type="text"/>
+          </div>
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">收货人姓名</label>
+          <input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all" placeholder="姓名关键词" type="text"/>
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">订单状态</label>
+          <select class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary/40 transition-all appearance-none cursor-pointer">
+            <option>全部状态</option>
+            <option>待付款</option>
+            <option>待发货</option>
+            <option>已发货</option>
+            <option>已完成</option>
+            <option>已取消</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-3">
+          <button class="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all">
+            查询
+          </button>
+          <button class="px-4 py-2.5 bg-white border border-outline-variant text-on-surface-variant font-bold rounded-xl hover:bg-slate-50 transition-all">
+            重置
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table Section -->
+    <section class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden border border-orange-50">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-surface-container-low border-b border-orange-100/30">
+            <tr>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">订单信息</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">商品详情</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">买家信息</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">实付金额</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">状态</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-orange-50">
+            <tr v-for="o in orders" :key="o.id" class="hover:bg-orange-50/30 transition-colors">
+              <td class="px-6 py-5">
+                <p class="font-bold text-on-surface">#{{ o.orderNo }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ formatDateTime(o.createdAt) }}</p>
+              </td>
+              <td class="px-6 py-5">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
+                    <img :alt="firstItem(o)?.product.name || '商品'" class="w-full h-full object-cover" :src="firstItem(o)?.product.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'"/>
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold text-on-surface line-clamp-1">{{ firstItem(o)?.product.name || '-' }}</p>
+                    <p class="text-xs text-slate-500">{{ firstItem(o)?.skuText || '-' }} x {{ totalQty(o) }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-5">
+                <p class="text-sm font-bold text-on-surface">{{ o.buyer.name }}</p>
+                <p class="text-xs text-slate-500">{{ o.buyer.phoneMasked }}</p>
+              </td>
+              <td class="px-6 py-5">
+                <p class="text-sm font-black text-primary">¥{{ formatMoney(o.pay.amountPaid) }}</p>
+                <p class="text-[10px] text-slate-400">{{ payMethodText(o.pay.method) }}</p>
+              </td>
+              <td class="px-6 py-5">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold" :class="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+              </td>
+              <td class="px-6 py-5">
+                <div class="flex justify-end gap-2">
+                  <button v-if="o.status === 'to_ship'" class="p-2 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors group relative" title="立即发货">
+                    <span class="material-symbols-outlined text-lg">local_shipping</span>
+                  </button>
+                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="订单详情">
+                    <span class="material-symbols-outlined text-lg">visibility</span>
+                  </button>
+                  <button class="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors group relative" title="修改价格">
+                    <span class="material-symbols-outlined text-lg">edit_note</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="!loading && orders.length === 0" class="bg-white">
+              <td colspan="6" class="px-6 py-10 text-center text-sm text-on-surface-variant">暂无数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="px-6 py-4 bg-slate-50/50 flex items-center justify-between">
+        <p class="text-xs font-bold text-slate-400">显示第 {{ start }} 至 {{ end }} 条，共 {{ total }} 条记录</p>
+        <div class="flex items-center gap-1">
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+            <span class="material-symbols-outlined text-lg">chevron_left</span>
+          </button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shadow-md shadow-orange-200">1</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">2</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">3</button>
+          <span class="px-1 text-slate-400">...</span>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold text-sm transition-colors">124</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-400 transition-colors">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
+import { formatDateTime, formatMoney } from '@/utils/format'
 
-const orders = ref([])
+type OrderItem = {
+  id: string
+  skuText: string | null
+  quantity: number
+  product: { id: string; name: string; imageUrl: string | null }
+}
+
+type Order = {
+  id: string
+  orderNo: string
+  createdAt: string
+  buyer: { id: string; name: string; phoneMasked: string }
+  pay: { amountPaid: number; method: string }
+  status: string
+  items: OrderItem[]
+}
+
 const loading = ref(false)
-const page = ref(1)
-const size = ref(10)
+const orders = ref<Order[]>([])
 const total = ref(0)
-const statusFilter = ref('')
+const page = ref(1)
+const pageSize = ref(10)
 
-const formatStatus = (status: string) => {
-  const map: Record<string, string> = {
-    'pending_pay': '待支付',
-    'pending_ship': '待发货',
-    'shipped': '已发货',
-    'completed': '已完成',
-    'cancelled': '已取消'
-  }
-  return map[status] || status
+const start = computed(() => {
+  if (total.value === 0) return 0
+  return (page.value - 1) * pageSize.value + 1
+})
+
+const end = computed(() => {
+  if (total.value === 0) return 0
+  return Math.min(total.value, page.value * pageSize.value)
+})
+
+const todayOrders = computed(() => {
+  const today = new Date()
+  const y = today.getFullYear()
+  const m = today.getMonth()
+  const d = today.getDate()
+  return orders.value.filter((o) => {
+    const dt = new Date(o.createdAt)
+    return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
+  }).length
+})
+
+const toShipCount = computed(() => orders.value.filter((o) => o.status === 'to_ship').length)
+const totalPaid = computed(() => orders.value.reduce((sum, o) => sum + (o.pay.amountPaid || 0), 0))
+
+function firstItem(o: Order) {
+  return o.items?.[0]
 }
 
-const getStatusType = (status: string) => {
-  const map: Record<string, string> = {
-    'pending_pay': 'warning',
-    'pending_ship': 'primary',
-    'shipped': 'success',
-    'completed': 'success',
-    'cancelled': 'info'
-  }
-  return map[status] || 'info'
+function totalQty(o: Order) {
+  return (o.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0)
 }
 
-const fetchOrders = async () => {
+function payMethodText(method: string) {
+  if (method === 'wechat') return '微信支付'
+  if (method === 'alipay') return '支付宝支付'
+  return method
+}
+
+function statusLabel(status: string) {
+  if (status === 'unpaid') return '待付款'
+  if (status === 'to_ship') return '待发货'
+  if (status === 'shipped') return '已发货'
+  if (status === 'completed') return '已完成'
+  if (status === 'cancelled') return '已取消'
+  return status
+}
+
+function statusClass(status: string) {
+  if (status === 'to_ship') return 'bg-blue-100 text-blue-700'
+  if (status === 'completed') return 'bg-green-100 text-green-700'
+  if (status === 'unpaid') return 'bg-orange-100 text-orange-700'
+  if (status === 'shipped') return 'bg-slate-100 text-slate-600'
+  return 'bg-surface-variant text-on-surface-variant'
+}
+
+async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/shop/orders', {
-      params: { page: page.value, size: size.value, status: statusFilter.value },
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    if (res.data.ok || res.data.code === 0) {
+    const res = await axios.get('/api/v1/admin/shop/orders', { params: { page: page.value, pageSize: pageSize.value } })
+    if (res.data?.ok || res.data?.code === 0) {
       orders.value = res.data.data.items
       total.value = res.data.data.total
-    } else {
-      ElMessage.error(res.data.message || '获取订单列表失败')
     }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '网络错误')
   } finally {
     loading.value = false
   }
 }
 
-const handleShip = async (row: any) => {
-  try {
-    await ElMessageBox.confirm(
-      '将此订单标记为已发货？',
-      '确认发货',
-      { confirmButtonText: '发货', cancelButtonText: '取消', type: 'info' }
-    )
-    
-    await axios.put(`/api/v1/admin/shop/orders/${row.id}/ship`, {}, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    
-    ElMessage.success('订单已成功发货')
-    fetchOrders()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.message || '操作失败')
-    }
-  }
-}
-
-onMounted(() => {
-  fetchOrders()
-})
+onMounted(load)
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  align-items: center;
-}
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
 </style>

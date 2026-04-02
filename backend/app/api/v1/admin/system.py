@@ -5,12 +5,28 @@ from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 from werkzeug.security import generate_password_hash
 
+def _iso(dt):
+    return dt.isoformat() + "Z" if dt else None
+
+def _pagination_args():
+    page = request.args.get("page", 1, type=int)
+    size = request.args.get("pageSize", None, type=int)
+    if size is None:
+        size = request.args.get("size", 10, type=int)
+    return page, size
+
+def _module_from_action(action: str):
+    if action in {"login", "logout"}:
+        return "账户安全"
+    if "order" in action or "product" in action:
+        return "订单财务"
+    return "系统"
+
 def register_admin_system_routes(bp):
     @bp.get("/admin/system/admins")
     @admin_required
     def get_admins():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = AdminUser.query
 
@@ -19,14 +35,19 @@ def register_admin_system_routes(bp):
         admins = []
         for admin in pagination.items:
             role = AdminRole.query.get(admin.role_id)
+            last_login = (
+                AdminLog.query.filter_by(admin_id=admin.id, action="login")
+                .order_by(AdminLog.created_at.desc())
+                .first()
+            )
             admins.append({
                 "id": admin.id,
                 "username": admin.username,
                 "name": admin.name,
-                "role_id": admin.role_id,
-                "role_name": role.name if role else "Unknown",
+                "phone": None,
+                "role": {"id": role.id if role else admin.role_id, "name": role.name if role else "Unknown"},
                 "status": admin.status,
-                "created_at": admin.created_at.isoformat() + "Z" if admin.created_at else None,
+                "lastLoginAt": _iso(last_login.created_at) if last_login else None,
             })
 
         return ok({
@@ -39,8 +60,7 @@ def register_admin_system_routes(bp):
     @bp.get("/admin/system/logs")
     @admin_required
     def get_admin_logs():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = AdminLog.query
 
@@ -51,13 +71,12 @@ def register_admin_system_routes(bp):
             admin = AdminUser.query.get(log.admin_id)
             logs.append({
                 "id": log.id,
-                "admin_id": log.admin_id,
-                "admin_username": admin.username if admin else "Unknown",
+                "serialNo": (log.id or "")[:8],
+                "module": _module_from_action(log.action),
                 "action": log.action,
-                "target_type": log.target_type,
-                "target_id": log.target_id,
                 "ip": log.ip,
-                "created_at": log.created_at.isoformat() + "Z" if log.created_at else None,
+                "createdAt": _iso(log.created_at),
+                "operator": {"id": log.admin_id, "name": admin.name if admin and admin.name else (admin.username if admin else "Unknown")},
             })
 
         return ok({

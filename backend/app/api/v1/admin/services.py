@@ -1,15 +1,25 @@
 from flask import request
+from ....models import Pet, ServiceOffering, User
 from ....extensions import db
 from ....models import ServiceProvider, ServiceAppointment
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 
+def _iso(dt):
+    return dt.isoformat() + "Z" if dt else None
+
+def _pagination_args():
+    page = request.args.get("page", 1, type=int)
+    size = request.args.get("pageSize", None, type=int)
+    if size is None:
+        size = request.args.get("size", 10, type=int)
+    return page, size
+
 def register_admin_services_routes(bp):
     @bp.get("/admin/services/providers")
     @admin_required
     def get_providers():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         
         query = ServiceProvider.query
 
@@ -22,7 +32,7 @@ def register_admin_services_routes(bp):
                 "name": provider.name,
                 "service_type": provider.service_type,
                 "status": provider.status,
-                "created_at": provider.created_at.isoformat() + "Z" if provider.created_at else None,
+                "created_at": _iso(provider.created_at),
             })
 
         return ok({
@@ -35,8 +45,7 @@ def register_admin_services_routes(bp):
     @bp.get("/admin/services/appointments")
     @admin_required
     def get_appointments():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         status = request.args.get("status", "")
         
         query = ServiceAppointment.query
@@ -46,16 +55,45 @@ def register_admin_services_routes(bp):
 
         pagination = query.order_by(ServiceAppointment.created_at.desc()).paginate(page=page, per_page=size, error_out=False)
 
+        status_map = {
+            "scheduled": "pending_service",
+            "arrived": "arrived",
+            "completed": "completed",
+            "cancelled": "cancelled",
+            "unpaid": "unpaid",
+        }
+
         appointments = []
         for appt in pagination.items:
-            appointments.append({
-                "id": appt.id,
-                "user_id": appt.user_id,
-                "service_type": appt.service_type,
-                "service_date": appt.service_date.isoformat() if appt.service_date else None,
-                "status": appt.status,
-                "created_at": appt.created_at.isoformat() + "Z" if appt.created_at else None,
-            })
+            u = User.query.get(appt.user_id)
+            pet = Pet.query.get(appt.pet_id) if appt.pet_id else None
+            offering = ServiceOffering.query.get(appt.offering_id) if appt.offering_id else None
+            appointments.append(
+                {
+                    "id": appt.id,
+                    "bookingNo": (appt.id or "")[:8],
+                    "createdAt": _iso(appt.created_at),
+                    "status": status_map.get(appt.status, appt.status),
+                    "pet": {
+                        "id": appt.pet_id,
+                        "nameCn": pet.name if pet else None,
+                        "avatarUrl": pet.avatar_url if pet else None,
+                        "breed": pet.breed if pet else None,
+                    },
+                    "service": {"id": appt.offering_id, "name": offering.name if offering else appt.service_type},
+                    "owner": {
+                        "id": appt.user_id,
+                        "name": u.nickname if u else "Unknown",
+                        "phoneMasked": "",
+                    },
+                    "schedule": {
+                        "type": "slot",
+                        "startAt": _iso(appt.appointment_at),
+                        "endAt": _iso(appt.appointment_at),
+                        "durationMinutes": offering.duration_minutes if offering else None,
+                    },
+                }
+            )
 
         return ok({
             "items": appointments,

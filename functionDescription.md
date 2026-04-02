@@ -2196,3 +2196,48 @@
 - 管理端：`admin-panel/src/views/Dashboard.vue`
 - 后端：`backend/app/api/v1/admin/dashboard.py`
 
+---
+
+## 管理端前后端数据库打通（admin-panel → backend）
+
+**目的**
+- 管理端不再依赖 `admin-panel/server` 的 SQLite 演示数据，改为读取 `backend` 的真实数据库（`backend/instance/app.db`）。
+- 尽量保持管理端前端页面不改（或少改），通过后端接口层做字段/路由适配。
+
+**入口**
+- 管理端前端接口：`/api/v1/admin/*`（由 `admin-panel` 通过 Vite proxy 转发到 Flask）。
+- 管理端登录：`POST /api/v1/admin/auth/login`
+
+**数据流/状态**
+- 管理端 `axios` 请求 `/api/...`：
+  - dev 环境由 `admin-panel/vite.config.ts` 将 `/api` 与 `/media` 代理到 `backend`（默认 `http://127.0.0.1:5001`）。
+  - 管理端使用 `Authorization: Bearer <admin_token>` 访问需要鉴权的管理端接口。
+- 后端管理端接口统一从 SQLAlchemy 模型读取真实数据并返回管理端页面需要的字段结构。
+
+**关键分支**
+- 新增与适配的管理端接口：
+  - `GET /api/v1/admin/dashboard/overview`：返回 `{ userCount, postCount, orderCount, revenue }`。
+  - `GET /api/v1/admin/content/posts`、`GET /api/v1/admin/content/comments`：为管理端“内容管理”提供字段结构兼容。
+- 分页入参兼容：
+  - 前端使用 `page/pageSize`，后端兼容读取 `pageSize`（并保留 `size` 兼容）。
+
+**边界条件**
+- 部分管理端展示字段在业务表中并不存在（如评论审核状态、用户等级等）：后端以合理默认值返回，保证页面可渲染，后续再按需求补齐数据字段与迁移。
+
+**相关文件**
+- 管理端：
+  - `admin-panel/vite.config.ts`
+  - `admin-panel/src/main.ts`
+  - `admin-panel/src/views/*`
+- 后端：
+  - `backend/app/api/v1/admin/dashboard.py`
+  - `backend/app/api/v1/admin/posts.py`
+  - `backend/app/api/v1/admin/shop.py`
+  - `backend/app/api/v1/admin/services.py`
+  - `backend/app/api/v1/admin/system.py`
+  - `backend/tests/test_admin_panel_contract.py`
+
+### 变更 2026-04-02（去除明显假数据）
+- Dashboard：使用 `/api/v1/admin/dashboard/stats` 的真实统计替换“累计点赞/评论”等硬编码数字；无法提供的“分享”显示为 `—`。
+- 用户管理/商品管理/管理员：将“42/1420/4组”等硬编码数字改为来自接口 `total` 或由列表派生；无法精确统计的指标显示为 `—`。
+

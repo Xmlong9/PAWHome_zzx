@@ -4,12 +4,28 @@ from ....models import User, Post, Follow
 from ....responses import ok, fail
 from .auth import admin_required, log_admin_action
 
+def _iso(dt):
+    return dt.isoformat() + "Z" if dt else None
+
+def _pagination_args():
+    page = request.args.get("page", 1, type=int)
+    size = request.args.get("pageSize", None, type=int)
+    if size is None:
+        size = request.args.get("size", 10, type=int)
+    return page, size
+
+def _mask_phone(phone: str | None):
+    if not phone or not isinstance(phone, str):
+        return ""
+    if len(phone) < 7:
+        return phone
+    return phone[:3] + "****" + phone[-4:]
+
 def register_admin_users_routes(bp):
     @bp.get("/admin/users")
     @admin_required
     def get_users():
-        page = request.args.get("page", 1, type=int)
-        size = request.args.get("size", 10, type=int)
+        page, size = _pagination_args()
         keyword = request.args.get("keyword", "")
 
         query = User.query
@@ -24,10 +40,10 @@ def register_admin_users_routes(bp):
             users.append({
                 "id": user.id,
                 "nickname": user.nickname,
-                "phone": user.phone,
-                "avatar_url": user.avatar_url,
+                "phoneMasked": _mask_phone(user.phone),
+                "avatarUrl": user.avatar_url,
                 "gender": user.gender,
-                "created_at": user.created_at.isoformat() + "Z" if user.created_at else None,
+                "registeredAt": _iso(user.created_at),
                 "status": getattr(user, "status", "active")  # We might need to add status to User model later if not present
             })
 

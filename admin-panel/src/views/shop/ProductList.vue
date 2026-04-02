@@ -1,373 +1,194 @@
 <template>
-  <div class="product-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>商品管理</span>
+  <div class="p-8 space-y-8">
+    <!-- Table Section (Asymmetric Editorial Style) -->
+    <section class="bg-surface-container-low rounded-3xl p-1 overflow-hidden">
+      <div class="bg-surface-container-lowest rounded-[1.4rem] shadow-sm">
+        <div class="p-6 border-b border-surface-variant/30 flex justify-between items-end">
           <div>
-            <el-button type="success" icon="Plus" @click="openDialog('create')">新增商品</el-button>
-            <el-button type="primary" icon="Refresh" @click="fetchProducts">刷新</el-button>
+            <h2 class="text-2xl font-bold text-primary">商品库</h2>
+            <p class="text-sm text-on-surface-variant mt-1">管理您的商品目录、价格及库存状态</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">批量下架</button>
+            <button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold hover:brightness-95 transition-all">导出表格</button>
           </div>
         </div>
-      </template>
-
-      <el-table :data="products" v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="商品 ID" width="280" />
-        <el-table-column prop="title" label="商品名称" show-overflow-tooltip />
-        <el-table-column label="图片" width="100">
-          <template #default="{ row }">
-            <el-image 
-              v-if="getFirstImage(row.images_json)" 
-              :src="getFirstImage(row.images_json)" 
-              style="width: 50px; height: 50px" 
-              fit="cover"
-              :preview-src-list="[getFirstImage(row.images_json)]"
-              preview-teleported
-            />
-            <span v-else>无图</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="价格" width="120">
-          <template #default="{ row }">
-            ￥{{ (row.price_cents / 100).toFixed(2) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="stock" label="库存" width="100" />
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.is_active ? 'success' : 'info'">
-              {{ row.is_active ? '已上架' : '已下架' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.created_at).toLocaleString() }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              size="small"
-              type="primary"
-              @click="openDialog('edit', row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              size="small"
-              :type="row.is_active ? 'warning' : 'success'"
-              @click="handleStatusChange(row)"
-            >
-              {{ row.is_active ? '下架' : '上架' }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="size"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchProducts"
-          @current-change="fetchProducts"
-        />
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-on-surface-variant text-[11px] uppercase tracking-wider font-bold">
+                <th class="px-6 py-4">商品ID</th>
+                <th class="px-6 py-4">商品信息</th>
+                <th class="px-6 py-4 text-right">价格</th>
+                <th class="px-6 py-4 text-center">库存</th>
+                <th class="px-6 py-4">状态</th>
+                <th class="px-6 py-4">创建时间</th>
+                <th class="px-6 py-4 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-variant/20">
+              <tr v-for="p in products" :key="p.id" class="group hover:bg-surface-container-low/50 transition-colors">
+                <td class="px-6 py-4 text-xs font-mono text-on-surface-variant">#{{ p.productNo }}</td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container-high shrink-0">
+                      <img class="w-full h-full object-cover" :alt="p.name" :src="p.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAAaLiWXImN5PJWgR5nqpgLsQexKxjhClgcj39smxO1E-4iCKIKqHkthkChKilTi8_3Hc-6qxDKI9qcFLjRkJud9bFx4vdkZ7aPs8NTDjbFBptiLlTuSE9NKTw81WDnQKy0LfyhxccPB_a1hqIz3tD1stoDnDcEDk_ZSvYODQbKrdZVCkhcpZa9ZJy-iMutaUguVvtSVg25Z5EQ3LLD6vRZSF0-RuqXhPyGc0iqwzbvQv5KTJQuODLwaQdY-qvpfVligrP0J07irFM'"/>
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold text-on-surface">{{ p.name }}</p>
+                      <p class="text-[10px] text-on-surface-variant">分类: {{ p.categoryText || '-' }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-right text-sm font-bold text-primary">¥ {{ formatMoney(p.price) }}</td>
+                <td class="px-6 py-4 text-center">
+                  <div class="text-sm font-medium">{{ p.stockQty.toLocaleString('zh-CN') }}</div>
+                  <div class="w-16 h-1 bg-surface-container-high rounded-full mx-auto mt-1 overflow-hidden">
+                    <div class="h-full" :class="p.stockQty === 0 ? 'bg-surface-dim' : p.stockQty < 100 ? 'bg-error' : 'bg-primary-container'" :style="{ width: stockBarWidth(p.stockQty) }"></div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span v-if="p.status === 'on_sale'" class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>销售中</span>
+                  <span v-else-if="p.status === 'low_stock'" class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary-container/20 text-on-tertiary-container text-[10px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>库存紧张</span>
+                  <span v-else class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant text-[10px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40"></span>已下架</span>
+                </td>
+                <td class="px-6 py-4 text-xs text-on-surface-variant">{{ formatDateTime(p.createdAt) }}</td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex justify-end gap-1">
+                    <button class="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+                    <button class="p-2 hover:bg-error-container/30 hover:text-error rounded-lg text-on-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="!loading && products.length === 0" class="bg-surface-container-lowest">
+                <td colspan="7" class="px-6 py-10 text-center text-sm text-on-surface-variant">暂无数据</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="p-6 border-t border-surface-variant/30 flex justify-between items-center">
+          <span class="text-xs text-on-surface-variant">显示 {{ start }} 到 {{ end }} 条，共 {{ total }} 条商品</span>
+          <div class="flex gap-1">
+            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-white text-xs font-bold">1</button>
+            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">2</button>
+            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors text-xs font-bold">3</button>
+            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+          </div>
+        </div>
       </div>
-    </el-card>
+    </section>
 
-    <!-- 新增/编辑商品弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogType === 'create' ? '新增商品' : '编辑商品'"
-      width="600px"
-      @close="resetForm"
-    >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="商品名称" prop="title">
-          <el-input v-model="form.title" placeholder="请输入商品名称" />
-        </el-form-item>
-        
-        <el-form-item label="价格(元)" prop="price">
-          <el-input-number v-model="form.price" :precision="2" :step="1" :min="0" style="width: 100%;" />
-        </el-form-item>
-        
-        <el-form-item label="库存" prop="stock">
-          <el-input-number v-model="form.stock" :step="1" :min="0" :precision="0" style="width: 100%;" />
-        </el-form-item>
-        
-        <el-form-item label="商品图片" prop="imageUrl">
-          <el-upload
-            class="avatar-uploader"
-            action="/api/v1/admin/uploads"
-            :headers="{ Authorization: `Bearer ${adminToken}` }"
-            :show-file-list="false"
-            :on-success="handleUploadSuccess"
-            :before-upload="beforeUpload"
-            :on-error="handleUploadError"
-            accept="image/*"
-          >
-            <img v-if="form.imageUrl" :src="form.imageUrl" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-          <div class="upload-tip">点击上传商品图片 (将保存至 F:\PAWHome\backend\instance\uploads)</div>
-        </el-form-item>
-        
-        <el-form-item label="商品描述" prop="description">
-          <el-input type="textarea" v-model="form.description" :rows="4" placeholder="请输入商品描述" />
-        </el-form-item>
-        
-        <el-form-item label="是否上架" prop="is_active">
-          <el-switch v-model="form.is_active" />
-        </el-form-item>
-      </el-form>
+    <!-- Summary Bento Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Total Stock Value -->
+      <div class="bg-surface-container-lowest rounded-3xl p-6 shadow-[0px_8px_24px_rgba(86,67,55,0.04)] relative overflow-hidden group hover:scale-[1.02] transition-transform">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+          </div>
+          <span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12.5%</span>
+        </div>
+        <p class="text-on-surface-variant text-sm font-medium">总库存价值</p>
+        <h3 class="text-3xl font-black text-on-surface mt-1">¥ 1,245,800</h3>
+        <p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">截止今日 08:00</p>
+      </div>
       
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+      <!-- Active Products -->
+      <div class="bg-surface-container-lowest rounded-3xl p-6 shadow-[0px_8px_24px_rgba(86,67,55,0.04)] relative overflow-hidden group hover:scale-[1.02] transition-transform">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-tertiary-container/5 rounded-full blur-2xl group-hover:bg-tertiary-container/10 transition-colors"></div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+          </div>
+          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full">稳定</span>
+        </div>
+        <p class="text-on-surface-variant text-sm font-medium">商品总数</p>
+        <h3 class="text-3xl font-black text-on-surface mt-1">{{ total }} <span class="text-sm font-normal text-on-surface-variant">款</span></h3>
+        <p class="text-[10px] text-on-surface-variant mt-2 tracking-wide uppercase">按后台实时统计</p>
+      </div>
+      
+      <!-- New This Month -->
+      <div class="bg-gradient-to-br from-primary to-primary-container rounded-3xl p-6 shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+        <div class="absolute right-0 top-0 p-4 opacity-20">
+          <span class="material-symbols-outlined text-6xl text-white">auto_awesome</span>
+        </div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">new_releases</span>
+          </div>
+        </div>
+        <p class="text-white/80 text-sm font-medium">本月新增</p>
+        <h3 class="text-3xl font-black text-white mt-1">— <span class="text-sm font-normal text-white/70">款</span></h3>
+        <div class="mt-4 flex items-center gap-2">
+          <div class="flex -space-x-2">
+            <div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMFM0JINixvEka4hgitxuTp9YHihV7r7Gg8u9VLIxTyAW0N2jMxVNuquAO0ZkfwXXtv5KR_-LPjaNyk7G6-_-IiAl45Ey1Ll04OJ_9YdgYadlTqJVx-EVa7EA8U9Gqaw0jnDDUVm1kXY5QTPZl4hsWuh48cz03FlNdg4JxGtfspTLnoEk2Xm2zTIk7biu9Q66c6CwINOi0I6GfNTz0QPo2P5bt8pykcKqCVqoJFAInwmlK9IrHSGGJWcEjh-jfF-RMZVEoTFCF6n0"/></div>
+            <div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx_JkIGIUm-a-69xTJ8CbRLHOEswFWXdE3DMwGCEOFQh1blGKzLgQ3rnHVdtVqeejN3x3zWm5PN7LP_6ijEsM6H7qZg-pxxyul0fsxBhh0kh2GM4lbho1LheOcEcaq6tU0pLL-of36bLhDXpIAGegB6DmMrj_l8OR1NxX3ic23XgaOvwwoT5JVjp40MV8C_9HFu9YTpkBpOZ-RpBmCh7jgNVQoXW2_Uv0IRoyApViM14iaLMd-eJdOgk-G2DbHpDeleEsypBWlOR4"/></div>
+            <div class="w-6 h-6 rounded-full border-2 border-primary-container bg-surface-container-high overflow-hidden"><img alt="user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzuWaFmFX-VTUVl5RqA33SuXIK-TMuSEfhugsd2HhUIoDriDAPmo6hUXVl-QqISIqCEdUg2uJ3V2WU9LVo3cPgYA6MO2GcDckkTu2UYyXy1Etr2nhTGcmkv4n96d7tczYnY8fBVIDcugmRIfuQYFMjv-LzDvQt9S-7dpq-QIkTNnUSEn1QUfvzOVCf2X7EY4__SYuFC1hTi0TxpVfzA-XJv4EaEe1ccARK2L2ZkC3ZRqayhbVP3Gqh61XoD2MPohKQGf6jN9zk6yg"/></div>
+          </div>
+          <span class="text-[10px] text-white/90 font-bold">运营团队近期活跃新增</span>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
-import type { UploadProps } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
-import { Plus } from '@element-plus/icons-vue'
+import { formatDateTime, formatMoney } from '@/utils/format'
 
-const adminToken = computed(() => localStorage.getItem('admin_token') || '')
+type ProductItem = {
+  id: string
+  productNo: string
+  name: string
+  categoryText: string | null
+  price: number
+  stockQty: number
+  status: string
+  imageUrl: string | null
+  createdAt: string
+}
 
-const products = ref([])
 const loading = ref(false)
-const page = ref(1)
-const size = ref(10)
+const products = ref<ProductItem[]>([])
 const total = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
 
-const dialogVisible = ref(false)
-const dialogType = ref<'create' | 'edit'>('create')
-const submitLoading = ref(false)
-const formRef = ref<FormInstance>()
-
-const form = reactive({
-  id: '',
-  title: '',
-  price: 0,
-  stock: 0,
-  description: '',
-  imageUrl: '',
-  is_active: true
+const start = computed(() => {
+  if (total.value === 0) return 0
+  return (page.value - 1) * pageSize.value + 1
 })
 
-const rules = reactive<FormRules>({
-  title: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-  stock: [{ required: true, message: '请输入库存', trigger: 'blur' }]
+const end = computed(() => {
+  if (total.value === 0) return 0
+  return Math.min(total.value, page.value * pageSize.value)
 })
 
-const getFirstImage = (imagesJson: string) => {
-  if (!imagesJson) return ''
-  try {
-    const images = JSON.parse(imagesJson)
-    if (Array.isArray(images) && images.length > 0) {
-      let url = images[0]
-      // 如果后端返回的是 http://localhost:5001/media/xxx 或 /media/xxx，前端直接使用
-      return url
-    }
-  } catch (e) {}
-  return ''
+function stockBarWidth(stockQty: number) {
+  if (stockQty <= 0) return '0%'
+  if (stockQty < 20) return '25%'
+  if (stockQty < 100) return '50%'
+  return '75%'
 }
 
-const handleUploadSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
-  if (response.ok || response.code === 0) {
-    form.imageUrl = response.data.url
-    ElMessage.success('图片上传成功')
-  } else {
-    ElMessage.error(response.message || '上传失败')
-  }
-}
-
-const handleUploadError: UploadProps['onError'] = (error) => {
-  ElMessage.error('图片上传失败，请检查网络或后端服务')
-  console.error(error)
-}
-
-const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  const isImage = rawFile.type.startsWith('image/')
-  if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
-    return false
-  }
-  const isLt5M = rawFile.size / 1024 / 1024 < 5
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB!')
-    return false
-  }
-  return true
-}
-
-const fetchProducts = async () => {
+async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/admin/shop/products', {
-      params: { page: page.value, size: size.value },
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    if (res.data.ok || res.data.code === 0) {
+    const res = await axios.get('/api/v1/admin/shop/products', { params: { page: page.value, pageSize: pageSize.value } })
+    if (res.data?.ok || res.data?.code === 0) {
       products.value = res.data.data.items
       total.value = res.data.data.total
-    } else {
-      ElMessage.error(res.data.message || '获取商品列表失败')
     }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '网络错误')
   } finally {
     loading.value = false
   }
 }
 
-const handleStatusChange = async (row: any) => {
-  const newStatus = !row.is_active
-  const action = newStatus ? '上架' : '下架'
-  
-  try {
-    await ElMessageBox.confirm(
-      `确定要${action}此商品吗？`,
-      '提示',
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
-    )
-    
-    await axios.put(`/api/v1/admin/shop/products/${row.id}/status`, { is_active: newStatus }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    })
-    
-    ElMessage.success(`商品已成功${action}`)
-    fetchProducts()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.message || '操作失败')
-    }
-  }
-}
-
-const openDialog = (type: 'create' | 'edit', row?: any) => {
-  dialogType.value = type
-  if (type === 'edit' && row) {
-    form.id = row.id
-    form.title = row.title
-    form.price = row.price_cents / 100
-    form.stock = row.stock
-    form.description = row.description || ''
-    form.imageUrl = getFirstImage(row.images_json)
-    form.is_active = row.is_active
-  } else {
-    form.id = ''
-    form.title = ''
-    form.price = 0
-    form.stock = 0
-    form.description = ''
-    form.imageUrl = ''
-    form.is_active = true
-  }
-  dialogVisible.value = true
-}
-
-const resetForm = () => {
-  if (formRef.value) {
-    formRef.value.resetFields()
-  }
-}
-
-const submitForm = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        const payload = {
-          title: form.title,
-          price_cents: Math.round(form.price * 100),
-          stock: form.stock,
-          description: form.description,
-          images_json: form.imageUrl ? JSON.stringify([form.imageUrl]) : "[]",
-          is_active: form.is_active
-        }
-        
-        const config = {
-          headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-        }
-        
-        if (dialogType.value === 'create') {
-          await axios.post('/api/v1/admin/shop/products', payload, config)
-          ElMessage.success('添加商品成功')
-        } else {
-          await axios.put(`/api/v1/admin/shop/products/${form.id}`, payload, config)
-          ElMessage.success('更新商品成功')
-        }
-        
-        dialogVisible.value = false
-        fetchProducts()
-      } catch (error: any) {
-        ElMessage.error(error.response?.data?.message || '保存失败')
-      } finally {
-        submitLoading.value = false
-      }
-    }
-  })
-}
-
-onMounted(() => {
-  fetchProducts()
-})
+onMounted(load)
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-.avatar-uploader .avatar {
-  width: 100px;
-  height: 100px;
-  display: block;
-  object-fit: cover;
-  border-radius: 6px;
-}
-.avatar-uploader :deep(.el-upload) {
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: var(--el-transition-duration-fast);
-}
-.avatar-uploader :deep(.el-upload:hover) {
-  border-color: var(--el-color-primary);
-}
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 100px;
-  height: 100px;
-  text-align: center;
-  line-height: 100px;
-}
-.upload-tip {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 8px;
-  line-height: 1.2;
-}
 </style>

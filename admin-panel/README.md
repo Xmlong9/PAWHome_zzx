@@ -7,26 +7,24 @@
 
 ## 2. 本地开发运行说明
 
-### 2.1 启动后端服务 (Flask)
-后端服务负责提供所有的 API 数据接口。
+### 2.1 启动后端服务（本项目内置 Node API，推荐）
+本仓库在 `admin-panel/server` 内提供了一个轻量的本地 API（Express + SQLite），用于本地联调与演示。
 
-1. 打开一个新终端，进入 `backend` 目录：
+1. 打开一个新终端，进入 `admin-panel` 目录：
    ```bash
-   cd backend
+   cd admin-panel
    ```
-2. 激活虚拟环境并安装依赖（如果尚未安装）：
+2. 安装依赖（如果是首次运行）：
    ```bash
-   # 如果有虚拟环境，请先激活，例如: .venv\Scripts\activate
-   pip install -r requirements.txt
+   npm install
    ```
-3. 运行 Flask 服务：
+3. 启动 API 服务：
    ```bash
-   python run.py
+   npm run dev:api
    ```
-   *服务将默认运行在 `http://127.0.0.1:5001/`*
+   *服务将默认运行在 `http://127.0.0.1:5101/`*
 
 ### 2.2 启动前端服务 (Vite + Vue 3)
-前端项目位于 `admin-panel` 目录。
 
 1. 打开另一个新终端，进入 `admin-panel` 目录：
    ```bash
@@ -38,9 +36,14 @@
    ```
 3. 启动 Vite 开发服务器：
    ```bash
-   npm run dev
+   npm run dev:web
    ```
    *服务将默认运行在 `http://localhost:5173/`*
+
+也可以一键双开（API + 前端）：
+```bash
+npm run dev:all
+```
 
 ### 2.3 登录系统
 - 在浏览器中打开：`http://localhost:5173/`
@@ -60,4 +63,4 @@ npm run build
 执行完毕后，会在目录下生成一个 `dist` 文件夹。将该文件夹下的所有静态文件部署到 Nginx 或其他静态资源服务器中即可。
 
 ### 后端部署
-建议使用 Gunicorn 或 uWSGI 作为 WSGI 服务器运行 Flask 应用，并配置 Nginx 作为反向代理服务器。
+当前 `admin-panel/server` 仅面向本地演示与联调；如需生产部署，请对接你的正式后端（例如现有 Flask 服务）。

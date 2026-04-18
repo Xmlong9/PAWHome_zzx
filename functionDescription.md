@@ -2434,5 +2434,52 @@
 - 管理端：[AppointmentList.vue](file:///f:/PAWHome/admin-panel/src/views/services/AppointmentList.vue)
 - 后端：[services.py](file:///f:/PAWHome/backend/app/api/v1/admin/services.py)
 
+---
+
+## 平台功能模块与层次逻辑（爱宠家）
+
+**目的**
+- 将“爱宠家宠物社区平台”拆解为可复用、可扩展的功能模块，并说明模块之间的层次关系（平台 → 端 → 业务域 → 子功能 → 支撑能力）。
+
+**入口**
+- 小程序用户端：`PawHome/miniprogram/pages/*`
+- 管理后台：`admin-panel/src/views/*`
+- 后端统一 API：`backend/app/api/v1/*`
+
+**数据流/状态**
+- 两个前端（小程序端、管理后台）通过 HTTP 调用后端 REST API，统一使用 `Authorization: Bearer <token>` 传递登录态。
+- 后端按业务域拆分路由（auth/users/posts/comments/notifications/im/shop/services/vaccines/search/uploads/admin），执行业务校验并读写数据库与文件存储。
+
+**层次逻辑（从上到下）**
+- 平台级（Platform）
+  - 面向用户的功能集合：社区 + 商城 + 服务/疫苗 + 个人中心
+  - 面向运营/管理的功能集合：管理后台（内容/用户/商城/服务/统计）
+- 端级（Channel）
+  - 小程序端：用户浏览、互动、交易、预约的主要入口
+  - 管理后台：运营与管理入口（数据看板、审核与治理、商品/订单/预约管理）
+- 业务域级（Domain）
+  - 账号与身份：登录注册、会话、用户资料、宠物档案
+  - 内容与互动：帖子、评论、点赞/收藏、关注关系、搜索
+  - 消息与触达：通知、私信、未读与红点聚合
+  - 交易闭环：商品、购物车、下单、支付（演示）、订单与物流、客服
+  - 线下服务：服务目录、预约创建、预约记录
+  - 疫苗专项：疫苗记录、疫苗预约、提醒与到期管理
+- 支撑能力级（Support）
+  - 上传与媒体：图片/视频上传、媒体 URL 归一化与兜底
+  - 运营位：Banner/推荐位、AI 页配置
+  - 可观测性：请求 ID、错误响应结构、必要的埋点/统计
+
+**关键分支**
+- 登录策略为多入口：手机号验证码 / 账号密码 / 微信 code2session；登录后必须通过用户资料接口做二次校验，失败则清 token 并提示。
+- 部分功能存在演示/降级路径（如商城余额、图片兜底、mock 数据/种子数据），保证在联调环境不完备时仍可跑通核心闭环。
+
+**边界条件**
+- 未登录访问：部分接口允许匿名（如部分搜索），但涉及写操作/隐私数据的接口需要鉴权。
+- 多端一致性：管理后台与小程序端对同一资源的字段口径需要后端适配，避免出现“页面可渲染但数据含义不一致”。
+
+**相关文件**
+- 小程序：`PawHome/miniprogram/pages/*`、`PawHome/miniprogram/services/*`
+- 管理端：`admin-panel/src/views/*`、`admin-panel/src/main.ts`
+- 后端：`backend/app/api/v1/*`、`backend/app/models.py`、`backend/app/auth.py`
 
 

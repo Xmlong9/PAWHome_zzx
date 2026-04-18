@@ -2482,4 +2482,52 @@
 - 管理端：`admin-panel/src/views/*`、`admin-panel/src/main.ts`
 - 后端：`backend/app/api/v1/*`、`backend/app/models.py`、`backend/app/auth.py`
 
+---
+
+## PPT 核心实现（5 个）
+
+**目的**
+- 用于 PPT“核心实现”章节：挑选项目中最能体现技术与业务闭环的 5 个实现点，并标注代码入口，便于讲解与截图。
+
+**入口**
+- 小程序端核心入口：`PawHome/miniprogram/pages/*` + `PawHome/miniprogram/services/*`
+- 后端核心入口：`backend/app/api/v1/*` + `backend/app/auth.py`
+
+**核心 1：多方式登录 + 会话鉴权（Bearer Session Token）**
+- 登录方式：短信验证码 / 密码 / 微信 code2session，成功后签发 token 并写入 `sessions` 表。
+- 小程序请求统一携带 `Authorization: Bearer <token>`，后端通过 `require_auth` 注入 `g.current_user`。
+- 相关文件：
+  - 后端会话解析与鉴权：`backend/app/auth.py`
+  - 后端登录注册接口：`backend/app/api/v1/auth.py`
+  - 小程序登录页：`PawHome/miniprogram/pages/login/index.ts`
+  - 小程序鉴权请求封装：`PawHome/miniprogram/services/request.ts`
+
+**核心 2：小程序统一请求封装（错误归一化 + HTTPS 降级兜底）**
+- 对 HTTP/业务错误做统一结构化（statusCode/code/message/url）。
+- 开发环境下遇到 `ERR_SSL_PROTOCOL_ERROR` 且是私网 host 时，自动将 `https://` 降级为 `http://` 重试一次，降低联调门槛。
+- 相关文件：
+  - `PawHome/miniprogram/services/request.ts`
+
+**核心 3：商城交易闭环（预览 → 下单 → 支付/物流事件）**
+- 预览：统一计算商品金额/运费/优惠/应付金额（支持来源：购物车/详情页）。
+- 下单：落库订单与订单项；余额支付分支会校验并扣减钱包余额。
+- 支付后流转：订单状态从 `pending_pay` 到 `shipping`，并记录物流事件供物流页展示。
+- 相关文件：
+  - 后端商城主路由：`backend/app/api/v1/shop.py`
+  - 小程序结算页：`PawHome/miniprogram/pages/shop/order/checkout.ts`
+
+**核心 4：服务预约引擎（机构/项目/时段/容量校验 + 快照）**
+- 三层目录：providers（机构）→ offerings（服务项）→ slots（可预约时段）。
+- 创建预约时校验：归属关系、serviceType 一致、appointmentAt 与 slot 对齐、capacity/remaining。
+- 将 provider/offering/slot/vaccine 等信息以 snapshot 写入 appointment，保证后续展示不依赖实时变动。
+- 相关文件：
+  - 后端预约 API：`backend/app/api/v1/services.py`
+  - 小程序通用预约页：`PawHome/miniprogram/pages/service/index.ts`
+
+**核心 5：私信 IM（REST 轮询实时收消息 + 未读统计 + 已读回写）**
+- 后端会话列表计算 `unreadCount`：根据 last_read_at 过滤对端消息。
+- 小程序聊天页轮询拉取消息并合并本地 pending/failed 消息，收到新消息后自动 `mark read`。
+- 相关文件：
+  - 后端 IM API：`backend/app/api/v1/im.py`
+  - 小程序聊天页：`PawHome/miniprogram/pages/chat/index.ts`
 

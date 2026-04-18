@@ -2484,10 +2484,10 @@
 
 ---
 
-## PPT 核心实现（5 个）
+## PPT 核心实现（6 个）
 
 **目的**
-- 用于 PPT“核心实现”章节：挑选项目中最能体现技术与业务闭环的 5 个实现点，并标注代码入口，便于讲解与截图。
+- 用于 PPT“核心实现”章节：挑选项目中最能体现技术与业务闭环的 6 个实现点，并标注代码入口，便于讲解与截图。
 
 **入口**
 - 小程序端核心入口：`PawHome/miniprogram/pages/*` + `PawHome/miniprogram/services/*`
@@ -2531,3 +2531,11 @@
   - 后端 IM API：`backend/app/api/v1/im.py`
   - 小程序聊天页：`PawHome/miniprogram/pages/chat/index.ts`
 
+**核心 6：AI 宠（结合用户宠物档案的智能对话）**
+- 复用“客服会话”能力，但通过 `channel=ai_pet` 进入 AI 宠模式：后端按用户查询宠物档案（宠物基本信息 + 疫苗记录 + 驱虫记录），拼接进 system prompt，让回答具备个性化上下文。
+- AI 调用：使用 Ark OpenAI SDK（豆包/方舟）`chat.completions`；并做简单的输出清洗（去掉 `#/*` 等 Markdown 符号），保证小程序端纯文本显示更稳定。
+- 相关文件：
+  - 后端 AI 宠 prompt 组装：`backend/app/api/v1/shop.py`（`_ai_pet_system_prompt`）
+  - 后端 AI 宠回复入口：`backend/app/api/v1/shop.py`（`_ai_pet_reply` + `send_support_message` 按 channel 分流）
+  - 小程序 AI 宠聊天页：`PawHome/miniprogram/pages/ai/chat/index.ts`
+  - 小程序客服/AI 会话请求封装：`PawHome/miniprogram/services/support.ts`

@@ -2539,3 +2539,118 @@
   - 后端 AI 宠回复入口：`backend/app/api/v1/shop.py`（`_ai_pet_reply` + `send_support_message` 按 channel 分流）
   - 小程序 AI 宠聊天页：`PawHome/miniprogram/pages/ai/chat/index.ts`
   - 小程序客服/AI 会话请求封装：`PawHome/miniprogram/services/support.ts`
+
+---
+
+## 后端核心流程梳理（用于答辩）
+
+**目的**
+- 以“后端如何组织、各模块如何串起来”为主线，梳理爱宠家后端核心业务流程，便于毕业答辩讲解。
+
+**入口**
+- 应用工厂：`backend/app/__init__.py`
+- API 蓝图注册：`backend/app/api/v1/__init__.py`
+- 统一鉴权：`backend/app/auth.py`
+- 统一响应/错误：`backend/app/responses.py`、`backend/app/errors.py`
+
+**数据流/状态（总体）**
+- 客户端（小程序/管理后台）→ `GET/POST/PUT/DELETE /api/v1/*` → 路由模块执行业务逻辑 → SQLAlchemy 读写 SQLite/MySQL → 返回统一 `{ok,data/error,requestId}` 的 JSON。
+- 用户态通过 `Authorization: Bearer <token>` 传入；服务端从 `sessions` 表解析并注入 `g.current_user`；管理端同理从 `admin_sessions` 注入 `g.current_admin`。
+
+**关键流程 1：请求进入、响应与错误契约**
+- 请求 ID：`before_request` 生成/透传 `X-Request-ID` 写入 `g.request_id`，并在 `after_request` 回写响应头（便于定位日志链路）。
+- 成功/失败响应：统一由 `ok()/fail()` 生成，保证前端解析一致。
+- 未捕获异常与 HTTPException：统一转换为结构化错误码（如 `HTTP_404`、`INTERNAL_ERROR`）。
+- 相关文件：
+  - `backend/app/__init__.py`
+  - `backend/app/responses.py`
+  - `backend/app/errors.py`
+
+**关键流程 2：用户认证（Session Token）**
+- 登录注册入口：短信验证码、密码登录、微信 code2session（演示实现）统一签发 token。
+- token 校验：每次请求解析 Bearer token → 查 `sessions` → 过期清理 → 注入 `g.current_user`。
+- 相关文件：
+  - `backend/app/api/v1/auth.py`
+  - `backend/app/auth.py`
+
+**关键流程 3：用户与宠物档案**
+- 用户资料：`GET /users/me`、`PUT /users/me`；用户详情 `GET /users/<id>` 会额外返回关注关系（isFollowing/isFollowed）与统计字段（帖子/粉丝/关注/获赞）。
+- 宠物档案：`GET/POST/PUT /users/me/pets*`，为疫苗、服务预约与 AI 宠提供基础数据源。
+- 相关文件：
+  - `backend/app/api/v1/users.py`
+  - `backend/app/models.py`（User/Pet）
+
+**关键流程 4：社区内容（帖子）**
+- 列表：`GET /posts` 按 tab/type/排序拉取，并执行可见性过滤（public/followers/private）。
+- 详情：`GET /posts/<id>` 校验可见性；写入 `PostHistory` 实现浏览去重统计（viewCount 更接近 UV）。
+- 发帖/改帖/删帖：写 `Post`；删除时级联清理评论/互动/通知/历史/置顶等关联数据。
+- 互动：点赞/收藏会写关系表并给作者生成通知。
+- 视频封面：`POST /posts/<id>/cover` 对缺封面视频抽帧生成封面并写回。
+- 相关文件：
+  - `backend/app/api/v1/posts.py`
+  - `backend/app/models.py`（Post/PostLike/PostFavorite/PostHistory/Follow/Notification）
+
+**关键流程 5：评论系统（楼中楼 + 级联删除 + 置顶）**
+- 评论列表：支持置顶评论优先（CommentPin）。
+- 发评论：更新 `post.comment_count` 并生成“评论/回复”通知。
+- 删评论：作者或帖主可删除；按 parent-child 关系递归/遍历级联删除子评论，并回收 `comment_count`。
+- 相关文件：
+  - `backend/app/api/v1/comments.py`
+
+**关键流程 6：消息通知（互动通知 + 未读汇总）**
+- 通知列表：聚合 actor 信息、帖子缩略图、commentText/引用内容等，直接满足小程序展示字段。
+- 未读汇总：按 like/favorite/comment/follow 统计，并返回 total 供红点展示。
+- 已读：支持按 ids 或按 type 批量置读。
+- 相关文件：
+  - `backend/app/api/v1/notifications.py`
+
+**关键流程 7：即时通讯 IM（会话唯一 + 未读计数 + 已读回写）**
+- 会话创建：一对用户只保留一条会话（按 user_id 排序后去重）。
+- 会话列表：计算 lastMessage 与 unreadCount（基于 IMConversationRead.last_read_at）。
+- 发消息：写 IMMessage，并更新会话 last_message_at。
+- 已读：upsert IMConversationRead，实现未读清零。
+- 相关文件：
+  - `backend/app/api/v1/im.py`
+  - `backend/app/models.py`（IMConversation/IMConversationRead/IMMessage）
+
+**关键流程 8：搜索（词库扩展 + FTS 优先 + 降级）**
+- 输入扩展：对“同音错字/用品泛词”扩展关键词（例如猫砂/猫沙等）。
+- FTS：若存在 SQLite FTS 表则走全文索引；否则降级到 contains/like。
+- 可见性：帖子搜索在匿名/登录状态下都执行可见性过滤。
+- 相关文件：
+  - `backend/app/api/v1/search.py`
+  - `backend/app/search_lexicon.py`
+  - `backend/app/search_fts.py`
+
+**关键流程 9：商城交易（预览→下单→支付→物流事件）**
+- 商品/收藏/购物车：标准增删改查，收藏用关系表记录。
+- 预览：统一计算 goodsAmount/freight/discount/payableAmount。
+- 下单：落库订单与订单项；余额支付会校验并扣减 Wallet；写入订单事件。
+- 支付与物流：支付后写入 paid/shipped 事件；物流接口汇总事件并生成模拟轨迹。
+- 智能客服：SupportConversation/SupportMessage 落库；smart 模式下可接入大模型，并可注入订单上下文回答。
+- 相关文件：
+  - `backend/app/api/v1/shop.py`
+  - `backend/app/models.py`（Shop* / Wallet / Support*）
+
+**关键流程 10：服务预约与疫苗模块（容量控制 + 预约记录 + 提醒）**
+- 服务目录：providers→offerings→slots；slots 维护 capacity/reserved_count/remaining。
+- 创建预约：校验三者一致性与容量；成功后 reserved_count++；取消/删除会回收 reserved_count。
+- 疫苗专项：疫苗目录与接种记录/驱虫记录；疫苗提醒与 ServiceAppointment 绑定（按 aheadDays 计算 remindAt）。
+- 相关文件：
+  - `backend/app/api/v1/services.py`
+  - `backend/app/api/v1/vaccines.py`
+  - `backend/app/models.py`（Service* / Vaccine*）
+
+**关键流程 11：上传与静态资源**
+- 上传：限制 MIME 类型；保存到 `instance/uploads`；返回 `/media/<name>` 可访问地址。
+- 静态映射：`/media/*` 与商城静态图 `/assets/images/shop/*`。
+- 相关文件：
+  - `backend/app/api/v1/uploads.py`
+  - `backend/app/__init__.py`
+
+**关键流程 12：管理后台（admin/*）**
+- 与用户侧逻辑隔离：独立 admin session、admin 日志、后台 CRUD 与统计。
+- 覆盖用户/内容/商城/服务/仪表盘/系统日志等管理能力。
+- 相关文件：
+  - `backend/app/api/v1/admin/*`
+  - `backend/app/models.py`（Admin* / SystemConfig）
